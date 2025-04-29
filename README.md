@@ -1,16 +1,41 @@
-# barbershop_project
+# Projeto da barbearia DG
 
-Estrutura do `barbershop_project`
 
+## Modelos de negócio
+
+#### **Usuários**:
+
+Para o cadastro de usuário é necessário o cadastro dele, onde vamos coletar o `nome`, `email`, `telefone`. Rastreabilidade de criação, edição e o deletar.
+
+**Motivo?**
+
+Usuário será o leed final da aplicação, onde será realizada uma prospecção de marketing para cadastro simples no `link` externo. Ele terá uma página responsável para escolher o produto e o profissional que está disponível.
+
+
+```python
+class User(models.Model):
+    name = models.CharField(max_length=120 , blank=False, null=False)
+    email = models.EmailField(max_length=100, blank=False, null=False)
+    password = models.CharField(max_length=300, blank=False, null=False)
+    phone = models.CharField(max_length=40, blank=False, null=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.IntegerField(blank=True, null=True)
+    deleted_by = models.IntegerField(blank=True, null=True)
+    is_deleted = models.BooleanField(default=False)
+    
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return f"<User name={self.name} email={self.email}>"
+```
+
+
+### Estrutura de projeto
 ```plaintext
-barbershop_project/
-│
-├── manage.py
-├── README.md
-├── requirements.txt
-├── .env.example
-│
-├── barbershop_project/    # Configurações principais do projeto
+├── barbershop_project/    # Configurações principais do
+core:
 │   ├── __init__.py
 │   ├── settings/
 │   │   ├── __init__.py
