@@ -1,5 +1,6 @@
 import requests
 
+
 def send_whatsapp_message():
     url = 'http://localhost:8080/message/sendText/chatbot_barber'
     headers = {

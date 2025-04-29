@@ -2,8 +2,10 @@ from flask import Flask
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_restx import Api
-from src.settings._base import config_by_name, flask_env
+
 from src.db.database import db
+from src.settings._base import config_by_name, flask_env
+
 
 def create_app():
     app = Flask(__name__, static_folder="static")
