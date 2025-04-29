@@ -15,7 +15,7 @@ class DevelopmentConfig(Config):
     APPLICATION_ROOT = "/dev"
     ENV = "development"
     DEBUG = True
-    PORT = os.getenv("DB_PORT")
+    PORT = os.getenv("PORT_FLASK")
     DATABASE = os.getenv("DB_NAME")
     USERNAME = os.getenv("DB_USERNAME")
     DB_HOST = os.getenv("DB_HOST")
