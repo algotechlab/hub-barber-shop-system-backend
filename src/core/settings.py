@@ -71,6 +71,7 @@ TEMPLATES = [
         },
     },
 ]
+
 WSGI_APPLICATION = 'core.wsgi.application'
 LANGUAGE_CODE = 'pt-br'
 TIME_ZONE = 'America/Sao_Paulo'
