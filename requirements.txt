@@ -1,4 +1,6 @@
-asgiref==3.8.1
-Django==5.2
-python-dotenv==1.1.0
-sqlparse==0.5.3
+Django>=5.0,<6.0
+psycopg2-binary>=2.9
+redis>=5.0
+python-decouple>=3.8
+dj-database-url>=2.1
+django-redis>=5.4
