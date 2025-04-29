@@ -71,11 +71,6 @@ services:
       - ALLOWED_HOSTS=localhost,127.0.0.1,django_app
     volumes:
       - ./src:/app
-    command: >
-      sh -c "until pg_isready -h postgres -p 5432 -U postgres; do sleep 1; done &&
-             psql -h postgres -U postgres -d postgres -c 'CREATE DATABASE barbershop_db;' || true &&
-             python manage.py migrate &&
-             python manage.py runserver 0.0.0.0:8000"
     networks:
       - evolution-net
 
