@@ -4,6 +4,7 @@ from flask_jwt_extended import JWTManager
 from flask_restx import Api
 
 from src.db.database import db
+from src.resource.user import user_us
 from src.settings._base import config_by_name, flask_env
 
 
@@ -28,9 +29,9 @@ def create_app():
         doc=f"/{app.config["DOCS"]}",
         authorizations=authorizations,
         security="Bearer Auth",
-        version="3.0",
-        title="Athenas Backend API micro serviços",
-        description="Backend Athenas.",
+        version="1.0",
+        title="Barbearia DG",
+        description="Backend Barbearia DG.",
     )
     app.config["CORS_HEADERS"] = "Content-Type"
     CORS(app, resources={r"/*": {"origins": "*"}, r"/static/*": {"origins": "*"}})
@@ -44,7 +45,7 @@ def create_app():
     jwt = JWTManager(app)
     
     # Namespaces registration
-    # api.add_namespace(user_ns)
+    api.add_namespace(user_us)
     
     return app
 

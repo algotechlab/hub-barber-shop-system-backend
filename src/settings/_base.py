@@ -8,7 +8,7 @@ load_dotenv()
 class Config:
     ENV = os.getenv("FLASK_ENV", "development")
     DEBUG = True
-    DOCS = os.getenv("DOCS_DEV")
+    DOCS = os.getenv("DOCS_DEV", "docs")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 class DevelopmentConfig(Config):
