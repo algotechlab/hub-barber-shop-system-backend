@@ -54,31 +54,53 @@ services:
       - evolution-net
 
   flask_db:
+    image: postgres:15
+    container_name: flask_db
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=barbershop_db
+      - DATABASE_URL=postgresql://postgres:postgres@flask_db:5432/barbershop_db
+      - ALLOWED_HOSTS=localhost,127.0.0.1
+    volumes:
+      - flask_db_data:/var/lib/postgresql/data
+    ports:
+      - "5477:5432"
+    networks:
+      - evolution-net
+    command: >
+      -c 'listen_addresses=*'
+      -c 'max_connections=200'
+      -c 'shared_buffers=256MB'
+      -c 'work_mem=8MB'
+      -c 'log_min_messages=WARNING'
+
+  flask_app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: flask_db
+    container_name: flask_app
     depends_on:
-      - postgres
+      - flask_db
       - redis
     restart: always
     ports:
-      - "5000:5000"
+      - "8000:8000"
     environment:
-      - FLASK_ENV=development
-      - FLASK_APP=external/app.py
-      - SQLALCHEMY_DATABASE_URI=postgresql://postgres:postgres@postgres:5432/barbershop_db
+      - SQLALCHEMY_DATABASE_URI=postgresql://postgres:postgres@flask_db:5432/barbershop_db
       - DEBUG=True
-      - ALLOWED_HOSTS=localhost,127.0.0.1,flask_db
+      - ALLOWED_HOSTS=localhost,127.0.0.1,flask_app
     volumes:
       - .:/app
     networks:
       - evolution-net
-    command: flask run --host=0.0.0.0 --port=5000
+    command: gunicorn --config gunicorn.conf.py -b 0.0.0.0:8000 manage:app
 
 volumes:
   evolution_instances:
   postgres_data:
+  flask_db_data:
 
 networks:
   evolution-net:
