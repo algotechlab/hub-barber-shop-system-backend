@@ -12,6 +12,8 @@ from src.utils.log import logdb
 from src.utils.metadata import Metadata
 
 class LoginCore:
+    # TODO - Testar o banco de dados postgreSQL com o Flask, verificar o docker-compose.yml
+    # TODO - Verificando também a possibilidade de realizar backup
     def __init__(self, user_id: int, *args, **kwargs):
         self.user_id = user_id
         self.user = User
