@@ -16,49 +16,65 @@ pagination_arguments_users.add_argument("sort_by", help="Sort By", default="", t
 pagination_arguments_users.add_argument("filter_by", help="Filter By", default="", type=str, required=False)
 pagination_arguments_users.add_argument("filter_value", help="Filter Value", default="", type=str, required=False)
 
-
 user_us = Namespace("user", description="Manager users")
-
 
 payload_users = user_us.model(
     "User",
     {
-        "name": fields.String(required=True, description="User name", max_length=120),
-        "email": fields.String(required=True, description="User email", max_length=100),
-        "password": fields.String(required=True, description="User password", max_length=300),
-        "phone": fields.String(required=True, description="User phone", max_length=40),
+        "username": fields.String(required=True, example="User name", max_length=120),
+        "lastname": fields.String(required=True, example="User name", max_length=120),
+        "email": fields.String(required=True, example="User email", max_length=100),
+        "password": fields.String(required=True, example="User password", max_length=300),
+        "phone": fields.String(required=True, example="User phone", max_length=40),
+    },
+)
+
+payload_update_users = user_us.model(
+    "User",
+    {
+        "username": fields.String(required=False, example="User name", max_length=120),
+        "lastname": fields.String(required=False, example="User name", max_length=120),
+        "email": fields.String(required=False, example="User email", max_length=100),
+        "password": fields.String(required=False, example="User password", max_length=300),
+        "phone": fields.String(required=False, example="User phone", max_length=40),
     },
 )
 
 
-
 @user_us.route("")
 class UserResource(Resource):
+
     @user_us.doc(description="List Users")
     @user_us.expect(pagination_arguments_users, validate=True)
     @cross_origin()
     def get(self):
         """List users"""
         try:
-            user_id = request.headers.get("Id", request.environ.get("Id")) 
+            user_id = request.headers.get("Id", request.environ.get("Id"))
             return UserCore(user_id=user_id).list_users(request.args.to_dict())
         except Exception as e:
             return Response().response(status_code=400, error=True, message_id="something_went_wrong", traceback=traceback.format_exc())
-    
+
     @user_us.doc(description="Add users")
     @user_us.expect(payload_users, validate=True)
     @cross_origin()
     def post(self):
         """Add users"""
         try:
-            user_id = request.headers.get("Id", request.environ.get("Id")) 
-            return UserCore(user_id=user_id).add_user(request.json)
+            user_id = request.headers.get("Id", request.environ.get("Id"))
+            return UserCore(user_id=user_id).add_user(request.get_json())
         except Exception as e:
-            return Response().response(status_code=400, error=True, message_id="something_went_wrong", traceback=traceback.format_exc())
+            print(e)
+            return Response().response(
+                status_code=500,
+                error=True,
+                message_id="something_went_wrong",
+                traceback=traceback.format_exc(e),
+            )
 
 @user_us.route("/<int:user_id>")
 class UserResourcerId(Resource):
-    
+
     @user_us.doc(description="Get User")
     @cross_origin()
     def get(self, user_id: int):
@@ -67,18 +83,17 @@ class UserResourcerId(Resource):
             return UserCore(user_id=user_id).get_user(user_id)
         except Exception as e:
             return Response().response(status_code=400, error=True, message_id="something_went_wrong", traceback=traceback.format_exc())
-    
-    
+
     @user_us.doc(description="Update User")
-    @user_us.expect(payload_users, validate=True)
+    @user_us.expect(payload_update_users, validate=True)
     @cross_origin()
     def put(self, user_id: int):
         """Update users"""
         try:
-            return UserCore(user_id=user_id).update_user(user_id, request.json)
+            return UserCore(user_id=user_id).update_user(user_id, request.get_json())
         except Exception as e:
             return Response().response(status_code=400, error=True, message_id="something_went_wrong", traceback=traceback.format_exc())
-    
+
     @user_us.doc(description="Delete User")
     @cross_origin()
     def delete(self, user_id: int):

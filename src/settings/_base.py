@@ -16,16 +16,8 @@ class DevelopmentConfig(Config):
     ENV = "development"
     DEBUG = True
     PORT = os.getenv("PORT_FLASK")
-    DATABASE = os.getenv("DB_NAME")
-    USERNAME = os.getenv("DB_USERNAME")
-    DB_HOST = os.getenv("DB_HOST")
-    DB_PORT = os.getenv("DB_PORT")
-    DB_PASSWORD = os.getenv("DB_PASSWORD")
     DOCS = os.getenv("DOCS_DEV")
-    SQLALCHEMY_DATABASE_URI = (
-        f"postgresql+psycopg2://{USERNAME}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DATABASE}"
-    )
-    
+    SQLALCHEMY_DATABASE_URI= os.getenv("SQLALCHEMY_DATABASE_URI")
 
 
 class ProductionConfig(Config):
