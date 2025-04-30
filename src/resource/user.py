@@ -1,5 +1,4 @@
 # src/resource/user.py
-
 import traceback
 
 from flask import request
@@ -35,12 +34,11 @@ payload_users = user_us.model(
 
 @user_us.route("")
 class UserResource(Resource):
-        
-    
     @user_us.doc(description="List Users")
     @user_us.expect(pagination_arguments_users, validate=True)
     @cross_origin()
     def get(self):
+        """List users"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id")) 
             return UserCore(user_id=user_id).list_users(request.args.to_dict())
@@ -51,6 +49,7 @@ class UserResource(Resource):
     @user_us.expect(payload_users, validate=True)
     @cross_origin()
     def post(self):
+        """Add users"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id")) 
             return UserCore(user_id=user_id).add_user(request.json)
@@ -62,7 +61,8 @@ class UserResourcerId(Resource):
     
     @user_us.doc(description="Get User")
     @cross_origin()
-    def get(self, user_id):
+    def get(self, user_id: int):
+        """Get id"""
         try:
             return UserCore(user_id=user_id).get_user(user_id)
         except Exception as e:
@@ -72,7 +72,8 @@ class UserResourcerId(Resource):
     @user_us.doc(description="Update User")
     @user_us.expect(payload_users, validate=True)
     @cross_origin()
-    def put(self, user_id):
+    def put(self, user_id: int):
+        """Update users"""
         try:
             return UserCore(user_id=user_id).update_user(user_id, request.json)
         except Exception as e:
@@ -80,7 +81,8 @@ class UserResourcerId(Resource):
     
     @user_us.doc(description="Delete User")
     @cross_origin()
-    def delete(self, user_id):
+    def delete(self, user_id: int):
+        """Delete users"""
         try:
             return UserCore(user_id=user_id).delete(user_id)
         except Exception as e:
