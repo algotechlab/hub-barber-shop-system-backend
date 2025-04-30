@@ -12,11 +12,10 @@ from src.utils.log import logdb
 from src.utils.metadata import Metadata
 
 class LoginCore:
-    # TODO - Testar o banco de dados postgreSQL com o Flask, verificar o docker-compose.yml
-    # TODO - Verificando também a possibilidade de realizar backup
-    def __init__(self, user_id: int, *args, **kwargs):
-        self.user_id = user_id
+    def __init__(self, *args, **kwargs):
         self.user = User
+        self.email = None
+        self.user_id = None
         
     def compact_token(self, token):
         return hashlib.sha256(token.encode()).hexdigest()
@@ -24,22 +23,19 @@ class LoginCore:
     def get_login(self, data: dict):
         user = self.user.query.filter_by(email=data.get("email")).first()
         
-        if not user or not user.id:
+        if not user:
             return Response().response(message_id="user_not_found", status_code=404, error=True)
         
         self.user_id = user.id
         self.email = user.email
         password = data.get("password")
-        
-        join_stmt = outerjoin(
-            self.user, self.employee, self.user.id == self.employee.user_id
-        )
+    
         
         stmt = select(
             self.user.id,
-            self.user.name,
+            self.user.username,
             self.user.email
-        ).select_from(join_stmt).where(self.user.id == self.user_id)
+        ).where(self.user.id == self.user_id)
         
         result = db.session.execute(stmt).fetchone()
         
