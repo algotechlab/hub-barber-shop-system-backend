@@ -17,11 +17,12 @@ COPY requirements.txt .
 # Instalar as dependências do Python
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiar a pasta src/ (onde está o manage.py e o código do Django)
-COPY src/ .
+# Copiar o manage.py e o diretório src/external/
+COPY manage.py .
+COPY src/external/ external/
 
-# Expor a porta do Django
-EXPOSE 8000
+# Expor a porta do Flask
+EXPOSE 5000
 
 # Comando padrão (sobrescrito no docker-compose.yml)
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["flask", "run", "--host=0.0.0.0", "--port=5000"]

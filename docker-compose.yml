@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   evolution-api:
     container_name: evolution_api
@@ -51,28 +53,28 @@ services:
     networks:
       - evolution-net
 
-  django:
+  flask_db:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: django_app
+    container_name: flask_db
     depends_on:
       - postgres
       - redis
     restart: always
     ports:
-      - "8000:8000"
+      - "5000:5000"
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/barbershop_db
-      - REDIS_URL=redis://redis:6379/0
-      - DJANGO_SETTINGS_MODULE=core.settings
-      - PGPASSWORD=postgres
+      - FLASK_ENV=development
+      - FLASK_APP=external/app.py
+      - SQLALCHEMY_DATABASE_URI=postgresql://postgres:postgres@postgres:5432/barbershop_db
       - DEBUG=True
-      - ALLOWED_HOSTS=localhost,127.0.0.1,django_app
+      - ALLOWED_HOSTS=localhost,127.0.0.1,flask_db
     volumes:
-      - ./src:/app
+      - .:/app
     networks:
       - evolution-net
+    command: flask run --host=0.0.0.0 --port=5000
 
 volumes:
   evolution_instances:

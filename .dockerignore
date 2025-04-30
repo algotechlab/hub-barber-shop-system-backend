@@ -1,0 +1,38 @@
+# Ignorar arquivos e diretórios gerados pelo Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignorar arquivos de log
+*.log
+src.log
+
+# Ignorar arquivos de configuração local e ambiente
+.env
+*.env
+stup.cfg
+
+# Ignorar diretórios de testes
+test/
+tests/
+
+# Ignorar arquivos de documentação e licença (não necessários no container)
+README.md
+LICENSE
+
+# Ignorar arquivos temporários e de cache
+*.bak
+*.swp
+*~
+
+# Ignorar diretórios de build e pacotes
+build/
+dist/
+*.egg-info/
+
+# Ignorar arquivos de IDE e editores
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace

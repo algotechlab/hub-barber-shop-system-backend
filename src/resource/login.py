@@ -8,7 +8,7 @@ from flask_restx import Namespace, Resource, fields
 from src.core.login import LoginCore
 from src.service.response import Response
 
-login_ns = Namespace("login", description="login")
+login_ns = Namespace("login", description="Manager Login")
 
 
 class PayloadFactoryLogin:
