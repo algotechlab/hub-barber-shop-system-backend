@@ -1,7 +1,7 @@
 # src/core/user.py
 from sqlalchemy import select
 from werkzeug.security import generate_password_hash
-from sqlalchemy import func
+from sqlalchemy import func, insert
 from src.db.database import db
 from src.model.model import User
 from src.service.response import Response
@@ -62,20 +62,25 @@ class UserCore:
                     error=True,
                     message_id="not_parms_found",
                 )
-
-            user = self.user(
+            stmt = insert(self.user).values(
                 username=data.get("username"),
                 lastname=data.get("lastname"),
                 email=data.get("email"),
                 password=generate_password_hash(password=data.get("password"), method="scrypt"),
                 phone=data.get("phone"),
-            )
-            db.session.add(user)
+            ).returning(self.user.id, self.user.username, self.user.email)
+            
+            result = db.session.execute(stmt).fetchone()
             db.session.commit()
             
             return Response().response(
                 status_code=200,
                 error=False,
+                data={
+                    "id": result.id,
+                    "username": result.username,
+                    "email": result.email,
+                },
                 message_id="register_successfully",
             )
 
