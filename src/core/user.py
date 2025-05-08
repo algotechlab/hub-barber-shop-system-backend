@@ -1,4 +1,6 @@
 # src/core/user.py
+
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy import select
 from werkzeug.security import generate_password_hash
 from sqlalchemy import func, insert
@@ -83,7 +85,14 @@ class UserCore:
                 },
                 message_id="register_successfully",
             )
-
+        except IntegrityError as uq:
+            db.session.rollback()
+            logdb("warning", message=str(uq))
+            return Response().response(
+                status_code=409,
+                error=True,
+                message_id="email_already_exists",
+            )
         except Exception as e:
             logdb("error", message=str(e))
             return Response().response(
@@ -151,10 +160,7 @@ class UserCore:
                     message_id="users_list_not_found",
                     exception="Not found"
                 )
-            
-            
-            result = db.session.execute(stmt).fetchall()
-            
+
             return Response().response(
                 status_code=200,
                 data=Metadata(result).model_to_list(),

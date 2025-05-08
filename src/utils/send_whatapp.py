@@ -1,17 +1,20 @@
 import requests
 
 
+# 00F3EDEEAC4A-44E0-8410-D6500037D5C6
+# 00F3EDEEAC4A-44E0-8410-D6500037D5C6
+
 def send_whatsapp_message():
     url = 'http://localhost:8080/message/sendText/chatbot_barber'
     headers = {
         'Content-Type': 'application/json',
-        'apikey': 'F372164DBC22-40A3-B5B2-9AD0D86C1A5D'
+        'apikey': '00F3EDEEAC4A-44E0-8410-D6500037D5C6'
     }
 
-    message_text = "Django administrando essa mensagem, por favor não responda"
+    message_text = f"""Flaks ..."""
 
     payload = {
-        "number": "5561983375870",
+        "number": "5561993936908",
         "text": message_text,
         "options": {
             "delay": 100,

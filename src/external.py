@@ -5,6 +5,7 @@ from flask_restx import Api
 
 from src.db.database import db
 from src.resource.user import user_us
+from src.resource.employee import employee_ns
 from src.resource.login import login_ns
 from src.settings._base import config_by_name, flask_env
 
@@ -31,8 +32,8 @@ def create_app():
         authorizations=authorizations,
         security="Bearer Auth",
         version="1.0",
-        title="Barbearia DG",
-        description="Backend Barbearia DG.",
+        title="Barber Shop DG",
+        description="Barber Shop DG.",
     )
     app.config["CORS_HEADERS"] = "Content-Type"
     CORS(app, resources={r"/*": {"origins": "*"}, r"/static/*": {"origins": "*"}})
@@ -48,6 +49,7 @@ def create_app():
     # Namespaces registration
     api.add_namespace(user_us)
     api.add_namespace(login_ns)
+    api.add_namespace(employee_ns)
     
     return app
 
