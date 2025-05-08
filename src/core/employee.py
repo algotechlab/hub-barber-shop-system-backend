@@ -29,7 +29,7 @@ class EmployeeCore:
             
             stmt = insert(self.employee).values(
                 username=data.get("username"),
-                cpf=data.get("email"),
+                cpf=data.get("cpf"),
                 rg=data.get("phone"),
                 date_of_birth=data.get("date_of_birth"),
                 nickname=data.get("nickname"),
@@ -130,6 +130,8 @@ class EmployeeCore:
                 stmt = stmt.filter(
                     db.or_(
                         func.unaccent(self.employee.username).ilike(func.unaccent(filter_value)),
+                        func.unaccent(self.employee.email).ilike(func.unaccent(filter_value)),
+                        func.unaccent(self.employee.cpf).ilike(func.unaccent(filter_value)),
                     )
                 )
             
@@ -180,6 +182,7 @@ class EmployeeCore:
             return Response().response(
                 status_code=200,
                 error=False,
+                message_id="success_list_employees",
                 data=Metadata(result).model_to_list(),
                 metadata=metadata,
             )
