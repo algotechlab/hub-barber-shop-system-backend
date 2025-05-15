@@ -1,32 +1,39 @@
 # src/core/employee.py
 
 import traceback
-
 from datetime import datetime
+
+from flask import jsonify
+from sqlalchemy import func, insert, select, update
 from werkzeug.security import generate_password_hash
+
 from src.db.database import db
-from sqlalchemy import insert, select, func, update
 from src.model.model import Employee
-from src.service.response import Response
+from src.utils.log import logdb
 from src.utils.metadata import Metadata
 from src.utils.pagination import Pagination
-from src.utils.log import logdb
+
 
 class EmployeeCore:
     def __init__(self, user_id: int, *args, **kwargs):
         self.employee = Employee
         self.user_id = user_id
-        
+
     def add_employee(self, data: dict):
         try:
             # expect data format cpf and rf and phone
             cpf = data.get("cpf").replace(".", "").replace("-", "")
             rg = data.get("rg").replace(".", "").replace("-", "")
-            phone = data.get("phone").replace("(", "").replace(")", "").replace("-", "")
+            phone = (
+                data.get("phone")
+                .replace("(", "")
+                .replace(")", "")
+                .replace("-", "")
+            )
             data["cpf"] = cpf
             data["rg"] = rg
             data["phone"] = phone
-            
+
             stmt = insert(self.employee).values(
                 username=data.get("username"),
                 cpf=data.get("cpf"),
@@ -35,84 +42,94 @@ class EmployeeCore:
                 nickname=data.get("nickname"),
                 email=data.get("email"),
                 phone=data.get("phone"),
-                password=generate_password_hash(password=data.get("password"), method="scrypt"),
+                password=generate_password_hash(
+                    password=data.get("password"), method="scrypt"
+                ),
             )
-            
+
             db.session.execute(stmt)
             db.session.commit()
-            return Response().response(
-                status_code=200,
-                error=False,
-                message_id="success_add_employee",
+
+            return jsonify(
+                {
+                    "status_code": 200,
+                    "message_id": "success_add_employee",
+                    "error": False,
+                }
             )
-            
         except Exception as e:
             db.session.rollback()
-            logdb("error", message=f"Error add employee. {e}\n{traceback.format_exc()}")
-            return Response().response(
-                status_code=500,
-                error=True,
-                message_id="error_add_employee",
+            logdb(
+                "error",
+                message=f"Error add employee. {e}\n{traceback.format_exc()}",
             )
-    
+            return jsonify(
+                {
+                    "status_code": 500,
+                    "message_id": "error_add_employee",
+                    "error": True,
+                }
+            )
+
     def get_employee(self, id: int):
         try:
             stmt = select(
                 self.employee.username,
                 self.employee.cpf,
                 self.employee.rg,
-                func.to_char(self.employee.date_of_birth, 'DD/MM/YYYY').label("date_of_birth"),
+                func.to_char(self.employee.date_of_birth, "DD/MM/YYYY").label(
+                    "date_of_birth"
+                ),
                 self.employee.nickname,
                 self.employee.email,
-                self.employee.phone
-            ).where(
-                self.employee.id == id, self.employee.is_deleted == False
-            )
-            
+                self.employee.phone,
+            ).where(~self.employee.is_deleted, self.employee.id == id)
+
             result = db.session.execute(stmt).fetchall()
-            
+
             if not result:
-                return Response().response(
-                    status_code=404,
-                    error=True,
-                    message_id="employee_not_found",
-                    exception="Not found"
+                return jsonify(
+                    {
+                        "status_code": 404,
+                        "message_id": "employee_not_found",
+                    }
                 )
-            
-            return Response().response(
-                status_code=200,
-                error=False,
-                data=Metadata(result).model_to_list(),
-                message_id="success_get_employee",
+
+            return jsonify(
+                {
+                    "status_code": 200,
+                    "data": Metadata(result).model_to_list(),
+                    "message_id": "success_get_employee",
+                    "error": False,
+                }
             )
 
         except Exception as e:
-            logdb("error", message=f"Error get employee. {e}\n{traceback.format_exc()}")
-            return Response().response(
-                status_code=500,
-                error=True,
-                message_id="error_get_employee",
+            logdb(
+                "error",
+                message=f"Error get employee. {e}\n{traceback.format_exc()}",
             )
-    
+            return jsonify(
+                {
+                    "status_code": 500,
+                    "message_id": "error_get_employee",
+                    "error": True,
+                }
+            )
+
     def list_employees(self, data: dict):
         try:
-            current_page = int(data.get("current_page", 1))
-            rows_per_page = int(data.get("rows_per_page", 10))
-            
-            if current_page < 1:
-                current_page = 1
-            if rows_per_page < 1:
-                rows_per_page = 1
+            pagination = Pagination(data)
+            pagination_params, error = pagination.validate_params()
+            if error:
+                return jsonify(
+                    {
+                        "status_code": 400,
+                        "message_id": "invalid_pagination_params",
+                        "error": True,
+                    }
+                )
 
-            pagination = Pagination().pagination(
-                current_page=current_page,
-                rows_per_page=rows_per_page,
-                sort_by=data.get("sort_by", ""),
-                order_by=data.get("order_by", ""),
-                filter_by=data.get("filter_by", ""),
-                filter_value=data.get("filter_value", "")
-            )
-            
             stmt = select(
                 self.employee.id,
                 self.employee.username,
@@ -121,152 +138,190 @@ class EmployeeCore:
                 self.employee.date_of_birth,
                 self.employee.nickname,
                 self.employee.email,
-                self.employee.phone
-                ).where( self.employee.is_deleted == False )
-            
+                self.employee.phone,
+            ).where(~self.employee.is_deleted)
+
             # Filtro dinâmico com ILIKE e unaccent
-            if pagination["filter_by"]:
-                filter_value = f"%{pagination['filter_by']}%"
-                stmt = stmt.filter(
-                    db.or_(
-                        func.unaccent(self.employee.username).ilike(func.unaccent(filter_value)),
-                        func.unaccent(self.employee.email).ilike(func.unaccent(filter_value)),
-                        func.unaccent(self.employee.cpf).ilike(func.unaccent(filter_value)),
+            if pagination_params.filter_by:
+                filter_value = f"%{pagination_params.filter_by}%"
+                try:
+                    stmt = stmt.filter(
+                        func.unaccent(self.employee.username).ilike(
+                            func.unaccent(filter_value)
+                        )
                     )
-                )
-            
+                except Exception:
+                    stmt = stmt.filter(
+                        self.employee.username.ilike(filter_value)
+                    )
+
             # Ordenação dinâmica
-            if pagination["order_by"] and pagination["sort_by"]:
-                sort_column = getattr(self.employee, pagination["order_by"], None)
-                if sort_column:
-                    stmt = stmt.order_by(
-                        sort_column.asc() if pagination["sort_by"] == "asc" else sort_column.desc()
-                    )
-            else:
-                stmt = stmt.order_by(self.employee.id.desc())  # Ordem padrão por id DESC
-                
-            # pagination
-            paginated_stmt = stmt.offset(pagination["offset"]).limit(pagination["limit"])
-            result = db.session.execute(paginated_stmt).fetchall()
-            
-            if not result:
-                return Response().response(
-                    status_code=404,
-                    error=True,
-                    message_id="employee_not_found",
-                    exception="Not found"
+            sort_column = getattr(self.employee, pagination_params.order_by, None)
+            if sort_column:
+                stmt = stmt.order_by(
+                    sort_column.asc()
+                    if pagination_params.sort_by == "asc"
+                    else sort_column.desc()
                 )
-            
-            metadata = Pagination().metadata(
-                current_page=current_page,
-                total_pages=round(len(result) / rows_per_page),
-                total_rows=len(result),
-                rows_per_page=rows_per_page,
-                sort_by=pagination["sort_by"],
-                order_by=pagination["order_by"],
-                filter_by=pagination["filter_by"],
-                filter_value=pagination["filter_value"],
-                total=len(result)
+
+            total_count = db.session.execute(
+                select(func.count()).select_from(stmt.subquery())
+            ).scalar()
+
+            paginated_stmt = stmt.offset(
+                (pagination_params.current_page - 1)
+                * pagination_params.rows_per_page
+            ).limit(pagination_params.rows_per_page)
+
+            result = db.session.execute(paginated_stmt).fetchall()
+
+            if not result:
+                return jsonify(
+                    {
+                        "status_code": 404,
+                        "message_id": "employee_not_found",
+                    }
+                )
+
+            metadata = pagination.build_metadata(
+                total_count, pagination_params
             )
-            
-            total = db.session.execute(select(func.count(self.employee.id))).scalar()
-            
-            metadata = Pagination().metadata(
-                current_page=current_page,
-                rows_per_page=rows_per_page,
-                sort_by=pagination["sort_by"],
-                order_by=pagination["order_by"],
-                filter_by=pagination["filter_by"],
-                total=total
-            )
-            return Response().response(
-                status_code=200,
-                error=False,
-                message_id="success_list_employees",
-                data=Metadata(result).model_to_list(),
-                metadata=metadata,
+
+            return jsonify(
+                {
+                    "status_code": 200,
+                    "data": Metadata(result).model_to_list(),
+                    "metadata": metadata if metadata else None,
+                    "message_id": "success_list_employees",
+                    "error": False,
+                }
             )
         except Exception as e:
-            logdb("error", message=f"Error list employees. {e}\n{traceback.format_exc()}")
-            return Response().response(
-                status_code=500,
-                error=True,
-                message_id="error_list_employees",
+            logdb(
+                "error",
+                message=f"Error list employees. {e}\n{traceback.format_exc()}",
             )
-    
+            return jsonify(
+                {
+                    "status_code": 500,
+                    "message_id": "error_list_employees",
+                    "error": True,
+                }
+            )
+
     def update_employee(self, id: int, data: dict):
         try:
             if not id:
-                return Response().response(
-                    status_code=404,
-                    error=True,
-                    message_id="is_required_id",
-                    exception="Is required id"
+                return jsonify(
+                    {
+                        "status_code": 400,
+                        "message_id": "not_id_found",
+                    }
                 )
 
-            employee_fields = ['username', 'cpf', 'rg', 'date_of_birth', 'nickname', 'email', 'phone', 'password']
+            employee_fields = [
+                "username",
+                "cpf",
+                "rg",
+                "date_of_birth",
+                "nickname",
+                "email",
+                "phone",
+                "password",
+            ]
             update_data = {}
 
             for key, value in data.items():
                 if value is not None and key in employee_fields:
                     if key == "password" and value:
-                        value = generate_password_hash(value, method="scrypt")
-                    update_data[key] = value
+                        hashed_value = generate_password_hash(
+                            value, method="scrypt"
+                        )
+                    update_data[key] = hashed_value
 
             if not update_data:
-                return Response().response(
-                    status_code=400,
-                    error=True,
-                    message_id="no_valid_fields",
-                    exception="No valid fields to update"
+                return jsonify(
+                    {
+                        "status_code": 400,
+                        "message_id": "no_valid_fields",
+                        "error": True,
+                    }
                 )
 
-            stmt = (update(self.employee).where(self.employee.id == id, self.employee.is_deleted == False).values(**update_data))
+            stmt = (
+                update(self.employee)
+                .where(~self.employee.is_deleted, self.employee.id == id)
+                .values(**update_data)
+            )
 
             db.session.execute(stmt)
             db.session.commit()
 
-            return Response().response(
-                status_code=200,
-                error=False,
-                message_id="success_update_employee",
+            return jsonify(
+                {
+                    "status_code": 200,
+                    "message_id": "success_update_employee",
+                    "error": False,
+                }
             )
 
         except Exception as e:
             db.session.rollback()
-            logdb("error", message=f"Error edit employee. {e}\n{traceback.format_exc()}")
-            return Response().response(
-                status_code=500,
-                error=True,
-                message_id="error_update_employee",
+            logdb(
+                "error",
+                message=f"Error edit employee. {e}\n{traceback.format_exc()}",
+            )
+            return jsonify(
+                {
+                    "status_code": 500,
+                    "message_id": "error_update_employee",
+                    "error": True,
+                }
             )
 
     def delete_employee(self, id: int):
         try:
             if not id:
-                return Response().response(
-                    status_code=404,
-                    error=True,
-                    message_id="is_required_id",
-                    exception="Is required id"
+                return jsonify(
+                    {
+                        "status_code": 400,
+                        "message_id": "not_id_found",
+                        "error": True,
+                    }
                 )
-            stmt = (update(
-                self.employee
-            ).where(
-                self.employee.id == id, self.employee.is_deleted == False
-            ).values(is_deleted=True, deleted_at=datetime.now(), deleted_by=self.user_id))
+
+            stmt = (
+                update(self.employee)
+                .where(~self.employee.is_deleted, self.employee.id == id)
+                .values(
+                    is_deleted=True,
+                    deleted_at=datetime.now(),
+                    deleted_by=self.user_id,
+                )
+            )
             db.session.execute(stmt)
             db.session.commit()
-            return Response().response(
-                status_code=200,
-                error=False,
-                message_id="success_delete_employee",
+
+            return jsonify(
+                {
+                    "status_code": 200,
+                    "message_id": "success_delete_employee",
+                    "error": False,
+                }
             )
+
         except Exception as e:
             db.session.rollback()
-            logdb("error", message=f"Error delete employee. {e}\n{traceback.format_exc()}")
-            return Response().response(
-                status_code=500,
-                error=True,
-                message_id="error_delete_employee",
+            logdb(
+                "error",
+                message=(
+                    f"Error delete employee. {e}\n{traceback.format_exc()}"
+                ),
+            )
+            return jsonify(
+                {
+                    "status_code": 500,
+                    "message_id": "error_delete_employee",
+                    "error": True,
+                }
             )

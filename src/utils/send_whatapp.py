@@ -1,17 +1,17 @@
 import requests
 
+# 00F3EDEEAC4A-44E0-8410-D6500037D5C6
+# 00F3EDEEAC4A-44E0-8410-D6500037D5C6
 
-# 00F3EDEEAC4A-44E0-8410-D6500037D5C6
-# 00F3EDEEAC4A-44E0-8410-D6500037D5C6
 
 def send_whatsapp_message():
-    url = 'http://localhost:8080/message/sendText/chatbot_barber'
+    url = "http://localhost:8080/message/sendText/chatbot_barber"
     headers = {
-        'Content-Type': 'application/json',
-        'apikey': '00F3EDEEAC4A-44E0-8410-D6500037D5C6'
+        "Content-Type": "application/json",
+        "apikey": "00F3EDEEAC4A-44E0-8410-D6500037D5C6",
     }
 
-    message_text = f"""Flaks ..."""
+    message_text = """Flaks ..."""
 
     payload = {
         "number": "5561993936908",
@@ -19,11 +19,9 @@ def send_whatsapp_message():
         "options": {
             "delay": 100,
             "presence": "composing",
-            "linkPreview": True
+            "linkPreview": True,
         },
-        "textMessage": {
-            "text": message_text
-        }
+        "textMessage": {"text": message_text},
     }
 
     try:
@@ -34,6 +32,7 @@ def send_whatsapp_message():
         print(f"Erro HTTP: {http_err} - {response.text}")
     except requests.exceptions.RequestException as e:
         print("Erro ao enviar mensagem:", e)
+
 
 if __name__ == "__main__":
     send_whatsapp_message()
