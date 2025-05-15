@@ -43,6 +43,7 @@ def log_to_db(logger_name: str, level: str, message: str):
         db.session.add(log_entry)
         db.session.commit()
     except Exception as e:
+        db.session.rollback()
         logger = setup_logger("DBLogger")
         logger.error(f"Erro ao salvar log no banco: {e}")
 

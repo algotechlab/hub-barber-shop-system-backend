@@ -156,7 +156,9 @@ class EmployeeCore:
                     )
 
             # Ordenação dinâmica
-            sort_column = getattr(self.employee, pagination_params.order_by, None)
+            sort_column = getattr(
+                self.employee, pagination_params.order_by, None
+            )
             if sort_column:
                 stmt = stmt.order_by(
                     sort_column.asc()

@@ -1,0 +1,135 @@
+# src/resource/product.py
+
+import traceback
+
+from flask import jsonify, request
+from flask_cors import cross_origin
+from flask_restx import Namespace, Resource, fields, reqparse
+
+from src.core.product import ProductCore
+
+pagination_arguments_products = reqparse.RequestParser()
+pagination_arguments_products.add_argument(
+    "current_page", help="Current Page", default=1, type=int, required=False
+)
+pagination_arguments_products.add_argument(
+    "rows_per_page", help="Rows per Page", default=10, type=int, required=False
+)
+pagination_arguments_products.add_argument(
+    "order_by", help="Order By", default="", type=str, required=False
+)
+pagination_arguments_products.add_argument(
+    "sort_by", help="Sort By", default="", type=str, required=False
+)
+pagination_arguments_products.add_argument(
+    "filter_by", help="Filter By", default="", type=str, required=False
+)
+
+
+product_ns = Namespace("product", description="Manager products")
+
+
+payload_add_products = product_ns.model(
+    "User",
+    {
+        "description": fields.String(
+            required=True, description="Product description"
+        ),
+        "value_operation": fields.Float(
+            required=True, description="Operation value"
+        ),
+        "time_to_spend": fields.String(
+            required=True, description="Time spent in HH:MM:SS"
+        ),
+        "commission": fields.Float(
+            required=True,
+            description="Commission percentage (e.g., 50.0 for 50%)",
+        ),
+        "category": fields.String(
+            required=True, description="Product category"
+        ),
+    },
+)
+
+
+@product_ns.route("")
+class ProductManagerResource(Resource):
+
+    @product_ns.doc(description="Add products")
+    @product_ns.expect(payload_add_products, validate=True)
+    @cross_origin()
+    def post(self):
+        """Add products"""
+        try:
+            user_id = request.headers.get("Id", request.environ.get("Id"))
+            return ProductCore(user_id=user_id).add_product(request.get_json())
+        except Exception:
+            return jsonify(
+                {
+                    "status_code": 500,
+                    "message_id": "something_went_wrong",
+                    "traceback": traceback.format_exc(),
+                },
+                500,
+            )
+
+    @product_ns.doc(description="List produtc")
+    @product_ns.expect(pagination_arguments_products, validate=True)
+    @cross_origin()
+    def get(self):
+        """List products"""
+        try:
+            user_id = request.headers.get("Id", request.environ.get("Id"))
+            return ProductCore(user_id=user_id).list_products(
+                request.args.to_dict()
+            )
+        except Exception:
+            return (
+                jsonify(
+                    {
+                        "status_code": 500,
+                        "message_id": "something_went_wrong",
+                        "error": True,
+                    },
+                )
+            ), 500
+
+@product_ns.route("/<int:id>")
+class ProductManagerResourceId(Resource):
+
+    @product_ns.doc(description="Update products")
+    @product_ns.expect(payload_add_products, validate=True)
+    @cross_origin()
+    def put(self):
+        """Update products"""
+        try:
+            user_id = request.headers.get("Id", request.environ.get("Id"))
+            return ProductCore(user_id=user_id).update_product(
+                id=id, data=request.get_json()
+            )
+        except Exception:
+            return jsonify(
+                {
+                    "status_code": 500,
+                    "message_id": "something_went_wrong",
+                    "traceback": traceback.format_exc(),
+                }
+            )
+
+    @product_ns.doc(description="Delete products")
+    @cross_origin()
+    def delete(self):
+        """Delete products"""
+        try:
+            user_id = request.headers.get("Id", request.environ.get("Id"))
+            return ProductCore(user_id=user_id).delete_product(
+                id=id
+            )
+        except Exception:
+            return jsonify(
+                {
+                    "status_code": 500,
+                    "message_id": "something_went_wrong",
+                    "traceback": traceback.format_exc(),
+                }
+            )

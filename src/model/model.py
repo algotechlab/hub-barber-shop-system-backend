@@ -1,7 +1,7 @@
 # src/model/model.py
 from datetime import datetime
 
-from sqlalchemy import Numeric, func
+from sqlalchemy import Interval, Numeric, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.db.database import db
@@ -97,9 +97,7 @@ class Products(db.Model):
     value_operation: Mapped[Numeric] = mapped_column(
         db.Numeric(2, 10), default=0.00
     )
-    time_to_spend: Mapped[datetime] = mapped_column(
-        db.DateTime, nullable=False
-    )
+    time_to_spend: Mapped[Interval] = mapped_column(Interval, nullable=False)
     commission: Mapped[float] = mapped_column(db.Float, nullable=False)
     category: Mapped[str] = mapped_column(db.String(20), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=True)
@@ -107,6 +105,9 @@ class Products(db.Model):
     deleted_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=True)
     deleted_by: Mapped[int] = mapped_column(db.Integer, nullable=True)
     is_deleted: Mapped[bool] = mapped_column(db.Boolean, default=False)
+
+    def __repr__(self):
+        return f"""{self.description} created successfully"""
 
 
 class ProductsEmployee(db.Model):
@@ -124,3 +125,6 @@ class ProductsEmployee(db.Model):
     deleted_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=True)
     deleted_by: Mapped[int] = mapped_column(db.Integer, nullable=True)
     is_deleted: Mapped[bool] = mapped_column(db.Boolean, default=False)
+
+    def __repr__(self):
+        return f"""{self.description} created successfully"""
