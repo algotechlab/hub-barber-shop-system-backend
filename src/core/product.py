@@ -13,6 +13,15 @@ from src.utils.metadata import Metadata
 from src.utils.pagination import Pagination
 
 
+PRODUCTS_FIELDS = [
+    "description",
+    "value_operation",
+    "time_to_spend",
+    "commission",
+    "category",
+]
+
+
 class ProductCore:
     def __init__(self, user_id: int, *args, **kwargs):
         self.products = Products
@@ -94,13 +103,13 @@ class ProductCore:
 
             stmt = select(
                 self.products.id,
-                self.products.description,
+                func.initcap(func.trim(self.products.description)).label("description"),
                 self.products.value_operation,
                 func.to_char(
                     self.products.time_to_spend, text("'HH24:MI:SS'")
                 ).label("time_to_spend"),
                 self.products.commission,
-                self.products.category,
+                func.initcap(func.trim(self.products.category)).label("category"),
             ).where(
                 ~self.products.is_deleted,
             )
@@ -190,48 +199,48 @@ class ProductCore:
     def update_product(self, id: int, data: dict):
         try:
             if not data:
-                return (
-                    jsonify(
-                        {
-                            "status_code": 400,
-                            "message_id": "not_parms_found",
-                        }
-                    ),
-                ), 400
+                return jsonify({
+                    "status_code": 400,
+                    "message_id": "not_parms_found",
+                    "error": True
+                }), 400
 
-            update = select(self.products).where(self.products.id == id)
+            product = db.session.query(self.products).filter_by(id=id).first()
 
-            prodcuts_fields = [
-                "description",
-                "value_operation",
-                "time_to_spend",
-                "commission",
-                "category",
-            ]
+            if not product:
+                return jsonify({
+                    "status_code": 404,
+                    "message_id": "product_not_found",
+                    "error": True
+                }), 404
 
             for key, value in data.items():
-                if value is not None and key in prodcuts_fields:
-                    if hasattr(update, key):
-                        setattr(update, key)
+                if value is not None and key in PRODUCTS_FIELDS:
+                    if key == "time_to_spend":
+                        value = self._parse_time_to_spend(value)
+                    if hasattr(product, key):
+                        setattr(product, key, value)
 
-            db.session.add(update)
             db.session.commit()
+
+            return jsonify({
+                "status_code": 200,
+                "message_id": "product_updated_successfully",
+                "error": False
+            }), 200
+
         except Exception as e:
+            db.session.rollback()
             logdb(
                 "error",
                 message=f"Error update product: {e}\n{traceback.format_exc()}",
             )
-            return (
-                jsonify(
-                    {
-                        "status_code": 500,
-                        "message_id": "something_went_wrong",
-                        "traceback": traceback.format_exc(),
-                        "error": True,
-                    }
-                ),
-                500,
-            )
+            return jsonify({
+                "status_code": 500,
+                "message_id": "something_went_wrong",
+                "traceback": traceback.format_exc(),
+                "error": True
+            }), 500
 
     def delete_product(self, id: int):
         try:

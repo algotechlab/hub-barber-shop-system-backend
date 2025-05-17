@@ -37,7 +37,7 @@ class LoginCore:
         self.email = user.email
         password = data.get("password")
 
-        stmt = select(self.user.id, self.user.username, self.user.email).where(
+        stmt = select(self.user.id, self.user.username, self.user.email, self.user.role).where(
             self.user.id == self.user_id
         )
 
