@@ -1,9 +1,10 @@
 # src/core/user.py
-
+import hashlib
 import traceback
 
-from flask import Response, jsonify
-from sqlalchemy import func, insert, select
+from flask import jsonify
+from flask_jwt_extended import create_access_token
+from sqlalchemy import func, insert, select, update
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash
 
@@ -13,11 +14,23 @@ from src.utils.log import logdb
 from src.utils.metadata import Metadata
 from src.utils.pagination import Pagination
 
+USER_FIELDS = [
+    "username",
+    "lastname",
+    "email",
+    "password",
+    "phone",
+]
+
 
 class UserCore:
     def __init__(self, user_id: int, *args, **kwargs):
         self.user_id = user_id
         self.user = User
+
+    # compact token
+    def compact_token(self, token: str):
+        return hashlib.sha256(token.encode()).hexdigest()
 
     def get_user(self, id: int):
         try:
@@ -50,21 +63,27 @@ class UserCore:
                 "error",
                 message=f"Error get user: {e}\n{traceback.format_exc()}",
             )
-            return Response().response(
-                status_code=500,
-                error=True,
-                message_id="error_processing_list_users",
-            )
+            return jsonify(
+                (
+                    {
+                        "status_code": 500,
+                        "message_id": "error_processing_list_users",
+                        "error": True,
+                    }
+                )
+            ), 500
 
     def add_user(self, data: dict):
         try:
             if not data:
                 return jsonify(
-                    {
-                        "status_code": 400,
-                        "message_id": "not_parms_found",
-                    }
-                )
+                    (
+                        {
+                            "status_code": 400,
+                            "message_id": "not_parms_found",
+                        }
+                    )
+                ), 400
 
             if (
                 not data.get("username")
@@ -72,11 +91,14 @@ class UserCore:
                 or not data.get("email")
                 or not data.get("password")
             ):
-                return Response().response(
-                    status_code=400,
-                    error=True,
-                    message_id="not_parms_found",
-                )
+                return jsonify(
+                    (
+                        {
+                            "status_code": 400,
+                            "message_id": "not_parms_found",
+                        }
+                    )
+                ), 400
             stmt = (
                 insert(self.user)
                 .values(
@@ -92,18 +114,26 @@ class UserCore:
             )
 
             result = db.session.execute(stmt).fetchone()
+            access_token = create_access_token(
+                identity={"id": result.id, "email": result.email}
+            )
             db.session.commit()
 
-            return Response().response(
-                status_code=200,
-                error=False,
-                data={
-                    "id": result.id,
-                    "username": result.username,
-                    "email": result.email,
-                },
-                message_id="register_successfully",
-            )
+            return jsonify(
+                (
+                    {
+                        "status_code": 200,
+                        "data": {
+                            "id": result.id,
+                            "username": result.username,
+                            "email": result.email,
+                        },
+                        "access_token": self.compact_token(access_token),
+                        "message_id": "register_successfully",
+                        "error": False,
+                    }
+                )
+            ), 200
         except IntegrityError:
             db.session.rollback()
             logdb(
@@ -112,23 +142,30 @@ class UserCore:
                 Error warning rollback user: \
                 IntegrityError\n{traceback.format_exc()}",
             )
-            return Response().response(
-                status_code=409,
-                error=True,
-                message_id="email_already_exists",
-            )
+            return jsonify(
+                (
+                    {
+                        "status_code": 409,
+                        "message_id": "email_already_exists",
+                        "error": True,
+                    }
+                )
+            ), 409
         except Exception as e:
+            db.session.rollback()
             logdb(
                 "error",
                 message=f"Error listing users: {e}\n{traceback.format_exc()}",
             )
             return jsonify(
-                {
-                    "status_code": 500,
-                    "message_id": "error_processing_add_user",
-                    "error": True,
-                }
-            )
+                (
+                    {
+                        "status_code": 500,
+                        "message_id": "error_processing_add_user",
+                        "error": True,
+                    }
+                )
+            ), 500
 
     def list_users(self, data: dict):
         try:
@@ -214,41 +251,62 @@ class UserCore:
     def update_user(self, id: int, data: dict):
         try:
             user = self.user.query.filter_by(id=id).first()
-            user_fields = [
-                "username",
-                "lastname",
-                "email",
-                "password",
-                "phone",
-            ]
-            for key, value in data.items():
-                if value is not None and key in user_fields:
-                    if key == "password" and value:
-                        hashed_value = generate_password_hash(
-                            value, method="scrypt"
-                        )
-                    if hasattr(user, key):
-                        setattr(user, key, hashed_value)
 
+            if not user:
+                return jsonify(
+                    (
+                        {
+                            "status_code": 404,
+                            "message_id": "user_not_found",
+                            "error": True,
+                        }
+                    )
+                ), 404
+
+            update_data = {}
+            for key, value in data.items():
+                if value is not None and key in USER_FIELDS:
+                    updated_value = (
+                        generate_password_hash(value, method="scrypt")
+                        if key == "password"
+                        else value
+                    )
+                    if hasattr(user, key):
+                        setattr(user, key, updated_value)
+                        update_data[key] = updated_value
+
+            stmt = (
+                update(self.user)
+                .where(~self.user.is_deleted, self.user.id == id)
+                .values(**update_data)
+            )
+
+            db.session.execute(stmt)
             db.session.commit()
 
-            return Response().response(
-                status_code=200,
-                error=False,
-                message_id="update_successfully",
-            )
+            return jsonify(
+                (
+                    {
+                        "status_code": 200,
+                        "message_id": "update_successfully",
+                        "error": False,
+                    }
+                )
+            ), 200
         except Exception as e:
             logdb(
                 "error",
                 message=f"Error updating user: {e}\n{traceback.format_exc()}",
             )
             return jsonify(
-                {
-                    "status_code": 500,
-                    "message_id": "error_processing_update_user",
-                    "error": True,
-                }
-            )
+                (
+                    {
+                        "status_code": 500,
+                        "message_id": "error_processing_update_user",
+                        "error": True,
+                    }
+                )
+            ), 500
 
     def delete(self, id: int):
         try:
@@ -256,20 +314,22 @@ class UserCore:
             user.is_deleted = True
             db.session.commit()
 
-            return Response().response(
-                status_code=200,
-                error=False,
-                message_id="delete_successfully",
-            )
+            return jsonify((
+                {
+                    "status_code": 200,
+                    "message_id": "delete_successfully",
+                    "error": False,
+                }
+            )), 200
         except Exception as e:
             logdb(
                 "error",
                 message=f"Error delete user: {e}\n{traceback.format_exc()}",
             )
-            return jsonify(
+            return jsonify((
                 {
                     "status_code": 500,
                     "message_id": "error_processing_delete_user",
                     "error": True,
                 }
-            )
+            )), 500

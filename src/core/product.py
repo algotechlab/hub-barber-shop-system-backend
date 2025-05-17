@@ -4,7 +4,7 @@ import traceback
 from datetime import datetime, timedelta
 
 from flask import jsonify
-from sqlalchemy import func, insert, select, text
+from sqlalchemy import func, insert, select, text, update
 
 from src.db.database import db
 from src.model.model import Products, ProductsEmployee
@@ -14,7 +14,6 @@ from src.utils.pagination import Pagination
 
 
 class ProductCore:
-
     def __init__(self, user_id: int, *args, **kwargs):
         self.products = Products
         self.products_employee = ProductsEmployee
@@ -188,10 +187,90 @@ class ProductCore:
                 500,
             )
 
-    def update_product(self, id: int, data: dict): ...
+    def update_product(self, id: int, data: dict):
+        try:
+            if not data:
+                return (
+                    jsonify(
+                        {
+                            "status_code": 400,
+                            "message_id": "not_parms_found",
+                        }
+                    ),
+                ), 400
 
-    def delete_product(self, id: int): ...
+            update = select(self.products).where(self.products.id == id)
 
-    def add_product_employee(self, data: dict): ...
+            prodcuts_fields = [
+                "description",
+                "value_operation",
+                "time_to_spend",
+                "commission",
+                "category",
+            ]
 
-    def delete_product_employee(self, id: int): ...
+            for key, value in data.items():
+                if value is not None and key in prodcuts_fields:
+                    if hasattr(update, key):
+                        setattr(update, key)
+
+            db.session.add(update)
+            db.session.commit()
+        except Exception as e:
+            logdb(
+                "error",
+                message=f"Error update product: {e}\n{traceback.format_exc()}",
+            )
+            return (
+                jsonify(
+                    {
+                        "status_code": 500,
+                        "message_id": "something_went_wrong",
+                        "traceback": traceback.format_exc(),
+                        "error": True,
+                    }
+                ),
+                500,
+            )
+
+    def delete_product(self, id: int):
+        try:
+            stmt = (
+                update(self.products)
+                .where(self.products.id == id)
+                .values(
+                    is_deleted=True,
+                    deleted_at=datetime.now(),
+                    deleted_by=self.user_id,
+                )
+            )
+            db.session.execute(stmt)
+            db.session.commit()
+
+            return (
+                jsonify(
+                    {
+                        "status_code": 200,
+                        "message_id": "success_delete_product",
+                        "error": False,
+                    }
+                ),
+                200,
+            )
+
+        except Exception as e:
+            logdb(
+                "error",
+                message=f"Error delete product: {e}\n{traceback.format_exc()}",
+            )
+            return (
+                jsonify(
+                    {
+                        "status_code": 500,
+                        "message_id": "something_went_wrong",
+                        "traceback": traceback.format_exc(),
+                        "error": True,
+                    }
+                ),
+                500,
+            )

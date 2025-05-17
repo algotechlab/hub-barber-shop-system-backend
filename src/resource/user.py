@@ -25,8 +25,8 @@ pagination_arguments_users.add_argument(
 )
 user_us = Namespace("user", description="Manager users")
 
-payload_users = user_us.model(
-    "User",
+payload_add_users = user_us.model(
+    "PayloadAddUser",
     {
         "username": fields.String(
             required=True, example="User name", max_length=120
@@ -47,7 +47,7 @@ payload_users = user_us.model(
 )
 
 payload_update_users = user_us.model(
-    "User",
+    "PayloadUpdateUser",
     {
         "username": fields.String(
             required=False, example="User name", max_length=120
@@ -88,7 +88,7 @@ class UserResource(Resource):
             )
 
     @user_us.doc(description="Add users")
-    @user_us.expect(payload_users, validate=True)
+    @user_us.expect(payload_add_users, validate=True)
     @cross_origin()
     def post(self):
         """Add users"""
@@ -105,14 +105,15 @@ class UserResource(Resource):
             )
 
 
-@user_us.route("/<int:user_id>")
+@user_us.route("/<int:id>")
 class UserResourcerId(Resource):
     @user_us.doc(description="Get User")
     @cross_origin()
-    def get(self, user_id: int):
+    def get(self, id: int):
         """Get id"""
         try:
-            return UserCore(user_id=user_id).get_user(user_id)
+            user_id = request.headers.get("Id", request.environ.get("Id"))
+            return UserCore(user_id=user_id).get_user(id=id)
         except Exception:
             return jsonify(
                 {
@@ -125,11 +126,12 @@ class UserResourcerId(Resource):
     @user_us.doc(description="Update User")
     @user_us.expect(payload_update_users, validate=True)
     @cross_origin()
-    def put(self, user_id: int):
+    def put(self, id: int):
         """Update users"""
         try:
+            user_id = request.headers.get("Id", request.environ.get("Id"))
             return UserCore(user_id=user_id).update_user(
-                user_id, request.get_json()
+                id=id, data=request.get_json()
             )
         except Exception:
             return jsonify(
@@ -142,10 +144,11 @@ class UserResourcerId(Resource):
 
     @user_us.doc(description="Delete User")
     @cross_origin()
-    def delete(self, user_id: int):
+    def delete(self, id: int):
         """Delete users"""
         try:
-            return UserCore(user_id=user_id).delete(user_id)
+            user_id = request.headers.get("Id", request.environ.get("Id"))
+            return UserCore(user_id=user_id).delete(id=id)
         except Exception:
             return jsonify(
                 {

@@ -30,7 +30,7 @@ product_ns = Namespace("product", description="Manager products")
 
 
 payload_add_products = product_ns.model(
-    "User",
+    "Product",
     {
         "description": fields.String(
             required=True, description="Product description"
@@ -51,10 +51,31 @@ payload_add_products = product_ns.model(
     },
 )
 
+payload_update_products = product_ns.model(
+    "Product",
+    {
+        "description": fields.String(
+            required=False, description="Product description"
+        ),
+        "value_operation": fields.Float(
+            required=False, description="Operation value"
+        ),
+        "time_to_spend": fields.String(
+            required=False, description="Time spent in HH:MM:SS"
+        ),
+        "commission": fields.Float(
+            required=False,
+            description="Commission percentage (e.g., 50.0 for 50%)",
+        ),
+        "category": fields.String(
+            required=False, description="Product category"
+        ),
+    },
+)
+
 
 @product_ns.route("")
 class ProductManagerResource(Resource):
-
     @product_ns.doc(description="Add products")
     @product_ns.expect(payload_add_products, validate=True)
     @cross_origin()
@@ -94,13 +115,13 @@ class ProductManagerResource(Resource):
                 )
             ), 500
 
+
 @product_ns.route("/<int:id>")
 class ProductManagerResourceId(Resource):
-
     @product_ns.doc(description="Update products")
-    @product_ns.expect(payload_add_products, validate=True)
+    @product_ns.expect(payload_update_products, validate=True)
     @cross_origin()
-    def put(self):
+    def put(self, id: int):
         """Update products"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
@@ -118,13 +139,11 @@ class ProductManagerResourceId(Resource):
 
     @product_ns.doc(description="Delete products")
     @cross_origin()
-    def delete(self):
+    def delete(self, id: int):
         """Delete products"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return ProductCore(user_id=user_id).delete_product(
-                id=id
-            )
+            return ProductCore(user_id=user_id).delete_product(id=id)
         except Exception:
             return jsonify(
                 {

@@ -13,6 +13,17 @@ from src.utils.log import logdb
 from src.utils.metadata import Metadata
 from src.utils.pagination import Pagination
 
+EMPLOYEE_FIELDS = [
+    "id",
+    "username",
+    "cpf",
+    "rg",
+    "date_of_birth",
+    "nickname",
+    "email",
+    "phone",
+]
+
 
 class EmployeeCore:
     def __init__(self, user_id: int, *args, **kwargs):
@@ -51,12 +62,14 @@ class EmployeeCore:
             db.session.commit()
 
             return jsonify(
-                {
-                    "status_code": 200,
-                    "message_id": "success_add_employee",
-                    "error": False,
-                }
-            )
+                (
+                    {
+                        "status_code": 200,
+                        "message_id": "success_add_employee",
+                        "error": False,
+                    }
+                )
+            ), 200
         except Exception as e:
             db.session.rollback()
             logdb(
@@ -64,12 +77,14 @@ class EmployeeCore:
                 message=f"Error add employee. {e}\n{traceback.format_exc()}",
             )
             return jsonify(
-                {
-                    "status_code": 500,
-                    "message_id": "error_add_employee",
-                    "error": True,
-                }
-            )
+                (
+                    {
+                        "status_code": 500,
+                        "message_id": "error_add_employee",
+                        "error": True,
+                    }
+                )
+            ), 500
 
     def get_employee(self, id: int):
         try:
@@ -96,13 +111,15 @@ class EmployeeCore:
                 )
 
             return jsonify(
-                {
-                    "status_code": 200,
-                    "data": Metadata(result).model_to_list(),
-                    "message_id": "success_get_employee",
-                    "error": False,
-                }
-            )
+                (
+                    {
+                        "status_code": 200,
+                        "data": Metadata(result).model_to_list(),
+                        "message_id": "success_get_employee",
+                        "error": False,
+                    }
+                )
+            ), 200
 
         except Exception as e:
             logdb(
@@ -123,12 +140,14 @@ class EmployeeCore:
             pagination_params, error = pagination.validate_params()
             if error:
                 return jsonify(
-                    {
-                        "status_code": 400,
-                        "message_id": "invalid_pagination_params",
-                        "error": True,
-                    }
-                )
+                    (
+                        {
+                            "status_code": 400,
+                            "message_id": "invalid_pagination_params",
+                            "error": True,
+                        }
+                    )
+                ), 400
 
             stmt = select(
                 self.employee.id,
@@ -179,25 +198,29 @@ class EmployeeCore:
 
             if not result:
                 return jsonify(
-                    {
-                        "status_code": 404,
-                        "message_id": "employee_not_found",
-                    }
-                )
+                    (
+                        {
+                            "status_code": 404,
+                            "message_id": "employee_not_found",
+                        }
+                    )
+                ), 404
 
             metadata = pagination.build_metadata(
                 total_count, pagination_params
             )
 
             return jsonify(
-                {
-                    "status_code": 200,
-                    "data": Metadata(result).model_to_list(),
-                    "metadata": metadata if metadata else None,
-                    "message_id": "success_list_employees",
-                    "error": False,
-                }
-            )
+                (
+                    {
+                        "status_code": 200,
+                        "data": Metadata(result).model_to_list(),
+                        "metadata": metadata if metadata else None,
+                        "message_id": "success_list_employees",
+                        "error": False,
+                    }
+                )
+            ), 200
         except Exception as e:
             logdb(
                 "error",
@@ -215,31 +238,39 @@ class EmployeeCore:
         try:
             if not id:
                 return jsonify(
-                    {
-                        "status_code": 400,
-                        "message_id": "not_id_found",
-                    }
-                )
+                    (
+                        {
+                            "status_code": 400,
+                            "message_id": "not_id_found",
+                        }
+                    )
+                ), 400
 
-            employee_fields = [
-                "username",
-                "cpf",
-                "rg",
-                "date_of_birth",
-                "nickname",
-                "email",
-                "phone",
-                "password",
-            ]
+            employee = self.employee.query.filter_by(id=id).first()
+            if not employee:
+                return jsonify(
+                    (
+                        {
+                            "status_code": 404,
+                            "message_id": "employee_not_found",
+                            "error": True,
+                        }
+                    )
+                ), 404
+
             update_data = {}
 
             for key, value in data.items():
-                if value is not None and key in employee_fields:
-                    if key == "password" and value:
-                        hashed_value = generate_password_hash(
-                            value, method="scrypt"
-                        )
-                    update_data[key] = hashed_value
+                if value is not None and key in EMPLOYEE_FIELDS:
+                    updated_value = (
+                        generate_password_hash(value, method="scrypt")
+                        if key == "password"
+                        else value
+                    )
+
+                    if hasattr(employee, key):
+                        setattr(employee, key, updated_value)
+                        update_data[key] = updated_value
 
             if not update_data:
                 return jsonify(
@@ -305,12 +336,14 @@ class EmployeeCore:
             db.session.commit()
 
             return jsonify(
-                {
-                    "status_code": 200,
-                    "message_id": "success_delete_employee",
-                    "error": False,
-                }
-            )
+                (
+                    {
+                        "status_code": 200,
+                        "message_id": "success_delete_employee",
+                        "error": False,
+                    }
+                )
+            ), 200
 
         except Exception as e:
             db.session.rollback()
@@ -321,9 +354,11 @@ class EmployeeCore:
                 ),
             )
             return jsonify(
-                {
-                    "status_code": 500,
-                    "message_id": "error_delete_employee",
-                    "error": True,
-                }
-            )
+                (
+                    {
+                        "status_code": 500,
+                        "message_id": "error_delete_employee",
+                        "error": True,
+                    }
+                )
+            ), 500

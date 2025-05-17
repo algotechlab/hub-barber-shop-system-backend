@@ -31,7 +31,7 @@ pagination_arguments_employees.add_argument(
 employee_ns = Namespace("employee", description="Manager Employee")
 
 payload_add_employees = employee_ns.model(
-    "User",
+    "PayloadAddEmployees",
     {
         "username": fields.String(
             required=True, example="User name", max_length=120
@@ -54,7 +54,7 @@ payload_add_employees = employee_ns.model(
 )
 
 payload_update_employees = employee_ns.model(
-    "User",
+    "PayloadUpdateEmployees",
     {
         "username": fields.String(
             required=False, example="User name", max_length=120
