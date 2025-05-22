@@ -61,30 +61,36 @@ class EmployeeCore:
             db.session.execute(stmt)
             db.session.commit()
 
-            return jsonify(
-                (
-                    {
-                        "status_code": 200,
-                        "message_id": "success_add_employee",
-                        "error": False,
-                    }
-                )
-            ), 200
+            return (
+                jsonify(
+                    (
+                        {
+                            "status_code": 200,
+                            "message_id": "success_add_employee",
+                            "error": False,
+                        }
+                    )
+                ),
+                200,
+            )
         except Exception as e:
             db.session.rollback()
             logdb(
                 "error",
                 message=f"Error add employee. {e}\n{traceback.format_exc()}",
             )
-            return jsonify(
-                (
-                    {
-                        "status_code": 500,
-                        "message_id": "error_add_employee",
-                        "error": True,
-                    }
-                )
-            ), 500
+            return (
+                jsonify(
+                    (
+                        {
+                            "status_code": 500,
+                            "message_id": "error_add_employee",
+                            "error": True,
+                        }
+                    )
+                ),
+                500,
+            )
 
     def get_employee(self, id: int):
         try:
@@ -110,16 +116,19 @@ class EmployeeCore:
                     }
                 )
 
-            return jsonify(
-                (
-                    {
-                        "status_code": 200,
-                        "data": Metadata(result).model_to_list(),
-                        "message_id": "success_get_employee",
-                        "error": False,
-                    }
-                )
-            ), 200
+            return (
+                jsonify(
+                    (
+                        {
+                            "status_code": 200,
+                            "data": Metadata(result).model_to_list(),
+                            "message_id": "success_get_employee",
+                            "error": False,
+                        }
+                    )
+                ),
+                200,
+            )
 
         except Exception as e:
             logdb(
@@ -139,15 +148,18 @@ class EmployeeCore:
             pagination = Pagination(data)
             pagination_params, error = pagination.validate_params()
             if error:
-                return jsonify(
-                    (
-                        {
-                            "status_code": 400,
-                            "message_id": "invalid_pagination_params",
-                            "error": True,
-                        }
-                    )
-                ), 400
+                return (
+                    jsonify(
+                        (
+                            {
+                                "status_code": 400,
+                                "message_id": "invalid_pagination_params",
+                                "error": True,
+                            }
+                        )
+                    ),
+                    400,
+                )
 
             stmt = select(
                 self.employee.id,
@@ -197,30 +209,36 @@ class EmployeeCore:
             result = db.session.execute(paginated_stmt).fetchall()
 
             if not result:
-                return jsonify(
-                    (
-                        {
-                            "status_code": 404,
-                            "message_id": "employee_not_found",
-                        }
-                    )
-                ), 404
+                return (
+                    jsonify(
+                        (
+                            {
+                                "status_code": 404,
+                                "message_id": "employee_not_found",
+                            }
+                        )
+                    ),
+                    404,
+                )
 
             metadata = pagination.build_metadata(
                 total_count, pagination_params
             )
 
-            return jsonify(
-                (
-                    {
-                        "status_code": 200,
-                        "data": Metadata(result).model_to_list(),
-                        "metadata": metadata if metadata else None,
-                        "message_id": "success_list_employees",
-                        "error": False,
-                    }
-                )
-            ), 200
+            return (
+                jsonify(
+                    (
+                        {
+                            "status_code": 200,
+                            "data": Metadata(result).model_to_list(),
+                            "metadata": metadata if metadata else None,
+                            "message_id": "success_list_employees",
+                            "error": False,
+                        }
+                    )
+                ),
+                200,
+            )
         except Exception as e:
             logdb(
                 "error",
@@ -237,26 +255,32 @@ class EmployeeCore:
     def update_employee(self, id: int, data: dict):
         try:
             if not id:
-                return jsonify(
-                    (
-                        {
-                            "status_code": 400,
-                            "message_id": "not_id_found",
-                        }
-                    )
-                ), 400
+                return (
+                    jsonify(
+                        (
+                            {
+                                "status_code": 400,
+                                "message_id": "not_id_found",
+                            }
+                        )
+                    ),
+                    400,
+                )
 
             employee = self.employee.query.filter_by(id=id).first()
             if not employee:
-                return jsonify(
-                    (
-                        {
-                            "status_code": 404,
-                            "message_id": "employee_not_found",
-                            "error": True,
-                        }
-                    )
-                ), 404
+                return (
+                    jsonify(
+                        (
+                            {
+                                "status_code": 404,
+                                "message_id": "employee_not_found",
+                                "error": True,
+                            }
+                        )
+                    ),
+                    404,
+                )
 
             update_data = {}
 
@@ -335,15 +359,18 @@ class EmployeeCore:
             db.session.execute(stmt)
             db.session.commit()
 
-            return jsonify(
-                (
-                    {
-                        "status_code": 200,
-                        "message_id": "success_delete_employee",
-                        "error": False,
-                    }
-                )
-            ), 200
+            return (
+                jsonify(
+                    (
+                        {
+                            "status_code": 200,
+                            "message_id": "success_delete_employee",
+                            "error": False,
+                        }
+                    )
+                ),
+                200,
+            )
 
         except Exception as e:
             db.session.rollback()
@@ -353,12 +380,15 @@ class EmployeeCore:
                     f"Error delete employee. {e}\n{traceback.format_exc()}"
                 ),
             )
-            return jsonify(
-                (
-                    {
-                        "status_code": 500,
-                        "message_id": "error_delete_employee",
-                        "error": True,
-                    }
-                )
-            ), 500
+            return (
+                jsonify(
+                    (
+                        {
+                            "status_code": 500,
+                            "message_id": "error_delete_employee",
+                            "error": True,
+                        }
+                    )
+                ),
+                500,
+            )

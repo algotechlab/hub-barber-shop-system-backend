@@ -7,6 +7,7 @@ from src.db.database import db
 from src.resource.employee import employee_ns
 from src.resource.login import login_ns
 from src.resource.product import product_ns
+from src.resource.shedule import shedule_ns
 from src.resource.user import user_us
 from src.settings._base import config_by_name, flask_env
 
@@ -55,5 +56,6 @@ def create_app():
     api.add_namespace(login_ns)
     api.add_namespace(employee_ns)
     api.add_namespace(product_ns)
+    api.add_namespace(shedule_ns)
 
     return app

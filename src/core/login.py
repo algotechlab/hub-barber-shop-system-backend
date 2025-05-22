@@ -37,9 +37,9 @@ class LoginCore:
         self.email = user.email
         password = data.get("password")
 
-        stmt = select(self.user.id, self.user.username, self.user.email, self.user.role).where(
-            self.user.id == self.user_id
-        )
+        stmt = select(
+            self.user.id, self.user.username, self.user.email, self.user.role
+        ).where(self.user.id == self.user_id)
 
         result = db.session.execute(stmt).fetchone()
 

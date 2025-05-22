@@ -7,11 +7,10 @@ from flask import jsonify
 from sqlalchemy import func, insert, select, text, update
 
 from src.db.database import db
-from src.model.model import Products, ProductsEmployee
+from src.model.model import Products
 from src.utils.log import logdb
 from src.utils.metadata import Metadata
 from src.utils.pagination import Pagination
-
 
 PRODUCTS_FIELDS = [
     "description",
@@ -22,17 +21,26 @@ PRODUCTS_FIELDS = [
 ]
 
 
+MINUTES = 59
+SECONDS = 59
+
 class ProductCore:
     def __init__(self, user_id: int, *args, **kwargs):
         self.products = Products
-        self.products_employee = ProductsEmployee
         self.user_id = user_id
 
-    def _parse_time_to_spend(self, hhmmss: str) -> datetime:
-        h, m, s = map(int, hhmmss.split(":"))
-        duration = timedelta(hours=h, minutes=m, seconds=s)
-        base = datetime(1970, 1, 1)
-        return base + duration
+    def _parse_time_to_spend(self, hhmmss: str) -> timedelta:
+        try:
+            if not hhmmss or not isinstance(hhmmss, str):
+                raise ValueError("time_to_spend must be a non-empty string")
+
+            h, m, s = map(int, hhmmss.split(":"))
+            if h < 0 or m < 0 or s < 0 or m > MINUTES or s > SECONDS:
+                raise ValueError("Invalid time format or values")
+
+            return timedelta(hours=h, minutes=m, seconds=s)
+        except ValueError as e:
+            raise ValueError(f"Invalid time_to_spend format: {str(e)}")
 
     def add_product(self, data: dict):
         try:
@@ -103,13 +111,17 @@ class ProductCore:
 
             stmt = select(
                 self.products.id,
-                func.initcap(func.trim(self.products.description)).label("description"),
+                func.initcap(func.trim(self.products.description)).label(
+                    "description"
+                ),
                 self.products.value_operation,
                 func.to_char(
                     self.products.time_to_spend, text("'HH24:MI:SS'")
                 ).label("time_to_spend"),
                 self.products.commission,
-                func.initcap(func.trim(self.products.category)).label("category"),
+                func.initcap(func.trim(self.products.category)).label(
+                    "category"
+                ),
             ).where(
                 ~self.products.is_deleted,
             )
@@ -199,35 +211,53 @@ class ProductCore:
     def update_product(self, id: int, data: dict):
         try:
             if not data:
-                return jsonify({
-                    "status_code": 400,
-                    "message_id": "not_parms_found",
-                    "error": True
-                }), 400
+                return (
+                    jsonify(
+                        {
+                            "status_code": 400,
+                            "message_id": "not_parms_found",
+                            "error": True,
+                        }
+                    ),
+                    400,
+                )
 
             product = db.session.query(self.products).filter_by(id=id).first()
 
             if not product:
-                return jsonify({
-                    "status_code": 404,
-                    "message_id": "product_not_found",
-                    "error": True
-                }), 404
+                return (
+                    jsonify(
+                        {
+                            "status_code": 404,
+                            "message_id": "product_not_found",
+                            "error": True,
+                        }
+                    ),
+                    404,
+                )
 
             for key, value in data.items():
                 if value is not None and key in PRODUCTS_FIELDS:
-                    if key == "time_to_spend":
-                        value = self._parse_time_to_spend(value)
+                    parsed_value = (
+                        self._parse_time_to_spend(value)
+                        if key == "time_to_spend"
+                        else value
+                    )
                     if hasattr(product, key):
-                        setattr(product, key, value)
+                        setattr(product, key, parsed_value)
 
             db.session.commit()
 
-            return jsonify({
-                "status_code": 200,
-                "message_id": "product_updated_successfully",
-                "error": False
-            }), 200
+            return (
+                jsonify(
+                    {
+                        "status_code": 200,
+                        "message_id": "product_updated_successfully",
+                        "error": False,
+                    }
+                ),
+                200,
+            )
 
         except Exception as e:
             db.session.rollback()
@@ -235,12 +265,17 @@ class ProductCore:
                 "error",
                 message=f"Error update product: {e}\n{traceback.format_exc()}",
             )
-            return jsonify({
-                "status_code": 500,
-                "message_id": "something_went_wrong",
-                "traceback": traceback.format_exc(),
-                "error": True
-            }), 500
+            return (
+                jsonify(
+                    {
+                        "status_code": 500,
+                        "message_id": "something_went_wrong",
+                        "traceback": traceback.format_exc(),
+                        "error": True,
+                    }
+                ),
+                500,
+            )
 
     def delete_product(self, id: int):
         try:

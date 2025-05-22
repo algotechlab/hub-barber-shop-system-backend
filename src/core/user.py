@@ -63,27 +63,33 @@ class UserCore:
                 "error",
                 message=f"Error get user: {e}\n{traceback.format_exc()}",
             )
-            return jsonify(
-                (
-                    {
-                        "status_code": 500,
-                        "message_id": "error_processing_list_users",
-                        "error": True,
-                    }
-                )
-            ), 500
+            return (
+                jsonify(
+                    (
+                        {
+                            "status_code": 500,
+                            "message_id": "error_processing_list_users",
+                            "error": True,
+                        }
+                    )
+                ),
+                500,
+            )
 
     def add_user(self, data: dict):
         try:
             if not data:
-                return jsonify(
-                    (
-                        {
-                            "status_code": 400,
-                            "message_id": "not_parms_found",
-                        }
-                    )
-                ), 400
+                return (
+                    jsonify(
+                        (
+                            {
+                                "status_code": 400,
+                                "message_id": "not_parms_found",
+                            }
+                        )
+                    ),
+                    400,
+                )
 
             if (
                 not data.get("username")
@@ -91,14 +97,17 @@ class UserCore:
                 or not data.get("email")
                 or not data.get("password")
             ):
-                return jsonify(
-                    (
-                        {
-                            "status_code": 400,
-                            "message_id": "not_parms_found",
-                        }
-                    )
-                ), 400
+                return (
+                    jsonify(
+                        (
+                            {
+                                "status_code": 400,
+                                "message_id": "not_parms_found",
+                            }
+                        )
+                    ),
+                    400,
+                )
             stmt = (
                 insert(self.user)
                 .values(
@@ -119,21 +128,24 @@ class UserCore:
             )
             db.session.commit()
 
-            return jsonify(
-                (
-                    {
-                        "status_code": 200,
-                        "data": {
-                            "id": result.id,
-                            "username": result.username,
-                            "email": result.email,
-                        },
-                        "access_token": self.compact_token(access_token),
-                        "message_id": "register_successfully",
-                        "error": False,
-                    }
-                )
-            ), 200
+            return (
+                jsonify(
+                    (
+                        {
+                            "status_code": 200,
+                            "data": {
+                                "id": result.id,
+                                "username": result.username,
+                                "email": result.email,
+                            },
+                            "access_token": self.compact_token(access_token),
+                            "message_id": "register_successfully",
+                            "error": False,
+                        }
+                    )
+                ),
+                200,
+            )
         except IntegrityError:
             db.session.rollback()
             logdb(
@@ -142,30 +154,36 @@ class UserCore:
                 Error warning rollback user: \
                 IntegrityError\n{traceback.format_exc()}",
             )
-            return jsonify(
-                (
-                    {
-                        "status_code": 409,
-                        "message_id": "email_already_exists",
-                        "error": True,
-                    }
-                )
-            ), 409
+            return (
+                jsonify(
+                    (
+                        {
+                            "status_code": 409,
+                            "message_id": "email_already_exists",
+                            "error": True,
+                        }
+                    )
+                ),
+                409,
+            )
         except Exception as e:
             db.session.rollback()
             logdb(
                 "error",
                 message=f"Error listing users: {e}\n{traceback.format_exc()}",
             )
-            return jsonify(
-                (
-                    {
-                        "status_code": 500,
-                        "message_id": "error_processing_add_user",
-                        "error": True,
-                    }
-                )
-            ), 500
+            return (
+                jsonify(
+                    (
+                        {
+                            "status_code": 500,
+                            "message_id": "error_processing_add_user",
+                            "error": True,
+                        }
+                    )
+                ),
+                500,
+            )
 
     def list_users(self, data: dict):
         try:
@@ -253,15 +271,18 @@ class UserCore:
             user = self.user.query.filter_by(id=id).first()
 
             if not user:
-                return jsonify(
-                    (
-                        {
-                            "status_code": 404,
-                            "message_id": "user_not_found",
-                            "error": True,
-                        }
-                    )
-                ), 404
+                return (
+                    jsonify(
+                        (
+                            {
+                                "status_code": 404,
+                                "message_id": "user_not_found",
+                                "error": True,
+                            }
+                        )
+                    ),
+                    404,
+                )
 
             update_data = {}
             for key, value in data.items():
@@ -284,29 +305,35 @@ class UserCore:
             db.session.execute(stmt)
             db.session.commit()
 
-            return jsonify(
-                (
-                    {
-                        "status_code": 200,
-                        "message_id": "update_successfully",
-                        "error": False,
-                    }
-                )
-            ), 200
+            return (
+                jsonify(
+                    (
+                        {
+                            "status_code": 200,
+                            "message_id": "update_successfully",
+                            "error": False,
+                        }
+                    )
+                ),
+                200,
+            )
         except Exception as e:
             logdb(
                 "error",
                 message=f"Error updating user: {e}\n{traceback.format_exc()}",
             )
-            return jsonify(
-                (
-                    {
-                        "status_code": 500,
-                        "message_id": "error_processing_update_user",
-                        "error": True,
-                    }
-                )
-            ), 500
+            return (
+                jsonify(
+                    (
+                        {
+                            "status_code": 500,
+                            "message_id": "error_processing_update_user",
+                            "error": True,
+                        }
+                    )
+                ),
+                500,
+            )
 
     def delete(self, id: int):
         try:
@@ -314,22 +341,32 @@ class UserCore:
             user.is_deleted = True
             db.session.commit()
 
-            return jsonify((
-                {
-                    "status_code": 200,
-                    "message_id": "delete_successfully",
-                    "error": False,
-                }
-            )), 200
+            return (
+                jsonify(
+                    (
+                        {
+                            "status_code": 200,
+                            "message_id": "delete_successfully",
+                            "error": False,
+                        }
+                    )
+                ),
+                200,
+            )
         except Exception as e:
             logdb(
                 "error",
                 message=f"Error delete user: {e}\n{traceback.format_exc()}",
             )
-            return jsonify((
-                {
-                    "status_code": 500,
-                    "message_id": "error_processing_delete_user",
-                    "error": True,
-                }
-            )), 500
+            return (
+                jsonify(
+                    (
+                        {
+                            "status_code": 500,
+                            "message_id": "error_processing_delete_user",
+                            "error": True,
+                        }
+                    )
+                ),
+                500,
+            )
