@@ -52,11 +52,7 @@ logger = setup_logger("AppLogger")
 
 
 def logdb(level: str, message: str):
-    """
-    Salva log no console/arquivo e também no banco de dados.
-    """
-    log_func = getattr(logger, level.lower(), logger.info)
-    log_func(message)
+    # save database manager
     log_to_db("AppLogger", level.upper(), message)
 
 
