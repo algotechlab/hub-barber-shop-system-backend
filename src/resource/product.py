@@ -5,6 +5,7 @@ import traceback
 from flask import jsonify, request
 from flask_cors import cross_origin
 from flask_restx import Namespace, Resource, fields, reqparse
+from werkzeug.datastructures import FileStorage
 
 from src.core.product import ProductCore
 
@@ -74,25 +75,79 @@ payload_update_products = product_ns.model(
 )
 
 
+payload_parser = reqparse.RequestParser()
+payload_parser.add_argument(
+    "description",
+    type=str,
+    required=True,
+    help="Product description",
+    location="form",
+)
+payload_parser.add_argument(
+    "value_operation",
+    type=float,
+    required=True,
+    help="Operation value",
+    location="form",
+)
+payload_parser.add_argument(
+    "time_to_spend",
+    type=str,
+    required=True,
+    help="Time spent in HH:MM:SS",
+    location="form",
+)
+payload_parser.add_argument(
+    "commission",
+    type=float,
+    required=True,
+    help="Commission percentage",
+    location="form",
+)
+payload_parser.add_argument(
+    "category",
+    type=str,
+    required=True,
+    help="Product category",
+    location="form",
+)
+payload_parser.add_argument(
+    "image",
+    type=FileStorage,
+    required=False,
+    help="Upload an image (PNG or JPEG)",
+    location="files",
+)
+
+
 @product_ns.route("")
 class ProductManagerResource(Resource):
     @product_ns.doc(description="Add products")
-    @product_ns.expect(payload_add_products, validate=True)
+    @product_ns.expect(payload_parser, validate=True)
     @cross_origin()
     def post(self):
         """Add products"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return ProductCore(user_id=user_id).add_product(request.get_json())
-        except Exception:
-            return jsonify(
-                {
-                    "status_code": 500,
-                    "message_id": "something_went_wrong",
-                    "traceback": traceback.format_exc(),
-                },
-                500,
+            args = payload_parser.parse_args()
+            data = {
+                "description": args["description"],
+                "value_operation": args["value_operation"],
+                "time_to_spend": args["time_to_spend"],
+                "commission": args["commission"],
+                "category": args["category"],
+            }
+            image_file = args["image"]
+            return ProductCore(user_id=user_id).add_product(
+                data=data, image_file=image_file
             )
+        except Exception:
+            return {
+                "status_code": 500,
+                "message_id": "something_went_wrong",
+                "traceback": traceback.format_exc(),
+                "error": True,
+            }, 500
 
     @product_ns.doc(description="List produtc")
     @product_ns.expect(pagination_arguments_products, validate=True)

@@ -72,7 +72,9 @@ class Employee(db.Model):
     email: Mapped[str] = mapped_column(
         db.String(100), unique=True, nullable=False
     )
+    role: Mapped[str] = mapped_column(db.String(20), nullable=False)
     phone: Mapped[str] = mapped_column(db.String(40), nullable=False)
+    session_token: Mapped[str] = mapped_column(db.Text, nullable=True)
     password: Mapped[str] = mapped_column(db.String(300), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         db.DateTime, nullable=False, server_default=func.now()
