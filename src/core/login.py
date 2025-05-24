@@ -162,8 +162,7 @@ class LoginCore:
                     }
                 )
 
-        except Exception as e:
-            print("Erro coletado", e)
+        except Exception:
             logdb(
                 "error",
                 message=f"Error login employee. \

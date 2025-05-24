@@ -36,6 +36,7 @@ payload_add_shedule = shedule_ns.model(
         "employee_id": fields.Integer(
             required=True, description="Employee id"
         ),
+        "user_id": fields.Integer(required=True, description="User id"),
         "time_register": fields.DateTime(
             required=True, description="Time register time spent in HH:MM:SS"
         ),
@@ -70,12 +71,14 @@ class SheduleManageResource(Resource):
                 data=request.get_json()
             )
         except Exception:
-            return jsonify(
-                {
-                    "status_code": 500,
-                    "message_id": "something_went_wrong",
-                    "traceback": traceback.format_exc(),
-                },
+            return (
+                jsonify(
+                    {
+                        "status_code": 500,
+                        "message_id": "something_went_wrong",
+                        "traceback": traceback.format_exc(),
+                    }
+                ),
                 500,
             )
 

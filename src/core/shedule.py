@@ -33,13 +33,22 @@ class SheduleCore:
         self.employee = Employee
         self.user = User
 
+    def __parser_iso_format(self, dt_str: str) -> datetime:
+        if dt_str.endswith("Z"):
+            dt_str = dt_str.replace("Z", "+00:00")
+        return datetime.fromisoformat(dt_str)
+
     def add_shedule(self, data: dict):
         try:
+            time_register_str = self.__parser_iso_format(
+                dt_str=data.get("time_register")
+            )
+
             stmt = insert(self.shedule).values(
                 product_id=data.get("product_id"),
                 employee_id=data.get("employee_id"),
-                time_register=data.get("time_register"),
-                user_id=self.user_id,
+                time_register=time_register_str,
+                user_id=data.get("user_id"),
                 is_awayalone=False,
                 is_check=False,
             )
@@ -48,16 +57,15 @@ class SheduleCore:
 
             return (
                 jsonify(
-                    (
-                        {
-                            "status_code": 200,
-                            "message_id": "success_add_shedule",
-                            "error": False,
-                        }
-                    )
+                    {
+                        "status_code": 200,
+                        "message_id": "success_add_shedule",
+                        "error": False,
+                    }
                 ),
                 200,
             )
+
         except Exception as e:
             db.session.rollback()
             logdb(
@@ -65,32 +73,19 @@ class SheduleCore:
                 message=f"Error add shedule: \
                 {e}{traceback.format_exc()}",
             )
-            return jsonify(
-                {
-                    "status_code": 500,
-                    "message_id": "something_went_wrong",
-                    "traceback": traceback.format_exc(),
-                },
+            return (
+                jsonify(
+                    {
+                        "status_code": 500,
+                        "message_id": "something_went_wrong",
+                        "traceback": traceback.format_exc(),
+                    }
+                ),
                 500,
             )
 
     def list_shedule(self, data: dict):
         try:
-            # Inicialização da paginação
-            pagination = Pagination(data)
-            pagination_params, error = pagination.validate_params()
-            if error:
-                return (
-                    jsonify(
-                        {
-                            "status_code": 400,
-                            "message_id": "invalid_pagination_params",
-                            "error": True,
-                        }
-                    ),
-                    400,
-                )
-
             stmt = (
                 select(
                     self.shedule.id,
@@ -117,55 +112,7 @@ class SheduleCore:
                 .where(~self.product.is_deleted)
             )
 
-            if pagination_params.filter_by:
-                filter_value = f"%{pagination_params.filter_by}%"
-                try:
-                    stmt = stmt.where(
-                        or_(
-                            func.unaccent(self.employee.username).ilike(
-                                func.unaccent(filter_value)
-                            ),
-                            func.unaccent(self.user.username).ilike(
-                                func.unaccent(filter_value)
-                            ),
-                            func.unaccent(self.product.description).ilike(
-                                func.unaccent(filter_value)
-                            ),
-                        )
-                    )
-                except Exception:
-                    stmt = stmt.where(
-                        or_(
-                            self.employee.username.ilike(filter_value),
-                            self.user.username.ilike(filter_value),
-                            self.product.description.ilike(filter_value),
-                        )
-                    )
-
-            sort_column = (
-                getattr(self.employee, pagination_params.order_by, None)
-                or getattr(self.shedule, pagination_params.order_by, None)
-                or getattr(self.user, pagination_params.order_by, None)
-                or getattr(self.product, pagination_params.order_by, None)
-            )
-
-            if sort_column:
-                stmt = stmt.order_by(
-                    sort_column.asc()
-                    if pagination_params.sort_by == "asc"
-                    else sort_column.desc()
-                )
-
-            total_count = db.session.execute(
-                select(func.count()).select_from(stmt.subquery())
-            ).scalar()
-
-            paginated_stmt = stmt.offset(
-                (pagination_params.current_page - 1)
-                * pagination_params.rows_per_page
-            ).limit(pagination_params.rows_per_page)
-
-            result_raw = db.session.execute(paginated_stmt).fetchall()
+            result_raw = db.session.execute(stmt).fetchall()
 
             if not result_raw:
                 return (
@@ -205,10 +152,6 @@ class SheduleCore:
 
                 converted_result.append(row_dict)
 
-            metadata = pagination.build_metadata(
-                total_count, pagination_params
-            )
-
             return (
                 jsonify(
                     {
@@ -216,7 +159,6 @@ class SheduleCore:
                         "message_id": "success_list_shedule",
                         "error": False,
                         "data": converted_result,
-                        "metadata": metadata,
                     }
                 ),
                 200,
@@ -342,4 +284,4 @@ class SheduleCore:
                     )
                 ),
                 500,
-            )
+            )()
