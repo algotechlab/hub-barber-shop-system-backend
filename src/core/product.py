@@ -200,7 +200,6 @@ class ProductCore:
                 description = secure_filename(
                     row.description.replace(" ", "_")
                 )
-                print(description, "Description coletada com sucesso")
                 for root, dirs, files in os.walk(base_upload_dir):
                     if f"product_images_{description}" in root:
                         for file in files:

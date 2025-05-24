@@ -16,7 +16,6 @@ from sqlalchemy import (
 from src.db.database import db
 from src.model.model import Employee, Products, SheduleService, User
 from src.utils.log import logdb
-from src.utils.pagination import Pagination
 
 SHEDULE_FIELDS = [
     "product_id",
@@ -109,8 +108,21 @@ class SheduleCore:
                 .join(self.product, self.shedule.product_id == self.product.id)
                 .join(self.user, self.user.id == self.shedule.user_id)
                 .where(~self.shedule.is_deleted)
+                .where(~self.shedule.is_check)
                 .where(~self.product.is_deleted)
             )
+            
+            filter_by = data.get("filter_by")
+            if filter_by:
+                filter_value = f"%{filter_by}%"
+                stmt = stmt.filter(
+                    or_(
+                        func.unaccent(self.employee.username).ilike(func.unaccent(filter_value)),
+                        func.unaccent(self.user.username).ilike(func.unaccent(filter_value)),
+                    )
+                )
+                
+
 
             result_raw = db.session.execute(stmt).fetchall()
 
@@ -168,6 +180,45 @@ class SheduleCore:
             logdb(
                 "error",
                 message=f"Error in list_shedule: \
+                {str(e)}\n{traceback.format_exc()}",
+            )
+            db.session.rollback()
+            return (
+                jsonify(
+                    {
+                        "status_code": 500,
+                        "message_id": "internal_server_error",
+                        "error": str(e),
+                    }
+                ),
+                500,
+            )
+
+    def check_shedule(self, id: int):
+        try:
+            stmt = (
+                update(self.shedule)
+                .where(self.shedule.id == id)
+                .values(is_check=True)
+            )
+            db.session.execute(stmt)
+            db.session.commit()
+
+            return (
+                jsonify(
+                    {
+                        "status_code": 200,
+                        "message_id": "success_check_shedule",
+                        "error": False,
+                    }
+                ),
+                200,
+            )
+
+        except Exception as e:
+            logdb(
+                "error",
+                message=f"Error in check_shedule: \
                 {str(e)}\n{traceback.format_exc()}",
             )
             db.session.rollback()
