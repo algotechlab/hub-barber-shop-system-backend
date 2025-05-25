@@ -2,13 +2,15 @@
 
 import traceback
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from flask import jsonify
-from sqlalchemy import func, insert, select, update
+from sqlalchemy import func, insert, select, update, literal_column
+from sqlalchemy.orm import aliased
 from werkzeug.security import generate_password_hash
 
 from src.db.database import db
-from src.model.model import Employee
+from src.model.model import Employee, ScheduleService, Products
 from src.utils.log import logdb
 from src.utils.metadata import Metadata
 from src.utils.pagination import Pagination
@@ -28,6 +30,8 @@ EMPLOYEE_FIELDS = [
 class EmployeeCore:
     def __init__(self, user_id: int, *args, **kwargs):
         self.employee = Employee
+        self.schedule = ScheduleService
+        self.product = Products
         self.user_id = user_id
 
     def add_employee(self, data: dict):
@@ -243,6 +247,90 @@ class EmployeeCore:
             logdb(
                 "error",
                 message=f"Error list employees. {e}\n{traceback.format_exc()}",
+            )
+            return jsonify(
+                {
+                    "status_code": 500,
+                    "message_id": "error_list_employees",
+                    "error": True,
+                }
+            )
+
+    def list_avaliable_emploees(self):
+        ## TODO - checar a possibilidade disso aqui
+        try:
+            if hour.tzinfo is None:
+                hour = hour.replace(tzinfo=ZoneInfo("UTC"))
+                hour_utc = hour.astimezone(ZoneInfo("UTC"))
+
+            # Aliases para clareza
+            Schedule = aliased(self.schedule)
+            Product = aliased(self.product)
+            Employee = aliased(self.employee)
+
+            # Subquery com todos os agendamentos ativos
+            subq = (
+                select(
+                    Schedule.employee_id.label("employee_id"),
+                    Schedule.time_register.label("inicio"),
+                    (Schedule.time_register + Product.time_to_spend).label("fim"),
+                )
+                .join(Product, Schedule.product_id == Product.id)
+                .where(Schedule.is_deleted.is_(False))
+                .where(Schedule.is_check.is_(False))
+                .where(Product.is_deleted.is_(False))
+                .subquery()
+            )
+
+            # Consulta principal: retorna funcionários que NÃO têm agendamento conflitante
+            stmt = (
+                select(Employee.id, Employee.username)
+                .where(Employee.is_deleted.is_(False))
+                .where(
+                    ~db.session.query(literal_column("1"))
+                    .select_from(subq)
+                    .filter(subq.c.employee_id == Employee.id)
+                    .filter(subq.c.inicio <= hour_utc)
+                    .filter(hour_utc < subq.c.fim)
+                    .exists()
+                )
+                .order_by(Employee.username)
+            )
+
+            result = db.session.execute(stmt).fetchall()
+            
+            if not result:
+                return (
+                    jsonify(
+                        (
+                            {
+                                "status_code": 404,
+                                "message_id": "employee_not_found",
+                            }
+                        )
+                    ),
+                    404,
+                )
+
+
+            return (
+                jsonify(
+                    (
+                        {
+                            "status_code": 200,
+                            "data": Metadata(result).model_to_list(),
+                            "message_id": "success_list_employees",
+                            "error": False,
+                        }
+                    )
+                ),
+                200,
+            )
+            
+        except Exception as e:
+            logdb(
+                "error",
+                message=f"Error list avaliable employees. {e}\n{traceback.format_exc()}",
             )
             return jsonify(
                 {
