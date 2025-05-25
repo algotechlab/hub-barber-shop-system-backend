@@ -99,13 +99,17 @@ class ScheduleCore:
                     self.user.username.label("name_client"),
                     self.user.phone.label("phone"),
                     (
-                        self.schedule.time_register + self.product.time_to_spend
+                        self.schedule.time_register
+                        + self.product.time_to_spend
                     ).label("end_time"),
                 )
                 .join(
-                    self.employee, self.schedule.employee_id == self.employee.id
+                    self.employee,
+                    self.schedule.employee_id == self.employee.id,
                 )
-                .join(self.product, self.schedule.product_id == self.product.id)
+                .join(
+                    self.product, self.schedule.product_id == self.product.id
+                )
                 .join(self.user, self.user.id == self.schedule.user_id)
                 .where(~self.schedule.is_deleted)
                 .where(~self.schedule.is_check)
@@ -212,13 +216,17 @@ class ScheduleCore:
                     self.user.username.label("name_client"),
                     self.user.phone.label("phone"),
                     (
-                        self.schedule.time_register + self.product.time_to_spend
+                        self.schedule.time_register
+                        + self.product.time_to_spend
                     ).label("end_time"),
                 )
                 .join(
-                    self.employee, self.schedule.employee_id == self.employee.id
+                    self.employee,
+                    self.schedule.employee_id == self.employee.id,
                 )
-                .join(self.product, self.schedule.product_id == self.product.id)
+                .join(
+                    self.product, self.schedule.product_id == self.product.id
+                )
                 .join(self.user, self.user.id == self.schedule.user_id)
                 .where(~self.schedule.is_deleted)
                 .where(~self.schedule.is_check)
@@ -377,7 +385,8 @@ class ScheduleCore:
             db.session.rollback()
             logdb(
                 "error",
-                message=f"Error update schedule: {e}\n{traceback.format_exc()}",
+                message=f"Error update schedule: \
+                {e}\n{traceback.format_exc()}",
             )
             return (
                 jsonify(

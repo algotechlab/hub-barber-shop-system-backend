@@ -157,8 +157,9 @@ class scheduleManagerResourceId(Resource):
 
 @schedule_ns.route("/manageruser")
 class scheduleManagerUserId(Resource):
-    
-    @schedule_ns.doc(description="List schedule filter user_id logged of platform")
+    @schedule_ns.doc(
+        description="List schedule filter user_id logged of platform"
+    )
     @schedule_ns.expect(pagination_arguments_schedule, validate=True)
     @cross_origin()
     def get(self):
