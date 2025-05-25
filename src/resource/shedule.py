@@ -1,4 +1,4 @@
-# src/resource/shedule.py
+# src/resource/schedule.py
 
 import traceback
 
@@ -6,18 +6,18 @@ from flask import jsonify, request
 from flask_cors import cross_origin
 from flask_restx import Namespace, Resource, fields, reqparse
 
-from src.core.shedule import SheduleCore
+from src.core.schedule import ScheduleCore
 
-pagination_arguments_shedule = reqparse.RequestParser()
-pagination_arguments_shedule.add_argument(
+pagination_arguments_schedule = reqparse.RequestParser()
+pagination_arguments_schedule.add_argument(
     "filter_by", help="Filter By", default="", type=str, required=False
 )
 
-shedule_ns = Namespace("shedule", description="Manager shedule")
+schedule_ns = Namespace("schedule", description="Manager schedule")
 
 
-payload_add_shedule = shedule_ns.model(
-    "SheduleAddPayload",
+payload_add_schedule = schedule_ns.model(
+    "scheduleAddPayload",
     {
         "product_id": fields.Integer(required=True, description="Product id"),
         "employee_id": fields.Integer(
@@ -31,8 +31,8 @@ payload_add_shedule = shedule_ns.model(
 )
 
 
-payload_update_shedule = shedule_ns.model(
-    "SheduleUpdatePayload",
+payload_update_schedule = schedule_ns.model(
+    "scheduleUpdatePayload",
     {
         "product_id": fields.Integer(required=False, description="Product id"),
         "employee_id": fields.Integer(
@@ -45,16 +45,16 @@ payload_update_shedule = shedule_ns.model(
 )
 
 
-@shedule_ns.route("")
-class SheduleManageResource(Resource):
-    @shedule_ns.doc(description="Add shedule")
-    @shedule_ns.expect(payload_add_shedule, validate=True)
+@schedule_ns.route("")
+class scheduleManageResource(Resource):
+    @schedule_ns.doc(description="Add schedule")
+    @schedule_ns.expect(payload_add_schedule, validate=True)
     @cross_origin()
     def post(self):
-        """Add shedule"""
+        """Add schedule"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return SheduleCore(user_id=user_id).add_shedule(
+            return ScheduleCore(user_id=user_id).add_schedule(
                 data=request.get_json()
             )
         except Exception:
@@ -69,14 +69,14 @@ class SheduleManageResource(Resource):
                 500,
             )
 
-    @shedule_ns.doc(description="List shedule")
-    @shedule_ns.expect(pagination_arguments_shedule, validate=True)
+    @schedule_ns.doc(description="List schedule")
+    @schedule_ns.expect(pagination_arguments_schedule, validate=True)
     @cross_origin()
     def get(self):
-        """List shedule"""
+        """List schedule"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return SheduleCore(user_id=user_id).list_shedule(
+            return ScheduleCore(user_id=user_id).list_schedule(
                 data=request.args.to_dict()
             )
         except Exception:
@@ -94,16 +94,15 @@ class SheduleManageResource(Resource):
             )
 
 
-@shedule_ns.route("/<int:id>")
-class SheduleManagerResourceId(Resource):
-    
-    @shedule_ns.doc(description="Check shedule")
+@schedule_ns.route("/<int:id>")
+class scheduleManagerResourceId(Resource):
+    @schedule_ns.doc(description="Check schedule")
     @cross_origin()
     def post(self, id: int):
-        """Check Shedule"""
+        """Check schedule"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return SheduleCore(user_id=user_id).check_shedule(
+            return ScheduleCore(user_id=user_id).check_schedule(
                 id=id,
             )
         except Exception:
@@ -115,16 +114,15 @@ class SheduleManagerResourceId(Resource):
                 },
                 500,
             )
-    
-    
-    @shedule_ns.doc(description="Update shedule")
-    @shedule_ns.expect(payload_update_shedule, validate=True)
+
+    @schedule_ns.doc(description="Update schedule")
+    @schedule_ns.expect(payload_update_schedule, validate=True)
     @cross_origin()
     def put(self, id: int):
-        """Update Shedule"""
+        """Update schedule"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return SheduleCore(user_id=user_id).update_shedule(
+            return ScheduleCore(user_id=user_id).update_schedule(
                 id=id, data=request.get_json()
             )
         except Exception:
@@ -137,13 +135,13 @@ class SheduleManagerResourceId(Resource):
                 500,
             )
 
-    @shedule_ns.doc(description="Delete shedule")
+    @schedule_ns.doc(description="Delete schedule")
     @cross_origin()
     def delete(self, id: int):
-        """Delete shedule"""
+        """Delete schedule"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return SheduleCore(user_id=user_id).delete_shedule(
+            return ScheduleCore(user_id=user_id).delete_schedule(
                 id=id,
             )
         except Exception:
@@ -153,5 +151,31 @@ class SheduleManagerResourceId(Resource):
                     "message_id": "something_went_wrong",
                     "traceback": traceback.format_exc(),
                 },
+                500,
+            )
+
+
+@schedule_ns.route("/manageruser")
+class scheduleManagerUserId(Resource):
+    
+    @schedule_ns.doc(description="List schedule filter user_id logged of platform")
+    @schedule_ns.expect(pagination_arguments_schedule, validate=True)
+    @cross_origin()
+    def get(self):
+        """List schedule user_id logged of platform"""
+        try:
+            user_id = request.headers.get("Id", request.environ.get("Id"))
+            return ScheduleCore(user_id=user_id).get_schedule()
+        except Exception:
+            return (
+                jsonify(
+                    (
+                        {
+                            "status_code": 500,
+                            "message_id": "something_went_wrong",
+                            "traceback": traceback.format_exc(),
+                        },
+                    )
+                ),
                 500,
             )

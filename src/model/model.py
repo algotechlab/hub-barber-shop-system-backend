@@ -113,7 +113,7 @@ class Products(db.Model):
         return f"""{self.description} created successfully"""
 
 
-class SheduleService(db.Model):
+class ScheduleService(db.Model):
     __tablename__ = "schedule_service"
     __table_args__ = {"schema": "public"}
 
