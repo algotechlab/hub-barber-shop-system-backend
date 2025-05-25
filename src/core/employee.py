@@ -415,44 +415,45 @@ class ManagerEmployeeCore:
     def list_available_employees(self, hour: datetime):
         try:
             if hour.tzinfo is None:
-                hour = hour.replace(tzinfo=ZoneInfo("UTC"))
+                hour = hour.replace(tzinfo=ZoneInfo("America/Sao_Paulo"))
 
             hour_utc = hour.astimezone(ZoneInfo("UTC"))
 
-            Schedule = aliased(self.schedule)
-            Product = aliased(self.product)
-            Employee = aliased(self.employee)
+            ScheduleAlias = aliased(self.schedule)
+            ProductAlias = aliased(self.product)
+            EmployeeAlias = aliased(self.employee)
 
-            # Subquery de bloqueios de horários
             subq = (
                 select(
-                    Schedule.employee_id.label("employee_id"),
-                    Schedule.time_register.label("inicio"),
-                    (Schedule.time_register + Product.time_to_spend).label(
-                        "fim"
-                    ),
+                    ScheduleAlias.employee_id.label("employee_id"),
+                    ScheduleAlias.time_register.label("inicio"),
+                    (
+                        ScheduleAlias.time_register
+                        + ProductAlias.time_to_spend
+                    ).label("fim"),
                 )
-                .join(Product, Schedule.product_id == Product.id)
-                .where(Schedule.is_deleted.is_(False))
-                .where(Schedule.is_check.is_(False))
-                .where(Product.is_deleted.is_(False))
+                .join(
+                    ProductAlias, ScheduleAlias.product_id == ProductAlias.id
+                )
+                .where(ScheduleAlias.is_deleted.is_(False))
+                .where(ScheduleAlias.is_check.is_(False))
+                .where(ProductAlias.is_deleted.is_(False))
                 .subquery()
             )
 
-            # Query principal: funcionários disponíveis
             stmt = (
-                select(Employee.id, Employee.username)
-                .where(Employee.is_deleted.is_(False))
+                select(EmployeeAlias.id, EmployeeAlias.username)
+                .where(EmployeeAlias.is_deleted.is_(False))
                 .where(
                     ~exists().where(
                         and_(
-                            subq.c.employee_id == Employee.id,
+                            subq.c.employee_id == EmployeeAlias.id,
                             subq.c.inicio <= hour_utc,
                             hour_utc < subq.c.fim,
                         )
                     )
                 )
-                .order_by(Employee.username)
+                .order_by(EmployeeAlias.username)
             )
 
             result = db.session.execute(stmt).fetchall()
