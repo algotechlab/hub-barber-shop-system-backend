@@ -5,7 +5,7 @@ from flask import jsonify, request
 from flask_cors import cross_origin
 from flask_restx import Namespace, Resource, fields, reqparse
 
-from src.core.employee import EmployeeCore
+from src.core.employee import EmployeeCore, ManagerEmployeeCore
 
 pagination_arguments_employees = reqparse.RequestParser()
 pagination_arguments_employees.add_argument(
@@ -164,6 +164,27 @@ class EmployeeResourceManagerId(Resource):
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
             return EmployeeCore(user_id=user_id).delete_employee(id)
+        except Exception:
+            return jsonify(
+                {
+                    "status_code": 500,
+                    "message_id": "something_went_wrong",
+                    "traceback": traceback.format_exc(),
+                }
+            )
+
+
+@employee_ns.route("/slots")
+class EmployeeResourceSlots(Resource):
+    @employee_ns.doc(description="List Employees Avaliable")
+    @cross_origin()
+    def get(self):
+        """List employees Avaliable"""
+        try:
+            user_id = request.headers.get("Id", request.environ.get("Id"))
+            return ManagerEmployeeCore(
+                user_id=user_id
+            ).generate_daily_schedule_slots()
         except Exception:
             return jsonify(
                 {

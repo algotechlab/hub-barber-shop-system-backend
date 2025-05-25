@@ -1,16 +1,23 @@
 # src/core/employee.py
 
 import traceback
-from datetime import datetime
+from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
 from flask import jsonify
-from sqlalchemy import func, insert, select, update, literal_column
+from sqlalchemy import (
+    and_,
+    exists,
+    func,
+    insert,
+    select,
+    update,
+)
 from sqlalchemy.orm import aliased
 from werkzeug.security import generate_password_hash
 
 from src.db.database import db
-from src.model.model import Employee, ScheduleService, Products
+from src.model.model import Employee, Products, ScheduleService
 from src.utils.log import logdb
 from src.utils.metadata import Metadata
 from src.utils.pagination import Pagination
@@ -256,90 +263,6 @@ class EmployeeCore:
                 }
             )
 
-    def list_avaliable_emploees(self):
-        ## TODO - checar a possibilidade disso aqui
-        try:
-            if hour.tzinfo is None:
-                hour = hour.replace(tzinfo=ZoneInfo("UTC"))
-                hour_utc = hour.astimezone(ZoneInfo("UTC"))
-
-            # Aliases para clareza
-            Schedule = aliased(self.schedule)
-            Product = aliased(self.product)
-            Employee = aliased(self.employee)
-
-            # Subquery com todos os agendamentos ativos
-            subq = (
-                select(
-                    Schedule.employee_id.label("employee_id"),
-                    Schedule.time_register.label("inicio"),
-                    (Schedule.time_register + Product.time_to_spend).label("fim"),
-                )
-                .join(Product, Schedule.product_id == Product.id)
-                .where(Schedule.is_deleted.is_(False))
-                .where(Schedule.is_check.is_(False))
-                .where(Product.is_deleted.is_(False))
-                .subquery()
-            )
-
-            # Consulta principal: retorna funcionários que NÃO têm agendamento conflitante
-            stmt = (
-                select(Employee.id, Employee.username)
-                .where(Employee.is_deleted.is_(False))
-                .where(
-                    ~db.session.query(literal_column("1"))
-                    .select_from(subq)
-                    .filter(subq.c.employee_id == Employee.id)
-                    .filter(subq.c.inicio <= hour_utc)
-                    .filter(hour_utc < subq.c.fim)
-                    .exists()
-                )
-                .order_by(Employee.username)
-            )
-
-            result = db.session.execute(stmt).fetchall()
-            
-            if not result:
-                return (
-                    jsonify(
-                        (
-                            {
-                                "status_code": 404,
-                                "message_id": "employee_not_found",
-                            }
-                        )
-                    ),
-                    404,
-                )
-
-
-            return (
-                jsonify(
-                    (
-                        {
-                            "status_code": 200,
-                            "data": Metadata(result).model_to_list(),
-                            "message_id": "success_list_employees",
-                            "error": False,
-                        }
-                    )
-                ),
-                200,
-            )
-            
-        except Exception as e:
-            logdb(
-                "error",
-                message=f"Error list avaliable employees. {e}\n{traceback.format_exc()}",
-            )
-            return jsonify(
-                {
-                    "status_code": 500,
-                    "message_id": "error_list_employees",
-                    "error": True,
-                }
-            )
-
     def update_employee(self, id: int, data: dict):
         try:
             if not id:
@@ -480,3 +403,155 @@ class EmployeeCore:
                 ),
                 500,
             )
+
+
+class ManagerEmployeeCore:
+    def __init__(self, user_id: int, *args, **kwargs):
+        self.employee = Employee
+        self.schedule = ScheduleService
+        self.product = Products
+        self.user_id = user_id
+
+    def list_available_employees(self, hour: datetime):
+        try:
+            if hour.tzinfo is None:
+                hour = hour.replace(tzinfo=ZoneInfo("UTC"))
+
+            hour_utc = hour.astimezone(ZoneInfo("UTC"))
+
+            Schedule = aliased(self.schedule)
+            Product = aliased(self.product)
+            Employee = aliased(self.employee)
+
+            # Subquery de bloqueios de horários
+            subq = (
+                select(
+                    Schedule.employee_id.label("employee_id"),
+                    Schedule.time_register.label("inicio"),
+                    (Schedule.time_register + Product.time_to_spend).label(
+                        "fim"
+                    ),
+                )
+                .join(Product, Schedule.product_id == Product.id)
+                .where(Schedule.is_deleted.is_(False))
+                .where(Schedule.is_check.is_(False))
+                .where(Product.is_deleted.is_(False))
+                .subquery()
+            )
+
+            # Query principal: funcionários disponíveis
+            stmt = (
+                select(Employee.id, Employee.username)
+                .where(Employee.is_deleted.is_(False))
+                .where(
+                    ~exists().where(
+                        and_(
+                            subq.c.employee_id == Employee.id,
+                            subq.c.inicio <= hour_utc,
+                            hour_utc < subq.c.fim,
+                        )
+                    )
+                )
+                .order_by(Employee.username)
+            )
+
+            result = db.session.execute(stmt).fetchall()
+
+            if not result:
+                return (
+                    jsonify(
+                        {
+                            "status_code": 404,
+                            "message_id": "employee_not_found",
+                        }
+                    ),
+                    404,
+                )
+
+            employees = [{"id": row[0], "username": row[1]} for row in result]
+
+            return jsonify(
+                {
+                    "status_code": 200,
+                    "message_id": "success_list_employees",
+                    "data": employees,
+                }
+            ), 200
+
+        except Exception as e:
+            logdb(
+                "error",
+                message=f"Erro list_available_employees: \
+                {e}\n{traceback.format_exc()}",
+            )
+            return (
+                jsonify(
+                    {
+                        "status_code": 500,
+                        "message_id": "error_list_employees",
+                        "error": True,
+                    }
+                ),
+                500,
+            )
+
+    def generate_daily_schedule_slots(self):
+        try:
+            local_tz = ZoneInfo("America/Sao_Paulo")
+            start = datetime.combine(datetime.today(), time(8, 0))
+            end = datetime.combine(date.today(), time(23, 0))
+            step = timedelta(minutes=20)
+
+            hour_slots = []
+
+            while start <= end:
+                response, status = self.list_available_employees(hour=start)
+
+                available = []
+
+                try:
+                    payload = (
+                        response.get_json()
+                        if hasattr(response, "get_json")
+                        else response
+                    )
+                    if isinstance(payload, dict) and "data" in payload:
+                        available = [e["username"] for e in payload["data"]]
+                except Exception as e:
+                    logdb(
+                        "error",
+                        message=f"Error extract employees {start}: {e}",
+                    )
+
+                hour_slots.append(
+                    {
+                        "horario": start.astimezone(local_tz).strftime(
+                            "%H:%M"
+                        ),
+                        "available": available,
+                    }
+                )
+
+                start += step
+
+            return jsonify(
+                {
+                    "status_code": 200,
+                    "data": hour_slots,
+                    "message_id": "success_schedule_slots",
+                }
+            ), 200
+
+        except Exception as e:
+            logdb(
+                "error",
+                message=f"Erro ao gerar slots: \
+                {e}\n{traceback.format_exc()}",
+            )
+            return jsonify(
+                {
+                    "status_code": 500,
+                    "message_id": "error_generate_slots",
+                    "error": True,
+                }
+            ), 500
