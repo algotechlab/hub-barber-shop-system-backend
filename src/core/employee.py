@@ -526,7 +526,7 @@ class ManagerEmployeeCore:
 
                 hour_slots.append(
                     {
-                        "horario": start.astimezone(local_tz).strftime(
+                        "time": start.astimezone(local_tz).strftime(
                             "%H:%M"
                         ),
                         "available": available,
