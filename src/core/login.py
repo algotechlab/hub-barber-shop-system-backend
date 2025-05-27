@@ -25,7 +25,7 @@ class LoginCore:
         return hashlib.sha256(token.encode()).hexdigest()
 
     def get_login(self, data: dict):
-        user = self.user.query.filter_by(email=data.get("email")).first()
+        user = self.user.query.filter_by(phone=data.get("phone")).first()
 
         if not user:
             return jsonify(
@@ -33,11 +33,10 @@ class LoginCore:
                     "status_code": 404,
                     "message_id": "user_not_found",
                 }
-            )
+            ), 404
 
         self.user_id = user.id
         self.email = user.email
-        password = data.get("password")
 
         stmt = select(
             self.user.id, self.user.username, self.user.email, self.user.role
@@ -45,17 +44,8 @@ class LoginCore:
 
         result = db.session.execute(stmt).fetchone()
 
-        if not password:
-            return jsonify(
-                {
-                    "status_code": 400,
-                    "message_id": "not_password_found",
-                }
-            )
 
-        is_valid = check_password_hash(user.password, password)
-
-        if is_valid:
+        if user:
             access_token = create_access_token(
                 identity={"id": self.user_id, "email": self.email}
             )

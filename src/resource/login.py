@@ -15,8 +15,7 @@ class PayloadFactoryLogin:
         return api.model(
             "Login",
             {
-                "email": fields.String(example="", required=True),
-                "password": fields.String(example="********", required="True"),
+                "phone": fields.String(example="61994261245", required=True),
             },
         )
 
