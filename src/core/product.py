@@ -150,16 +150,10 @@ class ProductCore:
 
             if pagination_params.filter_by:
                 filter_value = f"%{pagination_params.filter_by}%"
-                try:
-                    stmt = stmt.filter(
-                        func.unaccent(self.products.description).ilike(
-                            func.unaccent(filter_value)
-                        )
-                    )
-                except Exception:
-                    stmt = stmt.filter(
-                        self.products.description.ilike(filter_value)
-                    )
+                stmt = stmt.filter(
+                    func.unaccent(self.products.description).ilike(
+                        func.unaccent(filter_value))
+                )
 
             sort_column = getattr(
                 self.products, pagination_params.order_by, None
