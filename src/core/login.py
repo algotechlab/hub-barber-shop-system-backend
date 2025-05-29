@@ -44,7 +44,6 @@ class LoginCore:
 
         result = db.session.execute(stmt).fetchone()
 
-
         if user:
             access_token = create_access_token(
                 identity={"id": self.user_id, "email": self.email}

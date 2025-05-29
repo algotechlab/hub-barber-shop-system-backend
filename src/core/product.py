@@ -152,7 +152,8 @@ class ProductCore:
                 filter_value = f"%{pagination_params.filter_by}%"
                 stmt = stmt.filter(
                     func.unaccent(self.products.description).ilike(
-                        func.unaccent(filter_value))
+                        func.unaccent(filter_value)
+                    )
                 )
 
             sort_column = getattr(

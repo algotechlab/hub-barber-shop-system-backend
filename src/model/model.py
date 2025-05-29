@@ -134,3 +134,23 @@ class ScheduleService(db.Model):
 
     def __repr__(self):
         return f"""{self.id} created successfully"""
+
+
+class Avaliable(db.Model):
+    __tablename__ = "avaliable"
+    __table_args__ = {"schema": "public"}
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    star: Mapped[int] = mapped_column(db.Integer, nullable=False)
+    product_id: Mapped[int] = mapped_column(db.Integer, nullable=False)
+    employee_id: Mapped[int] = mapped_column(db.Integer, nullable=False)
+    user_id: Mapped[int] = mapped_column(db.Integer, nullable=False)
+    observer: Mapped[str] = mapped_column(db.String(20), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=True)
+    updated_by: Mapped[int] = mapped_column(db.Integer, nullable=True)
+    deleted_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=True)
+    deleted_by: Mapped[int] = mapped_column(db.Integer, nullable=True)
+    is_deleted: Mapped[bool] = mapped_column(db.Boolean, default=False)
+
+    def __repr__(self):
+        return f"""{self.id} created successfully"""

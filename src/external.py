@@ -9,6 +9,7 @@ from src.resource.login import login_ns
 from src.resource.product import product_ns
 from src.resource.shedule import schedule_ns
 from src.resource.user import user_us
+from src.resource.avaliable import avaliable_ns
 from src.settings._base import config_by_name, flask_env
 
 
@@ -57,5 +58,6 @@ def create_app():
     api.add_namespace(employee_ns)
     api.add_namespace(product_ns)
     api.add_namespace(schedule_ns)
+    api.add_namespace(avaliable_ns)
 
     return app
