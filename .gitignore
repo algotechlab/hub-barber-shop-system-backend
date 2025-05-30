@@ -7,6 +7,8 @@ __pycache__/
 static.
 static/
 
+# ignroe mac os
+.DS_Store
 
 # C extensions
 *.so
