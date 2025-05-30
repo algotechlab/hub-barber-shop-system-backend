@@ -58,12 +58,12 @@ class EmployeeCore:
 
             stmt = insert(self.employee).values(
                 username=data.get("username"),
-                cpf=data.get("cpf"),
-                rg=data.get("phone"),
+                cpf=cpf,
+                rg=rg,
                 date_of_birth=data.get("date_of_birth"),
                 nickname=data.get("nickname"),
                 email=data.get("email"),
-                phone=data.get("phone"),
+                phone=phone,
                 password=generate_password_hash(
                     password=data.get("password"), method="scrypt"
                 ),
