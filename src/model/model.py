@@ -1,8 +1,10 @@
 # src/model/model.py
 from datetime import datetime
+from decimal import Decimal
 
-from sqlalchemy import Interval, Numeric, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import ForeignKey, Interval, Numeric, func
+from sqlalchemy.dialects.postgresql import INTERVAL
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.db.database import db
 
@@ -154,3 +156,66 @@ class Avaliable(db.Model):
 
     def __repr__(self):
         return f"""{self.id} created successfully"""
+
+
+class Subscription(db.Model):
+    __tablename__ = "subscription"
+    __table_args__ = {"schema": "public"}
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(db.String(225), nullable=False)
+    price: Mapped[Decimal] = mapped_column(db.Numeric(10, 2), default=0.00)
+    time_to_spend: Mapped[str] = mapped_column(INTERVAL, nullable=False)
+    benefits: Mapped[str] = mapped_column(db.String(255), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        db.DateTime, default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=True)
+    updated_by: Mapped[int] = mapped_column(db.Integer, nullable=True)
+    deleted_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=True)
+    deleted_by: Mapped[int] = mapped_column(db.Integer, nullable=True)
+    is_deleted: Mapped[bool] = mapped_column(db.Boolean, default=False)
+
+    users: Mapped[list["SubscriptionUser"]] = relationship(
+        "SubscriptionUser", back_populates="subscription"
+    )
+
+    def __repr__(self):
+        return f"<Subscription {self.name}>"
+
+
+class SubscriptionUser(db.Model):
+    __tablename__ = "subscription_user"
+    __table_args__ = {"schema": "public"}
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    subscription_id: Mapped[int] = mapped_column(
+        ForeignKey("public.subscription.id"), nullable=False
+    )
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("public.user.id"), nullable=False
+    )
+    start_subscription: Mapped[datetime] = mapped_column(
+        db.DateTime, nullable=False
+    )
+    end_subscription: Mapped[datetime] = mapped_column(
+        db.DateTime, nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        db.DateTime, default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=True)
+    updated_by: Mapped[int] = mapped_column(db.Integer, nullable=True)
+    deleted_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=True)
+    deleted_by: Mapped[int] = mapped_column(db.Integer, nullable=True)
+    is_deleted: Mapped[bool] = mapped_column(db.Boolean, default=False)
+
+    subscription: Mapped["Subscription"] = relationship(
+        "Subscription",
+        back_populates="users",
+        cascade="all, delete-orphan",
+        single_parent=True,
+    )
+
+    def __repr__(self):
+        return f"<SubscriptionUser id={self.id}, user_id={self.user_id}>"

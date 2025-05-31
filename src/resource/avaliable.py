@@ -78,6 +78,7 @@ class ManageAvaliable(Resource):
                 }
             )
 
+
 @avaliable_ns.route("/count-avaliable")
 class ManageAvaliableId(Resource):
     @avaliable_ns.doc(description="Count Avaliable")
