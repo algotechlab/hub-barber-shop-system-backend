@@ -33,10 +33,10 @@ payload_add_subscription = subscription_ns.model(
         "name": fields.String(
             required=True, description="Name of the subscription"
         ),
-        "price": fields.Float(
+        "price": fields.String(
             required=True, description="Price of the subscription"
         ),
-        "time_to_spend": fields.String(
+        "days_to_spend": fields.String(
             required=True,
             description="Time duration (e.g. '30 days', '1 month 15 days')",
         ),
@@ -62,10 +62,10 @@ payload_update_subscription = subscription_ns.model(
         "name": fields.String(
             required=False, description="Name of the subscription"
         ),
-        "price": fields.Float(
+        "price": fields.String(
             required=False, description="Price of the subscription"
         ),
-        "time_to_spend": fields.String(
+        "days_to_spend": fields.String(
             required=False,
             description="Time duration (e.g. '30 days', '1 month 15 days')",
         ),

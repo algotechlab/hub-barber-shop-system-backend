@@ -165,7 +165,7 @@ class Subscription(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(db.String(225), nullable=False)
     price: Mapped[Decimal] = mapped_column(db.Numeric(10, 2), default=0.00)
-    time_to_spend: Mapped[str] = mapped_column(INTERVAL, nullable=False)
+    days_to_spend: Mapped[str] = mapped_column(INTERVAL, nullable=False)
     benefits: Mapped[str] = mapped_column(db.String(255), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         db.DateTime, default=func.now(), nullable=False

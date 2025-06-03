@@ -14,7 +14,7 @@ from src.utils.pagination import Pagination
 SUBSCRIPTION_FIELDS= [
     "name",
     "price",
-    "time_to_spend",
+    "days_to_spend",
     "benefits",
 ]
 
@@ -26,7 +26,7 @@ class SubscriptionCore:
 
     def add_subscription(self, data: dict):
         try:
-            time_to_spend = data.get("time_to_spend")
+            time_to_spend = data.get("days_to_spend")
             if not isinstance(time_to_spend, str):
                 raise ValueError(
                     "time_to_spend must be a string (e.g., '30 days')"
@@ -34,8 +34,8 @@ class SubscriptionCore:
 
             stmt = insert(self.subscription).values(
                 name=data.get("name"),
-                price=data.get("price"),
-                time_to_spend=time_to_spend,
+                price=float(data.get("price")),
+                days_to_spend=time_to_spend,
                 benefits=data.get("benefits"),
             )
             db.session.execute(stmt)
@@ -129,7 +129,7 @@ class SubscriptionCore:
                 self.subscription.id,
                 self.subscription.name,
                 self.subscription.price,
-                extract("day", self.subscription.time_to_spend).label(
+                extract("day", self.subscription.days_to_spend).label(
                     "days_to_spend"
                 ),
                 self.subscription.benefits,
