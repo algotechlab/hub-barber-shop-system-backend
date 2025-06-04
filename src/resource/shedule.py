@@ -44,6 +44,18 @@ payload_update_schedule = schedule_ns.model(
     },
 )
 
+payload_check_schedule = schedule_ns.model(
+    "CheckSchedule",
+    {
+        "product_id": fields.Integer(required=True, description="Invoice id"),
+        "payment_id": fields.Integer(required=True, description="Payment id"),
+        "user_id": fields.Integer(required=True, description="User id"),
+        "value_operation": fields.Float(required=False, description="Operation value"),
+        "tip": fields.Float(required=False, description="Tip"),
+        
+    }
+)
+
 
 @schedule_ns.route("")
 class scheduleManageResource(Resource):
@@ -97,6 +109,7 @@ class scheduleManageResource(Resource):
 @schedule_ns.route("/<int:id>")
 class scheduleManagerResourceId(Resource):
     @schedule_ns.doc(description="Check schedule")
+    @schedule_ns.expect(payload_check_schedule, validate=True)
     @cross_origin()
     def post(self, id: int):
         """Check schedule"""
@@ -104,6 +117,7 @@ class scheduleManagerResourceId(Resource):
             user_id = request.headers.get("Id", request.environ.get("Id"))
             return ScheduleCore(user_id=user_id).check_schedule(
                 id=id,
+                data=request.get_json()
             )
         except Exception:
             return jsonify(

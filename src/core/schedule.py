@@ -14,7 +14,7 @@ from sqlalchemy import (
 )
 
 from src.db.database import db
-from src.model.model import Employee, Products, ScheduleService, User
+from src.model.model import Employee, Products, ScheduleService, User, Invoice, BoxAccounting
 from src.utils.log import logdb
 
 schedule_FIELDS = [
@@ -31,6 +31,8 @@ class ScheduleCore:
         self.product = Products
         self.employee = Employee
         self.user = User
+        self.invoice = Invoice
+        self.box_accounting = BoxAccounting
 
     def __parser_iso_format(self, dt_str: str) -> datetime:
         if dt_str.endswith("Z"):
@@ -91,6 +93,7 @@ class ScheduleCore:
                     self.employee.id.label("employee_id"),
                     self.user.id.label("user_id"),
                     self.employee.username.label("name_employee"),
+                    self.product.id.label("product_id"),
                     self.product.description.label("description"),
                     self.schedule.time_register.label("time_register"),
                     func.to_char(
@@ -302,16 +305,36 @@ class ScheduleCore:
                 500,
             )
 
-    def check_schedule(self, id: int):
+    def check_schedule(self, id: int, data: dict):
         try:
-            stmt = (
+            update_stmt = (
                 update(self.schedule)
                 .where(self.schedule.id == id)
                 .values(is_check=True)
             )
-            db.session.execute(stmt)
+            db.session.execute(update_stmt)
+            
+            check_tip = data.get("tip", 0)
+            check_value_operation = data.get("value_operation", 0)
+
+            invoice_stmt = insert(self.invoice).values(
+                product_id=data.get("product_id"),
+                payments_id=data.get("payment_id"),
+                user_id=data.get("user_id"),
+            ).returning(self.invoice.id)
+
+            invoice_result = db.session.execute(invoice_stmt)
+            invoice_id = invoice_result.scalar()
             db.session.commit()
 
+            box_accounting = insert(self.box_accounting).values(
+                value_operation=check_value_operation,
+                invoice_id=invoice_id,
+                tip=check_tip,
+            )
+            db.session.execute(box_accounting)
+            db.session.commit()
+            
             return (
                 jsonify(
                     {

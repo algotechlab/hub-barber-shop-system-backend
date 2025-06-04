@@ -1,20 +1,18 @@
 import requests
 
-# 00F3EDEEAC4A-44E0-8410-D6500037D5C6
-# 00F3EDEEAC4A-44E0-8410-D6500037D5C6
-
-
+# 4E1C45786428-4F17-8A85-E8790027B405
 def send_whatsapp_message():
     url = "http://localhost:8080/message/sendText/chatbot_barber"
     headers = {
         "Content-Type": "application/json",
-        "apikey": "00F3EDEEAC4A-44E0-8410-D6500037D5C6",
+        "apikey": "4E1C45786428-4F17-8A85-E8790027B405",
     }
 
-    message_text = """Flaks ..."""
+    message_text = """Flaks com 20% de desconto
+    Link: https://www.google.com.br/"""
 
     payload = {
-        "number": "5561993936908",
+        "number": "5561985698378",
         "text": message_text,
         "options": {
             "delay": 100,

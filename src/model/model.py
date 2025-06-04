@@ -219,3 +219,76 @@ class SubscriptionUser(db.Model):
 
     def __repr__(self):
         return f"<SubscriptionUser id={self.id}, user_id={self.user_id}>"
+
+
+class Payments(db.Model):
+    __tablename__ = "payments"
+    __table_args__ = {"schema": "finance"}
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    type_payments: Mapped[str] = mapped_column(db.String(100), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        db.DateTime, default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=True)
+    updated_by: Mapped[int] = mapped_column(db.Integer, nullable=True)
+    deleted_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=True)
+    deleted_by: Mapped[int] = mapped_column(db.Integer, nullable=True)
+    is_deleted: Mapped[bool] = mapped_column(db.Boolean, default=False)
+    
+    def __repr__(self):
+        return f"<Payments id={self.id}, type_payments={self.type_payments}>"
+
+class Invoice(db.Model):
+    __tablename__ = "invoice"
+    __table_args__ = {"schema": "finance"}
+    
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("public.user.id"), nullable=False
+    )
+    product_id: Mapped[int] = mapped_column(
+        ForeignKey("public.products.id"), nullable=False
+    )
+    payments_id: Mapped[int] = mapped_column(
+        ForeignKey("finance.payments.id"), nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        db.DateTime, default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=True)
+    updated_by: Mapped[int] = mapped_column(db.Integer, nullable=True)
+    deleted_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=True)
+    deleted_by: Mapped[int] = mapped_column(db.Integer, nullable=True)
+    is_deleted: Mapped[bool] = mapped_column(db.Boolean, default=False)
+    
+    def __repr__(self):
+        return f"""<Invoice id={self.id}, 
+        user_id={self.user_id}, 
+        product_id={self.product_id},
+        payments_id={self.payments_id}>"""
+
+class BoxAccounting(db.Model):
+    __tablename__ = "box_accounting"
+    __table_args__ = {"schema": "finance"}
+    
+    id: Mapped[int] = mapped_column(primary_key=True)
+    value_operation: Mapped[float] = mapped_column(db.Numeric(10, 2), default=0.00)
+    tip: Mapped[float] = mapped_column(db.Numeric(10, 2), default=0.00)
+    invoice_id: Mapped[int] = mapped_column(
+        ForeignKey("finance.invoice.id"), nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        db.DateTime, default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=True)
+    updated_by: Mapped[int] = mapped_column(db.Integer, nullable=True)
+    deleted_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=True)
+    deleted_by: Mapped[int] = mapped_column(db.Integer, nullable=True)
+    is_deleted: Mapped[bool] = mapped_column(db.Boolean, default=False)
+    
+    def __repr__(self):
+        return f"""<BoxAccounting id={self.id}, 
+        value_operation={self.value_operation}, 
+        invoice_id={self.invoice_id}>"""
+
