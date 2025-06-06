@@ -11,12 +11,13 @@ from src.utils.log import logdb
 from src.utils.metadata import Metadata
 from src.utils.pagination import Pagination
 
-SUBSCRIPTION_FIELDS= [
+SUBSCRIPTION_FIELDS = [
     "name",
     "price",
     "days_to_spend",
     "benefits",
 ]
+
 
 class SubscriptionCore:
     def __init__(self, user_id: int, *args, **kwargs):
@@ -224,12 +225,13 @@ class SubscriptionCore:
                         setattr(subscription, key, value)
                         update_data[key] = value
 
-            stmt =  (
+            stmt = (
                 update(self.subscription)
                 .where(self.subscription.id == id)
-                .values(**update_data,
+                .values(
+                    **update_data,
                     updated_at=datetime.utcnow(),
-                    updated_by=self.user_id
+                    updated_by=self.user_id,
                 )
             )
 
@@ -237,13 +239,12 @@ class SubscriptionCore:
             db.session.commit()
 
             return jsonify(
-                    {
-                        "status_code": 200,
-                        "message_id": "success_update_subscription",
-                        "error": False,
-                    }
-                ), 200
-
+                {
+                    "status_code": 200,
+                    "message_id": "success_update_subscription",
+                    "error": False,
+                }
+            ), 200
 
         except Exception as e:
             logdb(
@@ -261,15 +262,16 @@ class SubscriptionCore:
                 }
             ), 500
 
-
     def delete_subcription(self, id: int):
         try:
-            stmt = update(self.subscription).where(
-                self.subscription.id == id
-            ).values(
-                is_deleted=True,
-                deleted_by=self.user_id,
-                deleted_at=datetime.utcnow()
+            stmt = (
+                update(self.subscription)
+                .where(self.subscription.id == id)
+                .values(
+                    is_deleted=True,
+                    deleted_by=self.user_id,
+                    deleted_at=datetime.utcnow(),
+                )
             )
             db.session.execute(stmt)
             db.session.commit()

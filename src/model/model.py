@@ -63,6 +63,7 @@ class Employee(db.Model):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     username: Mapped[str] = mapped_column(db.String(120), nullable=False)
+    lastname: Mapped[str] = mapped_column(db.String(120), nullable=False)
     cpf: Mapped[str] = mapped_column(
         db.String(20), unique=True, nullable=False
     )
@@ -72,7 +73,7 @@ class Employee(db.Model):
     )
     nickname: Mapped[str] = mapped_column(db.String(150), nullable=True)
     email: Mapped[str] = mapped_column(
-        db.String(100), unique=True, nullable=False
+        db.String(100), unique=True, nullable=True
     )
     role: Mapped[str] = mapped_column(db.String(20), nullable=False)
     phone: Mapped[str] = mapped_column(db.String(40), nullable=False)
@@ -235,14 +236,15 @@ class Payments(db.Model):
     deleted_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=True)
     deleted_by: Mapped[int] = mapped_column(db.Integer, nullable=True)
     is_deleted: Mapped[bool] = mapped_column(db.Boolean, default=False)
-    
+
     def __repr__(self):
         return f"<Payments id={self.id}, type_payments={self.type_payments}>"
+
 
 class Invoice(db.Model):
     __tablename__ = "invoice"
     __table_args__ = {"schema": "finance"}
-    
+
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(
         ForeignKey("public.user.id"), nullable=False
@@ -261,19 +263,19 @@ class Invoice(db.Model):
     deleted_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=True)
     deleted_by: Mapped[int] = mapped_column(db.Integer, nullable=True)
     is_deleted: Mapped[bool] = mapped_column(db.Boolean, default=False)
-    
+
     def __repr__(self):
-        return f"""<Invoice id={self.id}, 
-        user_id={self.user_id}, 
-        product_id={self.product_id},
-        payments_id={self.payments_id}>"""
+        return f"""<Invoice id={self.id}"""
+
 
 class BoxAccounting(db.Model):
     __tablename__ = "box_accounting"
     __table_args__ = {"schema": "finance"}
-    
+
     id: Mapped[int] = mapped_column(primary_key=True)
-    value_operation: Mapped[float] = mapped_column(db.Numeric(10, 2), default=0.00)
+    value_operation: Mapped[float] = mapped_column(
+        db.Numeric(10, 2), default=0.00
+    )
     tip: Mapped[float] = mapped_column(db.Numeric(10, 2), default=0.00)
     invoice_id: Mapped[int] = mapped_column(
         ForeignKey("finance.invoice.id"), nullable=False
@@ -286,9 +288,6 @@ class BoxAccounting(db.Model):
     deleted_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=True)
     deleted_by: Mapped[int] = mapped_column(db.Integer, nullable=True)
     is_deleted: Mapped[bool] = mapped_column(db.Boolean, default=False)
-    
-    def __repr__(self):
-        return f"""<BoxAccounting id={self.id}, 
-        value_operation={self.value_operation}, 
-        invoice_id={self.invoice_id}>"""
 
+    def __repr__(self):
+        return f"""<BoxAccounting id={self.id}"""

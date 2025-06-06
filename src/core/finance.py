@@ -2,17 +2,16 @@
 
 import traceback
 
-from sqlalchemy import select, func
-
 from flask import jsonify
+from sqlalchemy import func, select
+
 from src.db.database import db
+from src.model.model import BoxAccounting, Invoice, Payments
 from src.utils.log import logdb
-from src.model.model import Payments, Invoice, BoxAccounting
 from src.utils.metadata import Metadata
-from src.utils.pagination import Pagination
+
 
 class FinanceCore:
-    
     def __init__(self, user_id: int, *args, **kwargs):
         self.user_id = user_id
         self.finance_payments = Payments
@@ -23,14 +22,13 @@ class FinanceCore:
         try:
             stmt = select(
                 self.finance_payments.id,
-                func.upper(self.finance_payments.type_payments)
-                .label("type_payments"),
-            ).where(
-                ~self.finance_payments.is_deleted
-            )
-            
+                func.upper(self.finance_payments.type_payments).label(
+                    "type_payments"
+                ),
+            ).where(~self.finance_payments.is_deleted)
+
             result = db.session.execute(stmt).fetchall()
-            
+
             if not result:
                 return (
                     jsonify(
@@ -41,8 +39,7 @@ class FinanceCore:
                     ),
                     404,
                 )
-            
-            
+
             return jsonify(
                 {
                     "status_code": 200,
@@ -50,7 +47,7 @@ class FinanceCore:
                     "message_id": "success_list_type_payments",
                 }
             ), 200
-            
+
         except Exception as e:
             logdb(
                 "error",

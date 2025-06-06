@@ -120,9 +120,9 @@ class SubcriptionResource(Resource):
                 )
             ), 500
 
+
 @subscription_ns.route("/<int:id>")
 class SubscriptionResourceID(Resource):
-
     @subscription_ns.doc(description="Update subscription")
     @subscription_ns.expect(payload_update_subscription, validate=True)
     @cross_origin()

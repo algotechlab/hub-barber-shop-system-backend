@@ -1,5 +1,6 @@
 import requests
 
+
 # 4E1C45786428-4F17-8A85-E8790027B405
 def send_whatsapp_message():
     url = "http://localhost:8080/message/sendText/chatbot_barber"

@@ -4,14 +4,11 @@ import traceback
 
 from flask import jsonify, request
 from flask_cors import cross_origin
-from flask_restx import Namespace, Resource, fields, reqparse
+from flask_restx import Namespace, Resource
 
 from src.core.finance import FinanceCore
 
-
-
 finance_ns = Namespace("finance", description="Manager finance")
-
 
 
 @finance_ns.route("/types-payments")

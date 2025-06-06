@@ -50,10 +50,11 @@ payload_check_schedule = schedule_ns.model(
         "product_id": fields.Integer(required=True, description="Invoice id"),
         "payment_id": fields.Integer(required=True, description="Payment id"),
         "user_id": fields.Integer(required=True, description="User id"),
-        "value_operation": fields.Float(required=False, description="Operation value"),
+        "value_operation": fields.Float(
+            required=False, description="Operation value"
+        ),
         "tip": fields.Float(required=False, description="Tip"),
-        
-    }
+    },
 )
 
 
@@ -116,8 +117,7 @@ class scheduleManagerResourceId(Resource):
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
             return ScheduleCore(user_id=user_id).check_schedule(
-                id=id,
-                data=request.get_json()
+                id=id, data=request.get_json()
             )
         except Exception:
             return jsonify(

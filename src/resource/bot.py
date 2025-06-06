@@ -1,6 +1,7 @@
 from flask import jsonify, request
 from flask_cors import cross_origin
 from flask_restx import Namespace, Resource, fields
+
 from src.core.bot import BotCore
 
 webhook_ns = Namespace("webhook", description="Manager webhook")
@@ -15,13 +16,16 @@ payload_webhook = webhook_ns.model(
                 "TextMessage",
                 {
                     "text": fields.String(description="Message text"),
-                }
+                },
             ),
             required=False,
         ),
-        "text": fields.String(description="Fallback text field", required=False),
+        "text": fields.String(
+            description="Fallback text field", required=False
+        ),
     },
 )
+
 
 @webhook_ns.route("/messages-upsert")
 class Webhook(Resource):
@@ -29,13 +33,17 @@ class Webhook(Resource):
     @cross_origin()
     def post(self):
         data = request.get_json()
-        print("parametro vindo do data", data)
-        message = data['data']['message']['conversation']
-        sender_number = data['data']['key']['remoteJid'].split("@")[0]
-        BotCore().send_message(message=message, sender_number=sender_number)
+        message = data["data"]["message"]["conversation"]
+        sender_number = data["data"]["key"]["remoteJid"].split("@")[0]
+        BotCore(
+            message=message,
+            sender_number=sender_number,
+            push_name=data["data"]["pushName"],
+        ).send_message()
         return jsonify({"response": message})
 
-@webhook_ns.route('/health')
+
+@webhook_ns.route("/health")
 class HealthCheck(Resource):
     @cross_origin()
     def get(self):

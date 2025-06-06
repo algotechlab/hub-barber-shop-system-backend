@@ -14,7 +14,14 @@ from sqlalchemy import (
 )
 
 from src.db.database import db
-from src.model.model import Employee, Products, ScheduleService, User, Invoice, BoxAccounting
+from src.model.model import (
+    BoxAccounting,
+    Employee,
+    Invoice,
+    Products,
+    ScheduleService,
+    User,
+)
 from src.utils.log import logdb
 
 schedule_FIELDS = [
@@ -313,15 +320,19 @@ class ScheduleCore:
                 .values(is_check=True)
             )
             db.session.execute(update_stmt)
-            
+
             check_tip = data.get("tip", 0)
             check_value_operation = data.get("value_operation", 0)
 
-            invoice_stmt = insert(self.invoice).values(
-                product_id=data.get("product_id"),
-                payments_id=data.get("payment_id"),
-                user_id=data.get("user_id"),
-            ).returning(self.invoice.id)
+            invoice_stmt = (
+                insert(self.invoice)
+                .values(
+                    product_id=data.get("product_id"),
+                    payments_id=data.get("payment_id"),
+                    user_id=data.get("user_id"),
+                )
+                .returning(self.invoice.id)
+            )
 
             invoice_result = db.session.execute(invoice_stmt)
             invoice_id = invoice_result.scalar()
@@ -334,7 +345,7 @@ class ScheduleCore:
             )
             db.session.execute(box_accounting)
             db.session.commit()
-            
+
             return (
                 jsonify(
                     {
