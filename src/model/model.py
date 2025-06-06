@@ -63,7 +63,6 @@ class Employee(db.Model):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     username: Mapped[str] = mapped_column(db.String(120), nullable=False)
-    lastname: Mapped[str] = mapped_column(db.String(120), nullable=False)
     cpf: Mapped[str] = mapped_column(
         db.String(20), unique=True, nullable=False
     )

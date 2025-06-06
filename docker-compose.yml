@@ -5,8 +5,10 @@ services:
     container_name: evolution_api
     image: atendai/evolution-api:latest
     depends_on:
-      - redis
-      - postgres
+      postgres: 
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     restart: always
     ports:
       - "8080:8080"
@@ -45,6 +47,11 @@ services:
       -c 'shared_buffers=256MB'
       -c 'work_mem=8MB'
       -c 'log_min_messages=WARNING'
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis
@@ -53,6 +60,11 @@ services:
       - "6379:6379"
     networks:
       - evolution-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   flask_db:
     image: postgres:15

@@ -6,14 +6,14 @@ def send_whatsapp_message():
     url = "http://localhost:8080/message/sendText/chatbot_barber"
     headers = {
         "Content-Type": "application/json",
-        "apikey": "4E1C45786428-4F17-8A85-E8790027B405",
+        "apikey": "E79EDCBE56E7-4C9B-AF67-30939918CF3A",
     }
 
     message_text = """Flaks com 20% de desconto
     Link: https://www.google.com.br/"""
 
     payload = {
-        "number": "5561985698378",
+        "number": "5561994261245",
         "text": message_text,
         "options": {
             "delay": 100,
