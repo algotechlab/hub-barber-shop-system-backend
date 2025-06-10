@@ -48,7 +48,7 @@ def create_app():
         app,
         resources={r"/*": {"origins": "*"}, r"/static/*": {"origins": "*"}},
     )
-    
+
     session_manager = SessionManager()
     session_manager.clear_all()
 
