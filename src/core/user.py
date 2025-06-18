@@ -38,9 +38,8 @@ class UserCore:
                 self.user.id,
                 self.user.username,
                 self.user.lastname,
-                self.user.email,
                 self.user.phone,
-            ).where(~self.user.is_deleted, self.user.id == id)
+            ).where(self.user.id == id)
 
             result = db.session.execute(stmt).fetchall()
 
@@ -117,12 +116,12 @@ class UserCore:
                     ),
                     phone=data.get("phone"),
                 )
-                .returning(self.user.id, self.user.username, self.user.email)
+                .returning(self.user.id, self.user.username)
             )
 
             result = db.session.execute(stmt).fetchone()
             access_token = create_access_token(
-                identity={"id": result.id, "email": result.email}
+                identity={"id": result.id}
             )
             db.session.commit()
 
@@ -134,7 +133,6 @@ class UserCore:
                             "data": {
                                 "id": result.id,
                                 "username": result.username,
-                                "email": result.email,
                             },
                             "access_token": self.compact_token(access_token),
                             "message_id": "register_successfully",
