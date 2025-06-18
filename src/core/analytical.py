@@ -5,7 +5,7 @@ import traceback
 from flask import jsonify
 from sqlalchemy import select, func
 from src.db.database import db
-from src.model.model import ScheduleService, Products, Employee
+from src.model.model import User, ScheduleService, Products, Employee
 from src.utils.log import logdb
 from src.utils.metadata import Metadata
 
@@ -17,10 +17,18 @@ class AnalyticalCore:
         self.schedule_service = ScheduleService
         self.products = Products
         self.employee = Employee
-        
+        self.user = User 
         
     def summary_client(self, user_id: int):
         try:
+            summary = select(
+                self.user.username,
+                self.user.lastname,
+                self.user.phone
+            ).where(
+                self.user.id == user_id
+            )
+            
             # 1. Total de visitas
             total_visits_stmt = select(
                 func.count(self.schedule_service.id).label("total_visits")
@@ -70,7 +78,8 @@ class AnalyticalCore:
                 .group_by(self.employee.username)
                 .order_by(func.count(self.employee.id).desc())
             )
-
+            
+            summary = db.session.execute(summary).fetchone()
             total_visits = db.session.execute(total_visits_stmt).scalar()
             total_spent = db.session.execute(total_spent_stmt).scalar()
             cuts = db.session.execute(cuts_stmt).fetchall()
@@ -79,6 +88,7 @@ class AnalyticalCore:
             return jsonify({
                 "status_code": 200,
                 "data": {
+                    "summary_client": Metadata(summary).model_to_list(),
                     "total_visits": total_visits,
                     "total_spent": total_spent,
                     "cuts": Metadata(cuts).model_to_list(),

@@ -94,7 +94,6 @@ class UserCore:
             if (
                 not data.get("username")
                 or not data.get("lastname")
-                or not data.get("email")
                 or not data.get("password")
             ):
                 return (
@@ -113,7 +112,6 @@ class UserCore:
                 .values(
                     username=data.get("username"),
                     lastname=data.get("lastname"),
-                    email=data.get("email"),
                     password=generate_password_hash(
                         password=data.get("password"), method="scrypt"
                     ),
