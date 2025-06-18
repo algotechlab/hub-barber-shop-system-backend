@@ -17,7 +17,6 @@ from src.utils.pagination import Pagination
 USER_FIELDS = [
     "username",
     "lastname",
-    "email",
     "password",
     "phone",
 ]
@@ -89,7 +88,6 @@ class UserCore:
                     ),
                     400,
                 )
-
             if (
                 not data.get("username")
                 or not data.get("lastname")
@@ -106,6 +104,7 @@ class UserCore:
                     ),
                     400,
                 )
+
             stmt = (
                 insert(self.user)
                 .values(

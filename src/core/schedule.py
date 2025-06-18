@@ -236,16 +236,15 @@ class ScheduleCore:
                 )
                 .join(
                     self.employee,
-                    self.schedule.employee_id == self.employee.id,
+                    self.employee.id == self.schedule.employee_id,
                 )
                 .join(
                     self.product, self.schedule.product_id == self.product.id
                 )
-                .join(self.user, self.user.id == self.schedule.user_id)
-                .where(~self.schedule.is_deleted)
-                .where(~self.schedule.is_check)
-                .where(~self.product.is_deleted)
-                .where(self.user_id == self.schedule.user_id)
+                .join(self.user, self.schedule.user_id == self.user.id)
+                .where(self.schedule.is_deleted == False)
+                .where(self.schedule.is_check == False)
+                .where(self.schedule.user_id == int(self.user_id))
             )
             result_raw = db.session.execute(stmt).fetchall()
 

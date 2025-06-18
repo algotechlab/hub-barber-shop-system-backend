@@ -34,9 +34,6 @@ payload_add_users = user_us.model(
         "lastname": fields.String(
             required=True, example="User name", max_length=120
         ),
-        "email": fields.String(
-            required=True, example="User email", max_length=100
-        ),
         "password": fields.String(
             required=True, example="User password", max_length=300
         ),
@@ -54,9 +51,6 @@ payload_update_users = user_us.model(
         ),
         "lastname": fields.String(
             required=False, example="User name", max_length=120
-        ),
-        "email": fields.String(
-            required=False, example="User email", max_length=100
         ),
         "password": fields.String(
             required=False, example="User password", max_length=300
