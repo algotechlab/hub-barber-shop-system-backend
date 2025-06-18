@@ -12,12 +12,13 @@ from sqlalchemy import (
     insert,
     select,
     update,
+    union_all
 )
 from sqlalchemy.orm import aliased
 from werkzeug.security import generate_password_hash
 
 from src.db.database import db
-from src.model.model import Employee, Products, ScheduleService
+from src.model.model import Employee, Products, ScheduleService, BlockScheduleService
 from src.utils.log import logdb
 from src.utils.metadata import Metadata
 from src.utils.pagination import Pagination
@@ -411,6 +412,7 @@ class ManagerEmployeeCore:
         self.schedule = ScheduleService
         self.product = Products
         self.user_id = user_id
+        self.block_schedule = BlockScheduleService
 
     def list_available_employees(self, hour: datetime):
         try:
@@ -422,24 +424,35 @@ class ManagerEmployeeCore:
             ScheduleAlias = aliased(self.schedule)
             ProductAlias = aliased(self.product)
             EmployeeAlias = aliased(self.employee)
+            BlockSchedule = aliased(self.block_schedule)
 
-            subq = (
+            appointments_subq = (
                 select(
                     ScheduleAlias.employee_id.label("employee_id"),
                     ScheduleAlias.time_register.label("inicio"),
-                    (
-                        ScheduleAlias.time_register
-                        + ProductAlias.time_to_spend
-                    ).label("fim"),
+                    (ScheduleAlias.time_register + ProductAlias.time_to_spend).label("fim"),
                 )
-                .join(
-                    ProductAlias, ScheduleAlias.product_id == ProductAlias.id
+                .join(ProductAlias, ScheduleAlias.product_id == ProductAlias.id)
+                .where(
+                    ScheduleAlias.is_deleted.is_(False),
+                    ScheduleAlias.is_check.is_(False),
+                    ProductAlias.is_deleted.is_(False),
                 )
-                .where(ScheduleAlias.is_deleted.is_(False))
-                .where(ScheduleAlias.is_check.is_(False))
-                .where(ProductAlias.is_deleted.is_(False))
-                .subquery()
             )
+
+            blocks_subq = (
+                select(
+                    BlockSchedule.employee_id.label("employee_id"),
+                    BlockSchedule.time_register.label("inicio"),
+                    (BlockSchedule.time_register + BlockSchedule.time_block).label("fim"),
+                )
+                .where(
+                    BlockSchedule.is_deleted.is_(False),
+                    BlockSchedule.is_block.is_(True),
+                )
+            )
+
+            combined_subq = union_all(appointments_subq, blocks_subq).subquery("combined_subq")
 
             stmt = (
                 select(EmployeeAlias.id, EmployeeAlias.username)
@@ -447,9 +460,9 @@ class ManagerEmployeeCore:
                 .where(
                     ~exists().where(
                         and_(
-                            subq.c.employee_id == EmployeeAlias.id,
-                            subq.c.inicio <= hour_utc,
-                            hour_utc < subq.c.fim,
+                            combined_subq.c.employee_id == EmployeeAlias.id,
+                            combined_subq.c.inicio <= hour_utc,
+                            hour_utc < combined_subq.c.fim,
                         )
                     )
                 )
@@ -482,8 +495,7 @@ class ManagerEmployeeCore:
         except Exception as e:
             logdb(
                 "error",
-                message=f"Erro list_available_employees: \
-                {e}\n{traceback.format_exc()}",
+                message=f"Erro list_available_employees: {e}\n{traceback.format_exc()}",
             )
             return (
                 jsonify(
@@ -499,8 +511,10 @@ class ManagerEmployeeCore:
     def generate_daily_schedule_slots(self):
         try:
             local_tz = ZoneInfo("America/Sao_Paulo")
-            start = datetime.combine(datetime.today(), time(8, 0))
-            end = datetime.combine(date.today(), time(23, 0))
+            today = datetime.now(local_tz).date()
+
+            start = datetime.combine(today, time(8, 0), tzinfo=local_tz)
+            end = datetime.combine(today, time(23, 0), tzinfo=local_tz)
             step = timedelta(minutes=20)
 
             hour_slots = []
@@ -532,7 +546,7 @@ class ManagerEmployeeCore:
                 )
 
                 start += step
-
+                
             return jsonify(
                 {
                     "status_code": 200,
@@ -554,3 +568,4 @@ class ManagerEmployeeCore:
                     "error": True,
                 }
             ), 500
+

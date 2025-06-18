@@ -57,6 +57,19 @@ payload_check_schedule = schedule_ns.model(
     },
 )
 
+paylaod_add_block = schedule_ns.model(
+    "BlockSchedule",
+    {
+        "employee_id": fields.Integer(required=True, description="Employee id"),
+        "duration": fields.DateTime(
+            required=True, description="Duration block schedule"
+        ),
+        "time_register": fields.DateTime(
+            required=True, description="Time register time spent in HH:MM:SS"
+        ),
+    },
+)
+
 
 @schedule_ns.route("")
 class scheduleManageResource(Resource):
@@ -192,5 +205,71 @@ class scheduleManagerUserId(Resource):
                         },
                     )
                 ),
+                500,
+            )
+
+@schedule_ns.route("/block")
+class BlockSheduleResoruce(Resource):
+    
+    @cross_origin()
+    @schedule_ns.expect(paylaod_add_block, validate=True)
+    def post(self):
+        """Block shedule service"""
+        try:
+            user_id = request.headers.get("Id", request.environ.get("Id"))
+            return ScheduleCore(user_id=user_id).add_block_schedule(
+                data=request.get_json()
+            )
+        except Exception:
+            return (
+                jsonify(
+                    (
+                        {
+                            "status_code": 500,
+                            "message_id": "something_went_wrong",
+                            "traceback": traceback.format_exc(),
+                        },
+                    )
+                ),
+                500,
+            )
+    
+    @cross_origin()
+    def get(self):
+        """List block schedule"""
+        try:
+            user_id = request.headers.get("Id", request.environ.get("Id"))
+            return ScheduleCore(user_id=user_id).list_block_schedule()
+        except Exception as e:
+            return (
+                jsonify(
+                    (
+                        {
+                            "status_code": 500,
+                            "message_id": "something_went_wrong",
+                            "traceback": traceback.format_exc(),
+                        },
+                    )
+                ),
+                500,
+            )
+
+@schedule_ns.route("/block/<int:id>")
+class BlockScheduleResourceId(Resource):
+    @cross_origin()
+    def delete(self, id: int):
+        """Delete block schedule"""
+        try:
+            user_id = request.headers.get("Id", request.environ.get("Id"))
+            return ScheduleCore(user_id=user_id).delete_block_schedule(
+                id=id,
+            )
+        except Exception:
+            return jsonify(
+                {
+                    "status_code": 500,
+                    "message_id": "something_went_wrong",
+                    "traceback": traceback.format_exc(),
+                },
                 500,
             )

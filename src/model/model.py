@@ -290,3 +290,29 @@ class BoxAccounting(db.Model):
 
     def __repr__(self):
         return f"""<BoxAccounting id={self.id}"""
+
+
+class BlockScheduleService(db.Model):
+    __tablename__ = "block_schedule_service"
+    __table_args__ = {"schema": "public"}
+    
+    id: Mapped[int] = mapped_column(primary_key=True)
+    time_register: Mapped[datetime] = mapped_column(
+        db.DateTime, nullable=False
+    )
+    time_block: Mapped[str] = mapped_column(INTERVAL, nullable=False)
+    employee_id: Mapped[int] = mapped_column(
+        ForeignKey("public.employee.id"), nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        db.DateTime, default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=True)
+    updated_by: Mapped[int] = mapped_column(db.Integer, nullable=True)
+    deleted_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=True)
+    deleted_by: Mapped[int] = mapped_column(db.Integer, nullable=True)
+    is_deleted: Mapped[bool] = mapped_column(db.Boolean, default=False)
+    is_block: Mapped[bool] = mapped_column(db.Boolean, default=False)
+    
+    def __repr__(self):
+        return f"""<Created BlockScheduleService id={self.id}>"""
