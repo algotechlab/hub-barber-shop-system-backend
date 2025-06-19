@@ -3,8 +3,8 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_restx import Api
 
-
 from src.db.database import db
+from src.resource.analytical import analytical_ns
 from src.resource.avaliable import avaliable_ns
 from src.resource.bot import webhook_ns
 from src.resource.employee import employee_ns
@@ -13,10 +13,9 @@ from src.resource.login import login_ns
 from src.resource.product import product_ns
 from src.resource.shedule import schedule_ns
 from src.resource.subscription import subscription_ns
-from src.resource.analytical import analytical_ns
 from src.resource.user import user_us
-from src.settings._base import config_by_name, flask_env
 from src.service.redis import SessionManager
+from src.settings._base import config_by_name, flask_env
 
 
 def create_app():

@@ -4,6 +4,7 @@ import traceback
 from flask import jsonify, request
 from flask_cors import cross_origin
 from flask_restx import Namespace, Resource
+
 from src.core.analytical import AnalyticalCore
 
 analytical_ns = Namespace("analytical", description="Manager Analytical")
@@ -18,7 +19,7 @@ class AnalyticalVisitisBarberShop(Resource):
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
             return AnalyticalCore(user_id=user_id).summary_client(user_id=id)
-        except Exception as e:
+        except Exception:
             return jsonify(
                 {
                     "status_code": 500,
@@ -26,4 +27,3 @@ class AnalyticalVisitisBarberShop(Resource):
                     "traceback": traceback.format_exc(),
                 }
             )
-            

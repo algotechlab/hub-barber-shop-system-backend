@@ -1,9 +1,10 @@
-from flask import jsonify, request
+from flask import request
 from flask_cors import cross_origin
 from flask_restx import Namespace, Resource, fields
+
 from src.bot.core import BotCore
-from src.utils.log import logdb
 from src.service.redis import SessionManager
+from src.utils.log import logdb
 
 webhook_ns = Namespace("webhook", description="Manager webhook")
 

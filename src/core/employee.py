@@ -1,24 +1,21 @@
 # src/core/employee.py
 
 import traceback
-from datetime import date, datetime, time, timedelta
+from datetime import datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
 from flask import jsonify
-from sqlalchemy import (
-    and_,
-    exists,
-    func,
-    insert,
-    select,
-    update,
-    union_all
-)
+from sqlalchemy import and_, exists, func, insert, select, union_all, update
 from sqlalchemy.orm import aliased
 from werkzeug.security import generate_password_hash
 
 from src.db.database import db
-from src.model.model import Employee, Products, ScheduleService, BlockScheduleService
+from src.model.model import (
+    BlockScheduleService,
+    Employee,
+    Products,
+    ScheduleService,
+)
 from src.utils.log import logdb
 from src.utils.metadata import Metadata
 from src.utils.pagination import Pagination
@@ -430,9 +427,14 @@ class ManagerEmployeeCore:
                 select(
                     ScheduleAlias.employee_id.label("employee_id"),
                     ScheduleAlias.time_register.label("inicio"),
-                    (ScheduleAlias.time_register + ProductAlias.time_to_spend).label("fim"),
+                    (
+                        ScheduleAlias.time_register
+                        + ProductAlias.time_to_spend
+                    ).label("fim"),
                 )
-                .join(ProductAlias, ScheduleAlias.product_id == ProductAlias.id)
+                .join(
+                    ProductAlias, ScheduleAlias.product_id == ProductAlias.id
+                )
                 .where(
                     ScheduleAlias.is_deleted.is_(False),
                     ScheduleAlias.is_check.is_(False),
@@ -440,19 +442,20 @@ class ManagerEmployeeCore:
                 )
             )
 
-            blocks_subq = (
-                select(
-                    BlockSchedule.employee_id.label("employee_id"),
-                    BlockSchedule.time_register.label("inicio"),
-                    (BlockSchedule.time_register + BlockSchedule.time_block).label("fim"),
-                )
-                .where(
-                    BlockSchedule.is_deleted.is_(False),
-                    BlockSchedule.is_block.is_(True),
-                )
+            blocks_subq = select(
+                BlockSchedule.employee_id.label("employee_id"),
+                BlockSchedule.time_register.label("inicio"),
+                (BlockSchedule.time_register + BlockSchedule.time_block).label(
+                    "fim"
+                ),
+            ).where(
+                BlockSchedule.is_deleted.is_(False),
+                BlockSchedule.is_block.is_(True),
             )
 
-            combined_subq = union_all(appointments_subq, blocks_subq).subquery("combined_subq")
+            combined_subq = union_all(appointments_subq, blocks_subq).subquery(
+                "combined_subq"
+            )
 
             stmt = (
                 select(EmployeeAlias.id, EmployeeAlias.username)
@@ -546,7 +549,7 @@ class ManagerEmployeeCore:
                 )
 
                 start += step
-                
+
             return jsonify(
                 {
                     "status_code": 200,
@@ -568,4 +571,3 @@ class ManagerEmployeeCore:
                     "error": True,
                 }
             ), 500
-

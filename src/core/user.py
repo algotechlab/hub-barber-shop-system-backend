@@ -119,9 +119,7 @@ class UserCore:
             )
 
             result = db.session.execute(stmt).fetchone()
-            access_token = create_access_token(
-                identity={"id": result.id}
-            )
+            access_token = create_access_token(identity={"id": result.id})
             db.session.commit()
 
             return (

@@ -1,13 +1,11 @@
-# src/utils/log.py
-
 import logging
+import traceback
 from datetime import datetime
 
 from src.db.database import db
 from src.model.model import Log
 
 
-# setup logger para console e arquivo
 def setup_logger(name: str):
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
@@ -31,31 +29,29 @@ def setup_logger(name: str):
     return logger
 
 
-# salva o log no banco de dados
 def log_to_db(logger_name: str, level: str, message: str):
     try:
+        session = db.session()
+
+        if session.in_transaction():
+            session.rollback()
+
         log_entry = Log(
-            timestamp=datetime.utcnow(),  # <-- força o valor
+            timestamp=datetime.utcnow(),
             logger_name=logger_name,
-            level=level,
+            level=level.upper(),
             message=message,
         )
-        db.session.add(log_entry)
-        db.session.commit()
-    except Exception as e:
+        session.add(log_entry)
+        session.commit()
+    except Exception:
         db.session.rollback()
         logger = setup_logger("DBLogger")
-        logger.error(f"Erro ao salvar log no banco: {e}")
+        logger.error(traceback.format_exc())
 
 
 logger = setup_logger("AppLogger")
 
 
 def logdb(level: str, message: str):
-    # save database manager
-    log_to_db("AppLogger", level.upper(), message)
-
-
-# logdb("warning", "Not found") example
-# logdb("info", "Users list is empty")
-# logdb("error", "Not found")
+    log_to_db("AppLogger", level, message)

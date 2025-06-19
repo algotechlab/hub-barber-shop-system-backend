@@ -1,22 +1,16 @@
 # src/bot/users.py
-import os
 import re
 import secrets
-import requests
-from zoneinfo import ZoneInfo
+
 from dotenv import load_dotenv
-from datetime import date, time, timedelta
-from datetime import datetime
-from sqlalchemy.orm import aliased
-from sqlalchemy import insert, select, update, delete, func, or_, and_, exists
+from sqlalchemy import insert
 from werkzeug.security import generate_password_hash
+
 from src.bot.response_dictionary import RESPONSE_DICTIONARY
 from src.db.database import db
-from src.model.model import User, Employee, ScheduleService, Products
+from src.model.model import User
 from src.service.redis import SessionManager
 from src.utils.log import logdb
-from src.utils.metadata import Metadata
-
 
 load_dotenv()
 

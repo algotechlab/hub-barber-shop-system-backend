@@ -1,11 +1,12 @@
+from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
-from datetime import date, time, timedelta
-from datetime import datetime
+
+from sqlalchemy import and_, exists, func, insert, select
 from sqlalchemy.orm import aliased
-from sqlalchemy import insert, select, func, or_, and_, exists
+
 from src.bot.response_dictionary import RESPONSE_DICTIONARY
 from src.db.database import db
-from src.model.model import User, Employee, ScheduleService, Products
+from src.model.model import Employee, Products, ScheduleService, User
 from src.service.redis import SessionManager
 from src.utils.log import logdb
 from src.utils.metadata import Metadata

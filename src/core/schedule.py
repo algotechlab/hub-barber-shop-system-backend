@@ -5,14 +5,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from flask import jsonify
-from sqlalchemy import (
-    func,
-    insert,
-    or_,
-    select,
-    update,
-    desc
-)
+from sqlalchemy import func, insert, or_, select, update
 
 from src.db.database import db
 from src.model.model import (
@@ -317,12 +310,15 @@ class ScheduleCore:
 
     def check_schedule(self, id: int, data: dict):
         try:
-            update_stmt = (
+            schedule_check = (
                 update(self.schedule)
                 .where(self.schedule.id == id)
                 .values(is_check=True)
+                .returning(self.schedule.id)
             )
-            db.session.execute(update_stmt)
+
+            schedule_result = db.session.execute(schedule_check)
+            schedule_id = schedule_result.scalar()
 
             check_tip = data.get("tip", 0)
             check_value_operation = data.get("value_operation", 0)
@@ -332,6 +328,7 @@ class ScheduleCore:
                 .values(
                     product_id=data.get("product_id"),
                     payments_id=data.get("payment_id"),
+                    schedule_id=schedule_id,
                     user_id=data.get("user_id"),
                 )
                 .returning(self.invoice.id)
@@ -489,7 +486,7 @@ class ScheduleCore:
                 time_register=data.get("time_register"),
                 employee_id=data.get("employee_id"),
                 time_block=data.get("duration"),
-                is_block=True
+                is_block=True,
             )
             db.session.execute(stmt)
             db.session.commit()
@@ -521,43 +518,48 @@ class ScheduleCore:
                 ),
                 500,
             )
-            
+
     def list_block_schedule(self):
         try:
-            stmt = select(
-                self.block_schedule_service.id,
-                self.block_schedule_service.employee_id,
-                func.to_char(
-                    self.block_schedule_service.time_register, "YYYY-MM-DD HH:MM:SS"
-                ).label("time_register"),
-                func.to_char(
-                    self.block_schedule_service.time_block, "HH:MM"
-                ).label("duration")
-            ).where(
-                self.block_schedule_service.is_block == True,
-                self.block_schedule_service.is_deleted == False
-            ).order_by(self.block_schedule_service.id)
-            
-            result = db.session.execute(stmt).fetchall()
-            
-            if not result:
-                return(
-                    jsonify(
-                    {
-                        "status_code": 404,
-                        "message_id": "schedule_not_found",
-                        "error": True,
-                    }
-                ),
-                404,
+            stmt = (
+                select(
+                    self.block_schedule_service.id,
+                    self.block_schedule_service.employee_id,
+                    func.to_char(
+                        self.block_schedule_service.time_register,
+                        "YYYY-MM-DD HH:MM:SS",
+                    ).label("time_register"),
+                    func.to_char(
+                        self.block_schedule_service.time_block, "HH:MM"
+                    ).label("duration"),
+                )
+                .where(
+                    self.block_schedule_service.is_block == True,
+                    self.block_schedule_service.is_deleted == False,
+                )
+                .order_by(self.block_schedule_service.id)
             )
-            
+
+            result = db.session.execute(stmt).fetchall()
+
+            if not result:
+                return (
+                    jsonify(
+                        {
+                            "status_code": 404,
+                            "message_id": "schedule_not_found",
+                            "error": True,
+                        }
+                    ),
+                    404,
+                )
+
             return jsonify(
                 {
                     "status_code": 200,
                     "data": Metadata(result).model_to_list(),
                     "message_id": "list_block_schedule_success",
-                    "error": False
+                    "error": False,
                 }
             )
         except Exception as e:
@@ -581,18 +583,21 @@ class ScheduleCore:
         try:
             stmt = (
                 update(self.block_schedule_service)
-                .where(~self.block_schedule_service.is_deleted, self.block_schedule_service.id == id)
+                .where(
+                    ~self.block_schedule_service.is_deleted,
+                    self.block_schedule_service.id == id,
+                )
                 .values(
                     deleted_by=self.user_id,
                     deleted_at=datetime.now(),
                     is_deleted=True,
-                    is_block=False
+                    is_block=False,
                 )
             )
 
             db.session.execute(stmt)
             db.session.commit()
-            
+
             return jsonify(
                 {
                     "status_code": 200,
@@ -600,7 +605,6 @@ class ScheduleCore:
                 }
             )
 
-            
         except Exception as e:
             print("Error coletado", e)
             logdb(
@@ -618,4 +622,3 @@ class ScheduleCore:
                 ),
                 500,
             )
-

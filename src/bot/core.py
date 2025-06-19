@@ -5,8 +5,8 @@ from dotenv import load_dotenv
 from sqlalchemy import select
 
 from src.bot.response_dictionary import RESPONSE_DICTIONARY
-from src.bot.users import RegisterUser
 from src.bot.schedule import Scheduler
+from src.bot.users import RegisterUser
 from src.db.database import db
 from src.model.model import User
 from src.service.redis import SessionManager

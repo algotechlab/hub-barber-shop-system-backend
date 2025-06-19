@@ -16,14 +16,12 @@ class Log(db.Model):
     id: Mapped[int] = mapped_column(
         db.Integer, primary_key=True, autoincrement=True
     )
-    timestamp: Mapped[datetime] = mapped_column(
-        db.DateTime, nullable=False, server_default=func.now()
-    )
-    logger_name: Mapped[str] = mapped_column(db.String(100), nullable=False)
-    level: Mapped[str] = mapped_column(db.String(100), nullable=False)
+    timestamp: Mapped[datetime] = mapped_column(db.DateTime, nullable=False)
+    logger_name: Mapped[str] = mapped_column(db.Text, nullable=False)
+    level: Mapped[str] = mapped_column(db.Text, nullable=False)
     message: Mapped[str] = mapped_column(db.Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        db.DateTime, nullable=False, server_default=func.now()
+        db.DateTime, server_default=func.now(), nullable=True
     )
 
     def __repr__(self):
@@ -250,6 +248,9 @@ class Invoice(db.Model):
     payments_id: Mapped[int] = mapped_column(
         ForeignKey("finance.payments.id"), nullable=False
     )
+    schedule_id: Mapped[int] = mapped_column(
+        ForeignKey("public.schedule_service.id"), nullable=False
+    )
     created_at: Mapped[datetime] = mapped_column(
         db.DateTime, default=func.now(), nullable=False
     )
@@ -291,7 +292,7 @@ class BoxAccounting(db.Model):
 class BlockScheduleService(db.Model):
     __tablename__ = "block_schedule_service"
     __table_args__ = {"schema": "public"}
-    
+
     id: Mapped[int] = mapped_column(primary_key=True)
     time_register: Mapped[datetime] = mapped_column(
         db.DateTime, nullable=False
@@ -309,6 +310,29 @@ class BlockScheduleService(db.Model):
     deleted_by: Mapped[int] = mapped_column(db.Integer, nullable=True)
     is_deleted: Mapped[bool] = mapped_column(db.Boolean, default=False)
     is_block: Mapped[bool] = mapped_column(db.Boolean, default=False)
-    
+
     def __repr__(self):
         return f"""<Created BlockScheduleService id={self.id}>"""
+
+
+class InvoiceOutPut(db.Model):
+    __tablename__ = "invoice_out_put"
+    __table_args__ = {"schema": "finance"}
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    value_operation: Mapped[float] = mapped_column(
+        db.Numeric(10, 2), default=0.00
+    )
+    types_payments: Mapped[str] = mapped_column(db.String(30), nullable=False)
+    description: Mapped[str] = mapped_column(db.String(255), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        db.DateTime, default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=True)
+    updated_by: Mapped[int] = mapped_column(db.Integer, nullable=True)
+    deleted_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=True)
+    deleted_by: Mapped[int] = mapped_column(db.Integer, nullable=True)
+    is_deleted: Mapped[bool] = mapped_column(db.Boolean, default=False)
+
+    def __repr__(self):
+        return f"""<InvoiceOutPut id={self.id}>"""

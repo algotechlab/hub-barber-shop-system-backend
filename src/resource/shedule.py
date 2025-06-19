@@ -60,7 +60,9 @@ payload_check_schedule = schedule_ns.model(
 paylaod_add_block = schedule_ns.model(
     "BlockSchedule",
     {
-        "employee_id": fields.Integer(required=True, description="Employee id"),
+        "employee_id": fields.Integer(
+            required=True, description="Employee id"
+        ),
         "duration": fields.DateTime(
             required=True, description="Duration block schedule"
         ),
@@ -208,9 +210,9 @@ class scheduleManagerUserId(Resource):
                 500,
             )
 
+
 @schedule_ns.route("/block")
 class BlockSheduleResoruce(Resource):
-    
     @cross_origin()
     @schedule_ns.expect(paylaod_add_block, validate=True)
     def post(self):
@@ -233,14 +235,14 @@ class BlockSheduleResoruce(Resource):
                 ),
                 500,
             )
-    
+
     @cross_origin()
     def get(self):
         """List block schedule"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
             return ScheduleCore(user_id=user_id).list_block_schedule()
-        except Exception as e:
+        except Exception:
             return (
                 jsonify(
                     (
@@ -253,6 +255,7 @@ class BlockSheduleResoruce(Resource):
                 ),
                 500,
             )
+
 
 @schedule_ns.route("/block/<int:id>")
 class BlockScheduleResourceId(Resource):
