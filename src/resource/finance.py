@@ -4,9 +4,28 @@ import traceback
 
 from flask import jsonify, request
 from flask_cors import cross_origin
-from flask_restx import Namespace, Resource
+from flask_restx import Namespace, Resource, reqparse
 
 from src.core.finance import FinanceCore
+
+
+pagination_arguments_finance = reqparse.RequestParser()
+pagination_arguments_finance.add_argument(
+    "current_page", help="Current Page", default=1, type=int, required=False
+)
+pagination_arguments_finance.add_argument(
+    "rows_per_page", help="Rows per Page", default=10, type=int, required=False
+)
+pagination_arguments_finance.add_argument(
+    "order_by", help="Order By", default="", type=str, required=False
+)
+pagination_arguments_finance.add_argument(
+    "sort_by", help="Sort By", default="", type=str, required=False
+)
+pagination_arguments_finance.add_argument(
+    "filter_by", help="Filter By", default="", type=str, required=False
+)
+
 
 finance_ns = Namespace("finance", description="Manager finance")
 
@@ -92,6 +111,33 @@ class ListOutPutExitPayments(Resource):
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
             return FinanceCore(user_id=user_id).list_out_put_exit_payments()
+        except Exception as e:
+            return (
+                jsonify(
+                    {
+                        "status_code": 500,
+                        "message_id": "something_went_wrong",
+                        "error": True,
+                        "exception": str(e),
+                        "traceback": traceback.format_exc(),
+                    }
+                ),
+                500,
+            )
+
+# list_invoice_payments
+@finance_ns.route("/list-invoice-payments")
+class ListInvoicePayments(Resource):
+    @finance_ns.doc(description="List Invoice Payments")
+    @finance_ns.expect(pagination_arguments_finance, validate=True)
+    @cross_origin()
+    def get(self):
+        """List Invoice Payments"""
+        try:
+            user_id = request.headers.get("Id", request.environ.get("Id"))
+            return FinanceCore(user_id=user_id).list_invoice_payments(
+                data=request.args.to_dict()
+            )
         except Exception as e:
             return (
                 jsonify(

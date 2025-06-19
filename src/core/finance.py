@@ -3,7 +3,7 @@
 import traceback
 
 from flask import jsonify
-from sqlalchemy import func, select
+from sqlalchemy import func, select, or_
 
 from src.db.database import db
 from src.model.model import (
@@ -13,9 +13,13 @@ from src.model.model import (
     Payments,
     Products,
     ScheduleService,
+    User,
+    Products,
+    Employee
 )
 from src.utils.log import logdb
 from src.utils.metadata import Metadata
+from src.utils.pagination import Pagination
 
 
 class FinanceCore:
@@ -27,6 +31,9 @@ class FinanceCore:
         self.schedule = ScheduleService
         self.products = Products
         self.invoice_out_put = InvoiceOutPut
+        self.user = User
+        self.products = Products
+        self.employees = Employee
 
     def list_type_payments(self):
         try:
@@ -248,6 +255,118 @@ class FinanceCore:
             logdb(
                 "error",
                 message=f"Error in list out put exit payments: \
+                {str(e)}\n{traceback.format_exc()}",
+            )
+            return (
+                jsonify(
+                    {
+                        "status_code": 500,
+                        "message_id": "internal_server_error",
+                        "error": str(e),
+                    }
+                ),
+                500,
+            )
+
+    def list_invoice_payments(self, data: dict):
+        try:
+            
+            pagination = Pagination(data)
+            pagination_params, error = pagination.validate_params()
+            if error:
+                return jsonify(
+                    {
+                        "status_code": 400,
+                        "message_id": "invalid_pagination_params",
+                        "error": True,
+                    }
+                )
+
+            stmt = select(
+                self.user.username.label("username"),
+                self.products.description,
+                self.products.value_operation,
+                self.employees.username.label("employee_name"),
+                self.finance_payments.type_payments
+            ).select_from(
+                self.box_accounting
+            ).join(
+                self.invoice,
+                self.invoice.id == self.box_accounting.invoice_id,
+            ).join(
+                self.schedule,
+                self.schedule.id == self.invoice.schedule_id,
+            ).join(
+                self.user,
+                self.user.id == self.schedule.user_id,
+            ).join(
+                self.products,
+                self.products.id == self.schedule.product_id,
+            ).join(
+                self.employees,
+                self.employees.id == self.schedule.employee_id,
+            ).join(
+                self.finance_payments,
+                self.finance_payments.id == self.invoice.payments_id,
+            ).where(
+                self.schedule.is_check.is_(True)
+            ).order_by(
+                self.invoice.created_at.asc()
+            )
+            
+            if pagination_params.filter_by:
+                filter_value = f"%{pagination_params.filter_by}%"
+                try:
+                    stmt = stmt.where(
+                        or_(
+                            func.unaccent(self.user.username).ilike(func.unaccent(filter_value)),
+                            func.unaccent(self.employees.username).ilike(func.unaccent(filter_value))
+                        )
+                    )
+                except Exception:
+                    stmt = stmt.filter(self.user.username.ilike(filter_value))
+            
+            total_count = db.session.execute(
+                select(func.count()).select_from(stmt.subquery())
+            ).scalar()
+
+            paginated_stmt = stmt.offset(
+                (pagination_params.current_page - 1)
+                * pagination_params.rows_per_page
+            ).limit(pagination_params.rows_per_page)
+            
+            result = db.session.execute(paginated_stmt).fetchall()
+
+            if not result:
+                return (
+                    jsonify(
+                        {
+                            "status_code": 404,
+                            "message_id": "invoice_payments_not_found",
+                        }
+                    ),
+                    404,
+                )
+                
+            metadata = pagination.build_metadata(
+                total_count, pagination_params
+            )
+                
+            return jsonify(
+                {
+                    "status_code": 200,
+                    "data": Metadata(result).model_to_list(),
+                    "message_id": "success_list_invoice_payments",
+                    "error": False,
+                    "metadata": metadata
+                }
+            ), 200
+
+        except Exception as e:
+            db.session.rollback()
+            logdb(
+                "error",
+                message=f"Error in list invoice payments: \
                 {str(e)}\n{traceback.format_exc()}",
             )
             return (
