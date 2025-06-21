@@ -226,8 +226,13 @@ class FinanceCore:
             stmt = select(
                 func.sum(self.invoice_out_put.value_operation).label(
                     "total_exit"
-                )
-            ).where(self.invoice_out_put.is_deleted == False)
+                ),
+                self.invoice_out_put.description,
+                self.invoice_out_put.types_payments,
+            ).where(
+                self.invoice_out_put.is_deleted == False
+            ).group_by(self.invoice_out_put.id)
+            
 
             result = db.session.execute(stmt).fetchall()
 
@@ -251,6 +256,7 @@ class FinanceCore:
             ), 200
 
         except Exception as e:
+            print("coletando o error", e)
             db.session.rollback()
             logdb(
                 "error",

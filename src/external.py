@@ -13,6 +13,7 @@ from src.resource.login import login_ns
 from src.resource.product import product_ns
 from src.resource.shedule import schedule_ns
 from src.resource.subscription import subscription_ns
+from src.resource.dashboard import dashboard_ns
 from src.resource.user import user_us
 from src.service.redis import SessionManager
 from src.settings._base import config_by_name, flask_env
@@ -71,5 +72,6 @@ def create_app():
     api.add_namespace(webhook_ns)
     api.add_namespace(finance_ns)
     api.add_namespace(analytical_ns)
+    api.add_namespace(dashboard_ns)
 
     return app
