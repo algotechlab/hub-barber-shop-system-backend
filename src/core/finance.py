@@ -3,7 +3,7 @@
 import traceback
 
 from flask import jsonify
-from sqlalchemy import func, select, or_
+from sqlalchemy import func, select, or_, update
 
 from src.db.database import db
 from src.model.model import (
@@ -289,6 +289,7 @@ class FinanceCore:
                 )
 
             stmt = select(
+                self.invoice.id.label("invoice_id"),
                 self.user.username.label("username"),
                 self.products.description,
                 self.products.value_operation,
@@ -373,6 +374,58 @@ class FinanceCore:
             logdb(
                 "error",
                 message=f"Error in list invoice payments: \
+                {str(e)}\n{traceback.format_exc()}",
+            )
+            return (
+                jsonify(
+                    {
+                        "status_code": 500,
+                        "message_id": "internal_server_error",
+                        "error": str(e),
+                    }
+                ),
+                500,
+            )
+
+    def update_invoce_payments(self, invoce_id: int, data: dict):
+        try:
+            payments_id = int(data.get("payments_id"))
+            tips = data.get("tips")
+            value_operations = data.get("value_operations")
+            
+            if payments_id:
+                # update payments
+                update_invoice = update(
+                    self.invoice.payments_id
+                ).where(
+                    self.invoice.id == invoce_id
+                ).values(payments_id=payments_id)
+                db.session.execute(update_invoice)
+                db.session.commit()
+            
+            if tips or value_operations:
+                update_box_accounting = update(
+                    self.box_accounting
+                ).where(
+                    self.box_accounting.invoice_id == invoce_id
+                ).values(tips=tips, value_operations=value_operations)
+                db.session.execute(update_box_accounting)
+                db.session.commit()
+
+            return jsonify(
+                {
+                    "status_code": 200,
+                    "message_id": "success_update_invoice_payments",
+                    "error": False,
+                }
+            ), 200
+                
+        except Exception as e:
+            print("coletando error", e)
+            db.session.rollback()
+            logdb(
+                "error",
+                message=f"Error in update invoice payments: \
                 {str(e)}\n{traceback.format_exc()}",
             )
             return (

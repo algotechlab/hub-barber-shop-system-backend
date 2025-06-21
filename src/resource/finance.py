@@ -4,7 +4,7 @@ import traceback
 
 from flask import jsonify, request
 from flask_cors import cross_origin
-from flask_restx import Namespace, Resource, reqparse
+from flask_restx import Namespace, Resource, reqparse, fields
 
 from src.core.finance import FinanceCore
 
@@ -29,6 +29,46 @@ pagination_arguments_finance.add_argument(
 
 finance_ns = Namespace("finance", description="Manager finance")
 
+
+payload_update_finance = finance_ns.model(
+    "PayloadUpdateFinance",
+    {
+        "payments_id": fields.Integer(required=False, example=1, description="Payments ID"),
+        "tips":  fields.Float(required=False, description="Tip"),
+        "value_operation": fields.Float(
+            required=False, description="Operation value"
+        ),
+    }
+)
+
+
+@finance_ns.route("/<int:id>")
+class FinanceResourceManager(Resource):
+    
+    @finance_ns.doc(description="Update payments relashionship invoce and box accounting")
+    @finance_ns.expect(payload_update_finance, validate=True)
+    @cross_origin()
+    def put(self, id: int):
+        """Update payments relashionship invoce and box accounting"""
+        try:
+            user_id = request.headers.get("Id", request.environ.get("Id"))
+            return FinanceCore(user_id=user_id).update_invoce_payments(
+                invoce_id=id,
+                data=request.get_json()
+            )
+        except Exception as e:
+            return (
+                jsonify(
+                    {
+                        "status_code": 500,
+                        "message_id": "something_went_wrong",
+                        "error": True,
+                        "exception": str(e),
+                        "traceback": traceback.format_exc(),
+                    }
+                ),
+                500,
+            )
 
 @finance_ns.route("/types-payments")
 class FinancePaymentsTypesResource(Resource):

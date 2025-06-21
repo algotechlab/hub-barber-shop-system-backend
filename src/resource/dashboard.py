@@ -1,5 +1,4 @@
 # src/resource/dashboard.py
-
 import traceback
 
 from flask import jsonify, request
