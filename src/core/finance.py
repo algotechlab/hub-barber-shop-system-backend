@@ -3,7 +3,7 @@
 import traceback
 
 from flask import jsonify
-from sqlalchemy import func, select, or_, update
+from sqlalchemy import func, select, or_, update, insert
 
 from src.db.database import db
 from src.model.model import (
@@ -15,7 +15,8 @@ from src.model.model import (
     ScheduleService,
     User,
     Products,
-    Employee
+    Employee,
+    InvoiceOutPut
 )
 from src.utils.log import logdb
 from src.utils.metadata import Metadata
@@ -34,6 +35,45 @@ class FinanceCore:
         self.user = User
         self.products = Products
         self.employees = Employee
+        self.invoice_out_put = InvoiceOutPut
+
+
+    def add_out_put_finance(self, data: dict):
+        try:
+            stmt = insert(self.invoice_out_put).values(
+                description=data.get("description"),
+                value_operation=data.get("value_operation"),
+                types_payments=data.get("type_payments"),
+            )
+
+            db.session.execute(stmt)
+            db.session.commit()
+
+            return jsonify(
+                {
+                    "status_code": 200,
+                    "message_id": "success_add_out_put_finance",
+                    "error": False
+                }
+            ), 200
+            
+        except Exception as e:
+            db.session.rollback()
+            logdb(
+                "error",
+                message=f"Error in add out put finance: \
+                {str(e)}\n{traceback.format_exc()}",
+            )
+            return (
+                jsonify(
+                    {
+                        "status_code": 500,
+                        "message_id": "internal_server_error",
+                        "error": str(e),
+                    }
+                ),
+                500,
+            )
 
     def list_type_payments(self):
         try:
@@ -221,8 +261,20 @@ class FinanceCore:
                 500,
             )
 
-    def list_out_put_exit_payments(self):
+    def list_out_put_exit_payments(self, data: dict):
+        # TODO - ajustar a paginação ....
         try:
+            pagination = Pagination(data)
+            pagination_params, error = pagination.validate_params()
+            if error:
+                return jsonify(
+                    {
+                        "status_code": 400,
+                        "message_id": "invalid_pagination_params",
+                        "error": True,
+                    }
+                )
+            
             stmt = select(
                 func.sum(self.invoice_out_put.value_operation).label(
                     "total_exit"
@@ -233,8 +285,34 @@ class FinanceCore:
                 self.invoice_out_put.is_deleted == False
             ).group_by(self.invoice_out_put.id)
             
+            if pagination_params.filter_by:
+                filter_value = f"%{pagination_params.filter_by}%"
+                try:
+                    stmt = stmt.where(
+                        or_(
+                            func.unaccent(self.invoice_out_put.description).ilike(func.unaccent(filter_value)),
+                        )
+                    )
+                except Exception:
+                    stmt = stmt.filter(self.invoice_out_put.description.ilike(filter_value))
+            
+            totals = select(
+                func.sum(self.invoice_out_put.value_operation).label("totals")
+            ).where(
+                self.invoice_out_put.is_deleted == False
+            )
+            
+            total_count = db.session.execute(
+                select(func.count()).select_from(stmt.subquery())
+            ).scalar()
 
-            result = db.session.execute(stmt).fetchall()
+            paginated_stmt = stmt.offset(
+                (pagination_params.current_page - 1)
+                * pagination_params.rows_per_page
+            ).limit(pagination_params.rows_per_page)
+
+            result = db.session.execute(paginated_stmt).fetchall()
+            result_totals = db.session.execute(totals).fetchone()
 
             if not result:
                 return (
@@ -247,16 +325,21 @@ class FinanceCore:
                     404,
                 )
 
+            metadata = pagination.build_metadata(
+                total_count, pagination_params
+            )
             return jsonify(
                 {
                     "status_code": 200,
+                    "totals:": Metadata(result_totals).model_to_list(),
                     "data": Metadata(result).model_to_list(),
                     "message_id": "success_list_out_put_exit_payments",
+                    "erro": False,
+                    "metadata": metadata
                 }
             ), 200
 
         except Exception as e:
-            print("coletando o error", e)
             db.session.rollback()
             logdb(
                 "error",

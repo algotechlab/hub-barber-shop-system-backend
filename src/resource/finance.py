@@ -41,6 +41,17 @@ payload_update_finance = finance_ns.model(
     }
 )
 
+payload_add_finance = finance_ns.model(
+    "PayloadAddOutPutFinance",
+    {
+        "value_operation": fields.Float(
+            required=False, description="Operation value", example=0.0
+        ),
+        "description": fields.String(required=False, description="Description out put finance"),
+        "type_payments": fields.String(required=False, description="Type payments"),
+    }
+)
+
 
 @finance_ns.route("/<int:id>")
 class FinanceResourceManager(Resource):
@@ -69,6 +80,8 @@ class FinanceResourceManager(Resource):
                 ),
                 500,
             )
+            
+
 
 @finance_ns.route("/types-payments")
 class FinancePaymentsTypesResource(Resource):
@@ -145,12 +158,39 @@ class ListTotalsPayments(Resource):
 @finance_ns.route("/out-put-exit-payments")
 class ListOutPutExitPayments(Resource):
     @finance_ns.doc(description="List OutPut Exit Payments")
+    @finance_ns.expect(pagination_arguments_finance, valiedate=True)
     @cross_origin()
     def get(self):
         """List OutPut Exit Payments"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return FinanceCore(user_id=user_id).list_out_put_exit_payments()
+            return FinanceCore(user_id=user_id).list_out_put_exit_payments(
+                data=request.args.to_dict()
+            )
+        except Exception as e:
+            return (
+                jsonify(
+                    {
+                        "status_code": 500,
+                        "message_id": "something_went_wrong",
+                        "error": True,
+                        "exception": str(e),
+                        "traceback": traceback.format_exc(),
+                    }
+                ),
+                500,
+            )
+    
+    @finance_ns.doc(description="Add OutPut Exit Payments")
+    @finance_ns.expect(payload_add_finance, validate=True)
+    @cross_origin()
+    def post(self):
+        """Add OutPut Exit Payments"""
+        try:
+            user_id = request.headers.get("Id", request.environ.get("Id"))
+            return FinanceCore(user_id=user_id).add_out_put_finance(
+                data=request.get_json()
+            )
         except Exception as e:
             return (
                 jsonify(
