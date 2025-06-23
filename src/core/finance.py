@@ -262,7 +262,6 @@ class FinanceCore:
             )
 
     def list_out_put_exit_payments(self, data: dict):
-        # TODO - ajustar a paginação ....
         try:
             pagination = Pagination(data)
             pagination_params, error = pagination.validate_params()
