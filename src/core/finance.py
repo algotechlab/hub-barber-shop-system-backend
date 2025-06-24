@@ -35,7 +35,6 @@ class FinanceCore:
         self.employees = Employee
         self.invoice_out_put = InvoiceOutPut
 
-
     def add_out_put_finance(self, data: dict):
         try:
             stmt = insert(self.invoice_out_put).values(
