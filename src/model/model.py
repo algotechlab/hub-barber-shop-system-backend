@@ -336,3 +336,24 @@ class InvoiceOutPut(db.Model):
 
     def __repr__(self):
         return f"""<InvoiceOutPut id={self.id}>"""
+
+
+class IndicatedUsers(db.Model):
+    __tablename__ = "indicated_users"
+    __table_args__ = {"schema": "campaign"}
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("public.user.id"), nullable=False
+    )
+    employee_id: Mapped[int] = mapped_column(
+        ForeignKey("public.employee.id"), nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        db.DateTime, default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=True)
+    updated_by: Mapped[int] = mapped_column(db.Integer, nullable=True)
+    deleted_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=True)
+    deleted_by: Mapped[int] = mapped_column(db.Integer, nullable=True)
+    is_deleted: Mapped[bool] = mapped_column(db.Boolean, default=False)
