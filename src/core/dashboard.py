@@ -1,4 +1,4 @@
-# src/core/dashboard.py 
+# src/core/dashboard.py
 
 
 class DashBoardCore:

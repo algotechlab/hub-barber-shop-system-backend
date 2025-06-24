@@ -4,10 +4,9 @@ import traceback
 
 from flask import jsonify, request
 from flask_cors import cross_origin
-from flask_restx import Namespace, Resource, reqparse, fields
+from flask_restx import Namespace, Resource, fields, reqparse
 
 from src.core.finance import FinanceCore
-
 
 pagination_arguments_finance = reqparse.RequestParser()
 pagination_arguments_finance.add_argument(
@@ -52,10 +51,22 @@ payload_add_finance = finance_ns.model(
     }
 )
 
+payload_update_out_put_finance = finance_ns.model(
+    "PayloadUpdateOutPutFinance",
+    {
+        "value_operation": fields.Float(
+            required=False, description="Operation value", example=0.0
+        ),
+        "description": fields.String(required=False, description="Description out put finance"),
+        "type_payments": fields.String(required=False, description="Type payments"),
+    }
+)
+
+
 
 @finance_ns.route("/<int:id>")
 class FinanceResourceManager(Resource):
-    
+
     @finance_ns.doc(description="Update payments relashionship invoce and box accounting")
     @finance_ns.expect(payload_update_finance, validate=True)
     @cross_origin()
@@ -80,7 +91,7 @@ class FinanceResourceManager(Resource):
                 ),
                 500,
             )
-            
+
 
 
 @finance_ns.route("/types-payments")
@@ -180,7 +191,7 @@ class ListOutPutExitPayments(Resource):
                 ),
                 500,
             )
-    
+
     @finance_ns.doc(description="Add OutPut Exit Payments")
     @finance_ns.expect(payload_add_finance, validate=True)
     @cross_origin()
@@ -204,6 +215,59 @@ class ListOutPutExitPayments(Resource):
                 ),
                 500,
             )
+
+@finance_ns.route("/out-put-exit-payments/<int:id>")
+class OutPutExitsPaymentsManaget(Resource):
+
+    @finance_ns.doc(description="Get ID OutPut Exit Payments")
+    @cross_origin()
+    def get(self, id: int):
+        """Get id OutPut Exit Payments"""
+        try:
+            user_id = request.headers.get("Id", request.environ.get("Id"))
+            return FinanceCore(user_id=user_id).get_out_put_finance(id=id)
+
+        except Exception as e:
+            return (
+                jsonify(
+                    {
+                        "status_code": 500,
+                        "message_id": "something_went_wrong",
+                        "error": True,
+                        "exception": str(e),
+                        "traceback": traceback.format_exc(),
+                    }
+                ),
+                500,
+            )
+
+    @finance_ns.doc(description="Update OutPut Exit Payments")
+    @finance_ns.expect(payload_update_out_put_finance, validate=True)
+    @cross_origin()
+    def put(self, id: int):
+        """Update OutPut Exit Payments"""
+        try:
+            user_id = request.headers.get("Id", request.environ.get("Id"))
+            return FinanceCore(user_id=user_id).update_out_put_finance(
+                id=id,
+                data=request.get_json()
+            )
+
+        except Exception as e:
+            return (
+                jsonify(
+                    {
+                        "status_code": 500,
+                        "message_id": "something_went_wrong",
+                        "error": True,
+                        "exception": str(e),
+                        "traceback": traceback.format_exc(),
+                    }
+                ),
+                500,
+            )
+
+
 
 # list_invoice_payments
 @finance_ns.route("/list-invoice-payments")

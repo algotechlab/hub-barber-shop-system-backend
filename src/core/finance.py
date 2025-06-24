@@ -3,20 +3,18 @@
 import traceback
 
 from flask import jsonify
-from sqlalchemy import func, select, or_, update, insert
+from sqlalchemy import func, insert, or_, select, update
 
 from src.db.database import db
 from src.model.model import (
     BoxAccounting,
+    Employee,
     Invoice,
     InvoiceOutPut,
     Payments,
     Products,
     ScheduleService,
     User,
-    Products,
-    Employee,
-    InvoiceOutPut
 )
 from src.utils.log import logdb
 from src.utils.metadata import Metadata
@@ -56,12 +54,100 @@ class FinanceCore:
                     "error": False
                 }
             ), 200
-            
+
         except Exception as e:
             db.session.rollback()
             logdb(
                 "error",
                 message=f"Error in add out put finance: \
+                {str(e)}\n{traceback.format_exc()}",
+            )
+            return (
+                jsonify(
+                    {
+                        "status_code": 500,
+                        "message_id": "internal_server_error",
+                        "error": str(e),
+                    }
+                ),
+                500,
+            )
+
+    def get_out_put_finance(self, id: int):
+        try:
+            stmt = select(
+                self.invoice_out_put.id,
+                self.invoice_out_put.description,
+                self.invoice_out_put.value_operation
+            ).where(
+                self.invoice_out_put.id == id
+            )
+
+            result = db.session.execute(stmt).fetchall()
+
+            if not result:
+                return (
+                    jsonify(
+                        {
+                            "status_code": 404,
+                            "message_id": "out_put_finance_not_found",
+                        }
+                    ),
+                    404,
+                )
+
+            return jsonify(
+                {
+                    "status_code": 200,
+                    "data": Metadata(result).model_to_list(),
+                    "message_id": "success_get_out_put_finance",
+                }
+            ), 200
+
+        except Exception as e:
+            db.session.rollback()
+            logdb(
+                "error",
+                message=f"Error in get out put finance: \
+                {str(e)}\n{traceback.format_exc()}",
+            )
+            return (
+                jsonify(
+                    {
+                        "status_code": 500,
+                        "message_id": "internal_server_error",
+                        "error": str(e),
+                    }
+                ),
+                500,
+            )
+
+    def update_out_put_finance(self, id: int, data: dict):
+        try:
+            stmt = update(self.invoice_out_put).where(
+                self.invoice_out_put.id == id
+            ).values(
+                description=data.get("description"),
+                value_operation=data.get("value_operation"),
+                types_payments=data.get("type_payments"),
+            )
+
+            db.session.execute(stmt)
+            db.session.commit()
+
+            return jsonify(
+                {
+                    "status_code": 200,
+                    "message_id": "success_update_out_put_finance",
+                    "error": False
+                }
+            ), 200
+
+        except Exception as e:
+            db.session.rollback()
+            logdb(
+                "error",
+                message=f"Error in update out put finance: \
                 {str(e)}\n{traceback.format_exc()}",
             )
             return (
@@ -273,8 +359,9 @@ class FinanceCore:
                         "error": True,
                     }
                 )
-            
+
             stmt = select(
+                self.invoice_out_put.id,
                 func.sum(self.invoice_out_put.value_operation).label(
                     "total_exit"
                 ),
@@ -283,7 +370,7 @@ class FinanceCore:
             ).where(
                 self.invoice_out_put.is_deleted == False
             ).group_by(self.invoice_out_put.id)
-            
+
             if pagination_params.filter_by:
                 filter_value = f"%{pagination_params.filter_by}%"
                 try:
@@ -294,13 +381,13 @@ class FinanceCore:
                     )
                 except Exception:
                     stmt = stmt.filter(self.invoice_out_put.description.ilike(filter_value))
-            
+
             totals = select(
                 func.sum(self.invoice_out_put.value_operation).label("totals")
             ).where(
                 self.invoice_out_put.is_deleted == False
             )
-            
+
             total_count = db.session.execute(
                 select(func.count()).select_from(stmt.subquery())
             ).scalar()
@@ -358,7 +445,7 @@ class FinanceCore:
 
     def list_invoice_payments(self, data: dict):
         try:
-            
+
             pagination = Pagination(data)
             pagination_params, error = pagination.validate_params()
             if error:
@@ -402,7 +489,7 @@ class FinanceCore:
             ).order_by(
                 self.invoice.created_at.asc()
             )
-            
+
             if pagination_params.filter_by:
                 filter_value = f"%{pagination_params.filter_by}%"
                 try:
@@ -414,7 +501,7 @@ class FinanceCore:
                     )
                 except Exception:
                     stmt = stmt.filter(self.user.username.ilike(filter_value))
-            
+
             total_count = db.session.execute(
                 select(func.count()).select_from(stmt.subquery())
             ).scalar()
@@ -423,7 +510,7 @@ class FinanceCore:
                 (pagination_params.current_page - 1)
                 * pagination_params.rows_per_page
             ).limit(pagination_params.rows_per_page)
-            
+
             result = db.session.execute(paginated_stmt).fetchall()
 
             if not result:
@@ -436,11 +523,11 @@ class FinanceCore:
                     ),
                     404,
                 )
-                
+
             metadata = pagination.build_metadata(
                 total_count, pagination_params
             )
-                
+
             return jsonify(
                 {
                     "status_code": 200,
@@ -474,7 +561,7 @@ class FinanceCore:
             payments_id = int(data.get("payments_id"))
             tips = data.get("tips")
             value_operations = data.get("value_operations")
-            
+
             if payments_id:
                 # update payments
                 update_invoice = update(
@@ -484,7 +571,7 @@ class FinanceCore:
                 ).values(payments_id=payments_id)
                 db.session.execute(update_invoice)
                 db.session.commit()
-            
+
             if tips or value_operations:
                 update_box_accounting = update(
                     self.box_accounting
@@ -501,7 +588,7 @@ class FinanceCore:
                     "error": False,
                 }
             ), 200
-                
+
         except Exception as e:
             print("coletando error", e)
             db.session.rollback()
@@ -520,3 +607,4 @@ class FinanceCore:
                 ),
                 500,
             )
+

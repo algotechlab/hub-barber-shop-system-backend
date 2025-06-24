@@ -1,11 +1,6 @@
 # src/resource/dashboard.py
-import traceback
 
-from flask import jsonify, request
-from flask_cors import cross_origin
-from flask_restx import Namespace, Resource, fields, reqparse
-
-from src.core.dashboard import DashBoardCore
+from flask_restx import Namespace, reqparse
 
 pagination_arguments_dashboard = reqparse.RequestParser()
 pagination_arguments_dashboard.add_argument(
