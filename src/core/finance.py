@@ -50,7 +50,7 @@ class FinanceCore:
                 {
                     "status_code": 200,
                     "message_id": "success_add_out_put_finance",
-                    "error": False
+                    "error": False,
                 }
             ), 200
 
@@ -77,10 +77,8 @@ class FinanceCore:
             stmt = select(
                 self.invoice_out_put.id,
                 self.invoice_out_put.description,
-                self.invoice_out_put.value_operation
-            ).where(
-                self.invoice_out_put.id == id
-            )
+                self.invoice_out_put.value_operation,
+            ).where(self.invoice_out_put.id == id)
 
             result = db.session.execute(stmt).fetchall()
 
@@ -123,12 +121,14 @@ class FinanceCore:
 
     def update_out_put_finance(self, id: int, data: dict):
         try:
-            stmt = update(self.invoice_out_put).where(
-                self.invoice_out_put.id == id
-            ).values(
-                description=data.get("description"),
-                value_operation=data.get("value_operation"),
-                types_payments=data.get("type_payments"),
+            stmt = (
+                update(self.invoice_out_put)
+                .where(self.invoice_out_put.id == id)
+                .values(
+                    description=data.get("description"),
+                    value_operation=data.get("value_operation"),
+                    types_payments=data.get("type_payments"),
+                )
             )
 
             db.session.execute(stmt)
@@ -138,7 +138,7 @@ class FinanceCore:
                 {
                     "status_code": 200,
                     "message_id": "success_update_out_put_finance",
-                    "error": False
+                    "error": False,
                 }
             ), 200
 
@@ -359,33 +359,37 @@ class FinanceCore:
                     }
                 )
 
-            stmt = select(
-                self.invoice_out_put.id,
-                func.sum(self.invoice_out_put.value_operation).label(
-                    "total_exit"
-                ),
-                self.invoice_out_put.description,
-                self.invoice_out_put.types_payments,
-            ).where(
-                self.invoice_out_put.is_deleted == False
-            ).group_by(self.invoice_out_put.id)
+            stmt = (
+                select(
+                    self.invoice_out_put.id,
+                    func.sum(self.invoice_out_put.value_operation).label(
+                        "total_exit"
+                    ),
+                    self.invoice_out_put.description,
+                    self.invoice_out_put.types_payments,
+                )
+                .where(self.invoice_out_put.is_deleted == False)
+                .group_by(self.invoice_out_put.id)
+            )
 
             if pagination_params.filter_by:
                 filter_value = f"%{pagination_params.filter_by}%"
                 try:
                     stmt = stmt.where(
                         or_(
-                            func.unaccent(self.invoice_out_put.description).ilike(func.unaccent(filter_value)),
+                            func.unaccent(
+                                self.invoice_out_put.description
+                            ).ilike(func.unaccent(filter_value)),
                         )
                     )
                 except Exception:
-                    stmt = stmt.filter(self.invoice_out_put.description.ilike(filter_value))
+                    stmt = stmt.filter(
+                        self.invoice_out_put.description.ilike(filter_value)
+                    )
 
             totals = select(
                 func.sum(self.invoice_out_put.value_operation).label("totals")
-            ).where(
-                self.invoice_out_put.is_deleted == False
-            )
+            ).where(self.invoice_out_put.is_deleted == False)
 
             total_count = db.session.execute(
                 select(func.count()).select_from(stmt.subquery())
@@ -420,7 +424,7 @@ class FinanceCore:
                     "data": Metadata(result).model_to_list(),
                     "message_id": "success_list_out_put_exit_payments",
                     "erro": False,
-                    "metadata": metadata
+                    "metadata": metadata,
                 }
             ), 200
 
@@ -444,7 +448,6 @@ class FinanceCore:
 
     def list_invoice_payments(self, data: dict):
         try:
-
             pagination = Pagination(data)
             pagination_params, error = pagination.validate_params()
             if error:
@@ -456,37 +459,42 @@ class FinanceCore:
                     }
                 )
 
-            stmt = select(
-                self.invoice.id.label("invoice_id"),
-                self.user.username.label("username"),
-                self.products.description,
-                self.products.value_operation,
-                self.employees.username.label("employee_name"),
-                self.finance_payments.type_payments
-            ).select_from(
-                self.box_accounting
-            ).join(
-                self.invoice,
-                self.invoice.id == self.box_accounting.invoice_id,
-            ).join(
-                self.schedule,
-                self.schedule.id == self.invoice.schedule_id,
-            ).join(
-                self.user,
-                self.user.id == self.schedule.user_id,
-            ).join(
-                self.products,
-                self.products.id == self.schedule.product_id,
-            ).join(
-                self.employees,
-                self.employees.id == self.schedule.employee_id,
-            ).join(
-                self.finance_payments,
-                self.finance_payments.id == self.invoice.payments_id,
-            ).where(
-                self.schedule.is_check.is_(True)
-            ).order_by(
-                self.invoice.created_at.asc()
+            stmt = (
+                select(
+                    self.invoice.id.label("invoice_id"),
+                    self.user.username.label("username"),
+                    self.products.description,
+                    self.products.value_operation,
+                    self.employees.username.label("employee_name"),
+                    self.finance_payments.type_payments,
+                )
+                .select_from(self.box_accounting)
+                .join(
+                    self.invoice,
+                    self.invoice.id == self.box_accounting.invoice_id,
+                )
+                .join(
+                    self.schedule,
+                    self.schedule.id == self.invoice.schedule_id,
+                )
+                .join(
+                    self.user,
+                    self.user.id == self.schedule.user_id,
+                )
+                .join(
+                    self.products,
+                    self.products.id == self.schedule.product_id,
+                )
+                .join(
+                    self.employees,
+                    self.employees.id == self.schedule.employee_id,
+                )
+                .join(
+                    self.finance_payments,
+                    self.finance_payments.id == self.invoice.payments_id,
+                )
+                .where(self.schedule.is_check.is_(True))
+                .order_by(self.invoice.created_at.asc())
             )
 
             if pagination_params.filter_by:
@@ -494,8 +502,12 @@ class FinanceCore:
                 try:
                     stmt = stmt.where(
                         or_(
-                            func.unaccent(self.user.username).ilike(func.unaccent(filter_value)),
-                            func.unaccent(self.employees.username).ilike(func.unaccent(filter_value))
+                            func.unaccent(self.user.username).ilike(
+                                func.unaccent(filter_value)
+                            ),
+                            func.unaccent(self.employees.username).ilike(
+                                func.unaccent(filter_value)
+                            ),
                         )
                     )
                 except Exception:
@@ -533,7 +545,7 @@ class FinanceCore:
                     "data": Metadata(result).model_to_list(),
                     "message_id": "success_list_invoice_payments",
                     "error": False,
-                    "metadata": metadata
+                    "metadata": metadata,
                 }
             ), 200
 
@@ -563,20 +575,20 @@ class FinanceCore:
 
             if payments_id:
                 # update payments
-                update_invoice = update(
-                    self.invoice.payments_id
-                ).where(
-                    self.invoice.id == invoce_id
-                ).values(payments_id=payments_id)
+                update_invoice = (
+                    update(self.invoice.payments_id)
+                    .where(self.invoice.id == invoce_id)
+                    .values(payments_id=payments_id)
+                )
                 db.session.execute(update_invoice)
                 db.session.commit()
 
             if tips or value_operations:
-                update_box_accounting = update(
-                    self.box_accounting
-                ).where(
-                    self.box_accounting.invoice_id == invoce_id
-                ).values(tips=tips, value_operations=value_operations)
+                update_box_accounting = (
+                    update(self.box_accounting)
+                    .where(self.box_accounting.invoice_id == invoce_id)
+                    .values(tips=tips, value_operations=value_operations)
+                )
                 db.session.execute(update_box_accounting)
                 db.session.commit()
 
@@ -606,4 +618,3 @@ class FinanceCore:
                 ),
                 500,
             )
-

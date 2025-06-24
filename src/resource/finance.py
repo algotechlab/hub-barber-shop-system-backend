@@ -32,12 +32,14 @@ finance_ns = Namespace("finance", description="Manager finance")
 payload_update_finance = finance_ns.model(
     "PayloadUpdateFinance",
     {
-        "payments_id": fields.Integer(required=False, example=1, description="Payments ID"),
-        "tips":  fields.Float(required=False, description="Tip"),
+        "payments_id": fields.Integer(
+            required=False, example=1, description="Payments ID"
+        ),
+        "tips": fields.Float(required=False, description="Tip"),
         "value_operation": fields.Float(
             required=False, description="Operation value"
         ),
-    }
+    },
 )
 
 payload_add_finance = finance_ns.model(
@@ -46,9 +48,13 @@ payload_add_finance = finance_ns.model(
         "value_operation": fields.Float(
             required=False, description="Operation value", example=0.0
         ),
-        "description": fields.String(required=False, description="Description out put finance"),
-        "type_payments": fields.String(required=False, description="Type payments"),
-    }
+        "description": fields.String(
+            required=False, description="Description out put finance"
+        ),
+        "type_payments": fields.String(
+            required=False, description="Type payments"
+        ),
+    },
 )
 
 payload_update_out_put_finance = finance_ns.model(
@@ -57,17 +63,21 @@ payload_update_out_put_finance = finance_ns.model(
         "value_operation": fields.Float(
             required=False, description="Operation value", example=0.0
         ),
-        "description": fields.String(required=False, description="Description out put finance"),
-        "type_payments": fields.String(required=False, description="Type payments"),
-    }
+        "description": fields.String(
+            required=False, description="Description out put finance"
+        ),
+        "type_payments": fields.String(
+            required=False, description="Type payments"
+        ),
+    },
 )
-
 
 
 @finance_ns.route("/<int:id>")
 class FinanceResourceManager(Resource):
-
-    @finance_ns.doc(description="Update payments relashionship invoce and box accounting")
+    @finance_ns.doc(
+        description="Update payments relashionship invoce and box accounting"
+    )
     @finance_ns.expect(payload_update_finance, validate=True)
     @cross_origin()
     def put(self, id: int):
@@ -75,8 +85,7 @@ class FinanceResourceManager(Resource):
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
             return FinanceCore(user_id=user_id).update_invoce_payments(
-                invoce_id=id,
-                data=request.get_json()
+                invoce_id=id, data=request.get_json()
             )
         except Exception as e:
             return (
@@ -91,7 +100,6 @@ class FinanceResourceManager(Resource):
                 ),
                 500,
             )
-
 
 
 @finance_ns.route("/types-payments")
@@ -216,9 +224,9 @@ class ListOutPutExitPayments(Resource):
                 500,
             )
 
+
 @finance_ns.route("/out-put-exit-payments/<int:id>")
 class OutPutExitsPaymentsManaget(Resource):
-
     @finance_ns.doc(description="Get ID OutPut Exit Payments")
     @cross_origin()
     def get(self, id: int):
@@ -249,8 +257,7 @@ class OutPutExitsPaymentsManaget(Resource):
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
             return FinanceCore(user_id=user_id).update_out_put_finance(
-                id=id,
-                data=request.get_json()
+                id=id, data=request.get_json()
             )
 
         except Exception as e:
@@ -266,7 +273,6 @@ class OutPutExitsPaymentsManaget(Resource):
                 ),
                 500,
             )
-
 
 
 # list_invoice_payments
