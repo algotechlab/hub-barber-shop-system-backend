@@ -1,260 +1,481 @@
 # src/bot/schedule.py
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
-
-from sqlalchemy import delete
-
+from sqlalchemy import delete, select, insert
 from src.bot.helpers.schedule_helpers import HelpersScheduler
-from src.bot.response_dictionary import RESPONSE_DICTIONARY
+from src.bot.response_dictionary import RESPONSE_DICTIONARY, TIME_SLOTS_CONFIG
 from src.db.database import db
-from src.model.model import ScheduleService
+from src.model.model import ScheduleService, Products, Employee, User
 from src.service.redis import SessionManager
-from src.utils.log import logdb
-
 
 class Scheduler(HelpersScheduler):
     def __init__(self, message: str, sender_number: str, *args, **kwargs):
+        super().__init__(sender_number, *args, **kwargs)
         self.message = message.strip().lower()
         self.sender_number = sender_number
         self.session = SessionManager()
 
-    def handle_schedule_flow(self):
+    def handle_schedule(self):
         state = self.session.get(self.sender_number)
+        print(f"DEBUG: Estado atual para {self.sender_number}: {state}")
 
         if self.message == "menu":
-            return self.session.reset_to_default(
-                self.sender_number, RESPONSE_DICTIONARY
-            )
+            print(f"DEBUG: User requested menu, resetting state for {self.sender_number}")
+            return self._reset_session()
 
         if not self.identify_user():
-            self.session.set(self.sender_number, "awaiting_register_data")
+            self.session.set(self.sender_number, "undefined")
+            print(f"DEBUG: User not identified, set state to undefined for {self.sender_number}")
             return (
                 "Você precisa se cadastrar primeiro. Envie seu nome completo.\n\n"
                 "Digite 'menu' para voltar ao início."
             )
 
-        if state == "registered":
-            employees = self.get_employees()
-            if not employees:
-                return self.session.reset_to_default(
-                    self.sender_number,
-                    {
-                        "error": "Não há barbeiros disponíveis no momento.\n\n"
-                        + RESPONSE_DICTIONARY["default"]
-                    },
+        if state == "undefined":
+            try:
+                employees = self.get_employees()
+                if not employees:
+                    print(f"WARNING: Nenhum barbeiro disponível encontrado")
+                    return self._reset_session(
+                        {
+                            "error": "Não há barbeiros disponíveis no momento.\n\n"
+                            + RESPONSE_DICTIONARY["default"]
+                        }
+                    )
+                self.session.set(self.sender_number, "awaiting_employee")
+                print(f"DEBUG: Set state to awaiting_employee for {self.sender_number}")
+                return (
+                    f"Escolha um barbeiro:\n{employees}\n\n"
+                    "Digite 'menu' para voltar ao início."
                 )
-            self.session.set(self.sender_number, "awaiting_employee")
-            return (
-                f"Escolha um barbeiro:\n{employees}\n\n"
-                "Digite 'menu' para voltar ao início."
-            )
+            except Exception as e:
+                print(f"ERROR: Error getting employees: {e}")
+                return self._reset_session()
 
         elif state == "awaiting_employee":
-            if self.message == "voltar":
-                self.session.set(self.sender_number, "registered")
-                return self.handle_schedule_flow()
+            try:
+                if self.message == "voltar":
+                    self.session.set(self.sender_number, "undefined")
+                    print(f"DEBUG: Returning to undefined state for {self.sender_number}")
+                    return self.handle_schedule()
 
-            if not self.message.isdigit():
+                if not self.message.isdigit():
+                    print(f"WARNING: Invalid employee ID input: {self.message}")
+                    return (
+                        "Por favor, digite o ID do barbeiro.\n\n"
+                        "Digite 'voltar' para retornar ou 'menu' para voltar ao início."
+                    )
+
+                employee_id = int(self.message)
+                if not self.validate_employee(employee_id):
+                    print(f"WARNING: Invalid employee ID {employee_id} for {self.sender_number}")
+                    return (
+                        "ID de barbeiro inválido. Escolha um ID da lista.\n\n"
+                        "Digite 'voltar' para retornar ou 'menu' para voltar ao início."
+                    )
+
+                self.session.set(self.sender_number, f"awaiting_product:{employee_id}")
+                self.session.set(f"{self.sender_number}_employee_id", str(employee_id))
+                print(f"DEBUG: Set state to awaiting_product:{employee_id} for {self.sender_number}")
+                products = self.get_products()
+                if not products:
+                    print(f"WARNING: No products available")
+                    return (
+                        "Nenhum serviço disponível no momento.\n\n"
+                        "Digite 'menu' para voltar ao início."
+                    )
                 return (
-                    "Por favor, digite o ID do barbeiro.\n\n"
-                    "Digite 'voltar' para retornar ou 'menu' para voltar ao início."
+                    f"Escolha um serviço:\n{products}\n\n"
+                    "Digite 'voltar' para escolher outro barbeiro ou 'menu' para voltar ao início."
                 )
-
-            employee_id = int(self.message)
-            if not self.validate_employee(employee_id):
-                return (
-                    "ID de barbeiro inválido. Escolha um ID da lista.\n\n"
-                    "Digite 'voltar' para retornar ou 'menu' para voltar ao início."
-                )
-
-            self.session.set(
-                self.sender_number, f"awaiting_product:{employee_id}"
-            )
-            products = self.get_products()
-            return (
-                f"Escolha um serviço:\n{products}\n\n"
-                "Digite 'voltar' para escolher outro barbeiro ou 'menu' para voltar ao início."
-            )
+            except Exception as e:
+                print(f"ERROR: Error handling employee selection: {e}")
+                return self._reset_session()
 
         elif state.startswith("awaiting_product"):
-            if self.message == "voltar":
-                self.session.set(self.sender_number, "awaiting_employee")
-                return self.handle_schedule_flow()
+            try:
+                if self.message == "voltar":
+                    self.session.set(self.sender_number, "awaiting_employee")
+                    print(f"DEBUG: Returning to awaiting_employee for {self.sender_number}")
+                    return self.handle_schedule()
 
-            if not self.message.isdigit():
-                return (
-                    "Por favor, digite o ID do serviço.\n\n"
-                    "Digite 'voltar' para escolher outro barbeiro ou 'menu' para voltar ao início."
-                )
+                if not self.message.isdigit():
+                    print(f"WARNING: Invalid product ID input: {self.message}")
+                    return (
+                        "Por favor, digite o ID do serviço.\n\n"
+                        "Digite 'voltar' para escolher outro barbeiro ou 'menu' para voltar ao início."
+                    )
 
-            employee_id = state.split(":")[1]
-            product_id = int(self.message)
-
-            if not self.validate_product(product_id):
-                return (
-                    "ID de serviço inválido. Escolha um ID da lista.\n\n"
-                    "Digite 'voltar' para escolher outro barbeiro ou 'menu' para voltar ao início."
-                )
-
-            self.session.set(
-                self.sender_number, f"awaiting_time:{employee_id}:{product_id}"
-            )
-            return (
-                "Qual período prefere? manhã, tarde ou noite?\n\n"
-                "Digite 'voltar' para escolher outro serviço ou 'menu' para voltar ao início."
-            )
-
-        elif state.startswith("awaiting_time"):
-            if self.message == "voltar":
                 employee_id = state.split(":")[1]
-                self.session.set(
-                    self.sender_number, f"awaiting_product:{employee_id}"
-                )
-                return self.handle_schedule_flow()
+                product_id = int(self.message)
 
-            time_period = self.message.strip().lower()
-            if time_period not in ("manhã", "tarde", "noite"):
+                is_valid_product = self.validate_product(product_id)
+                print(f"DEBUG: Validating product ID {product_id}: {is_valid_product}")
+                if not is_valid_product:
+                    print(f"WARNING: Invalid product ID {product_id} for {self.sender_number}")
+                    return (
+                        "ID de serviço inválido. Escolha um ID da lista.\n\n"
+                        "Digite 'voltar' para escolher outro barbeiro ou 'menu' para voltar ao início."
+                    )
+
+                self.session.set(self.sender_number, f"awaiting_period:{employee_id}:{product_id}")
+                self.session.set(f"{self.sender_number}_scheduler_state", f"awaiting_period:{employee_id}:{product_id}")
+                print(f"DEBUG: Set state to awaiting_period:{employee_id}:{product_id} for {self.sender_number}")
+                return RESPONSE_DICTIONARY["period_selection"]
+            except Exception as e:
+                print(f"ERROR: Error handling product selection: {e}")
                 return (
-                    "Por favor, escolha entre manhã, tarde ou noite.\n\n"
-                    "Digite 'voltar' para escolher outro serviço ou 'menu' para voltar ao início."
+                    "Erro ao processar o serviço. Tente novamente.\n\n"
+                    "Digite 'voltar' para escolher outro barbeiro ou 'menu' para voltar ao início."
                 )
 
-            _, employee_id, product_id = state.split(":")
-            user_id = self.identify_user()
+        elif state.startswith("awaiting_slot"):
+            try:
+                if self.message == "voltar":
+                    _, employee_id, product_id, _ = state.split(":")
+                    self.session.set(self.sender_number, f"awaiting_period:{employee_id}:{product_id}")
+                    self.session.set(f"{self.sender_number}_scheduler_state", f"awaiting_period:{employee_id}:{product_id}")
+                    print(f"DEBUG: Returning to awaiting_period:{employee_id}:{product_id} for {self.sender_number}")
+                    return RESPONSE_DICTIONARY["period_selection"]
 
+                import json
+                options = json.loads(self.session.get(f"{self.sender_number}_slots") or "[]")
+                if not self.message.isdigit() or int(self.message) not in range(1, len(options) + 1):
+                    print(f"WARNING: Invalid slot selection: {self.message}")
+                    return (
+                        "Seleção inválida. Escolha um número da lista.\n\n"
+                        "Digite 'voltar' para retornar ou 'menu' para voltar ao início."
+                    )
+
+                _, employee_id, product_id, time_period = state.split(":")
+                user_id = self.identify_user()
+                if not user_id:
+                    self.session.set(self.sender_number, "undefined")
+                    print(f"ERROR: User not found, set state to undefined for {self.sender_number}")
+                    return (
+                        "Erro: usuário não encontrado. Por favor, cadastre-se novamente.\n\n"
+                        "Digite 'menu' para voltar ao início."
+                    )
+
+                selected_time_str = options[int(self.message) - 1]
+                today = datetime.now(ZoneInfo("America/Sao_Paulo")).date()
+                time_obj = datetime.strptime(selected_time_str, "%H:%M").time()
+                datetime_obj = datetime.combine(today, time_obj).astimezone(ZoneInfo("UTC"))
+
+                result = self.register_schedule(user_id, product_id, employee_id, datetime_obj)
+                print(f"INFO: Agendamento registrado para {self.sender_number} às {selected_time_str}")
+                return result
+            except Exception as e:
+                print(f"ERROR: Error handling slot selection: {e}")
+                return (
+                    "Erro ao selecionar o horário. Tente novamente.\n\n"
+                    "Digite 'voltar' para retornar ou 'menu' para voltar ao início."
+                )
+
+        print(f"WARNING: Unhandled state {state} for {self.sender_number}")
+        return self._reset_session()
+
+    def _get_available_slots(self, period: str, employee_id: int) -> list:
+        """Obtém horários disponíveis para um período e funcionário específico."""
+        config = TIME_SLOTS_CONFIG.get(period)
+        if not config:
+            print(f"ERROR: Invalid period in get_available_slots: {period}")
+            return []
+
+        occupied_slots = self._get_occupied_slots(period, employee_id)
+        available_slots = [slot for slot in config["slots"] if slot not in occupied_slots]
+        print(f"DEBUG: Slots disponíveis para {period}, funcionário {employee_id}: {available_slots}")
+        return available_slots
+
+    def _get_occupied_slots(self, period: str, employee_id: int) -> list:
+        """Obtém horários ocupados para um período e funcionário específico."""
+        try:
+            config = TIME_SLOTS_CONFIG.get(period)
+            if not config:
+                print(f"ERROR: Invalid period in get_occupied_slots: {period}")
+                return []
+
+            start_time = datetime.strptime(config["period"].split(" - ")[0], "%H:%M").time()
+            end_time = datetime.strptime(config["period"].split(" - ")[1], "%H:%M").time()
+            today = datetime.now(ZoneInfo("America/Sao_Paulo")).date()
+            start_datetime = datetime.combine(today, start_time, tzinfo=ZoneInfo("America/Sao_Paulo")).astimezone(ZoneInfo("UTC"))
+            end_datetime = datetime.combine(today, end_time, tzinfo=ZoneInfo("America/Sao_Paulo")).astimezone(ZoneInfo("UTC"))
+
+            print(f"DEBUG: Querying schedules for employee_id={employee_id}, period={period}, start={start_datetime}, end={end_datetime}")
+
+            stmt = (
+                db.session.query(ScheduleService.time_register, Products.time_to_spend)
+                .join(Products, ScheduleService.product_id == Products.id)
+                .filter(
+                    ScheduleService.employee_id == employee_id,
+                    ScheduleService.is_deleted.is_(False),
+                    ScheduleService.is_check.is_(False),
+                    ScheduleService.time_register >= start_datetime,
+                    ScheduleService.time_register <= end_datetime
+                )
+            )
+            results = db.session.execute(stmt).all()
+            print(f"DEBUG: Found {len(results)} schedules for employee_id={employee_id} in period {period}")
+
+            occupied_slots = set()
+            slot_interval = timedelta(minutes=20)
+
+            for time_register, time_to_spend in results:
+                start = time_register.astimezone(ZoneInfo("America/Sao_Paulo"))
+                minutes = int(time_to_spend.total_seconds() / 60) if time_to_spend else 30
+                duration = timedelta(minutes=minutes)
+                end = start + duration
+                print(f"DEBUG: Schedule found: start={start}, duration={minutes} minutes, end={end}")
+
+                current = start
+                while current < end:
+                    slot_str = current.strftime("%H:%M")
+                    if slot_str in config["slots"]:
+                        occupied_slots.add(slot_str)
+                    current += slot_interval
+
+            print(f"DEBUG: Slots ocupados para {period}, funcionário {employee_id}: {list(occupied_slots)}")
+            return list(occupied_slots)
+        except Exception as e:
+            print(f"ERROR: Erro ao obter slots ocupados: {e}")
+            return []
+
+    def _reset_session(self, message: dict = None) -> str:
+        try:
+            keys_to_clear = [
+                f"session:{self.sender_number}",
+                f"{self.sender_number}_selected_period",
+                f"{self.sender_number}_slots",
+                f"{self.sender_number}_scheduler_state",
+                f"{self.sender_number}_employee_id"
+            ]
+            for key in keys_to_clear:
+                self.session.delete(key)
+                print(f"DEBUG: Cleared Redis key {key}")
+            print(f"INFO: Session reset for {self.sender_number}")
+            return message.get("error", RESPONSE_DICTIONARY["default"]) if message else RESPONSE_DICTIONARY["default"]
+        except Exception as e:
+            print(f"ERROR: Failed to reset session for {self.sender_number}: {e}")
+            return RESPONSE_DICTIONARY["default"]
+
+    def list_schedules(self):
+        """Lista os agendamentos ativos do usuário."""
+        try:
+            user_id = self.identify_user()
             if not user_id:
-                self.session.set(self.sender_number, "awaiting_register_data")
+                self.session.set(self.sender_number, "undefined")
+                print(f"ERROR: User not found, set state to undefined for {self.sender_number}")
                 return (
                     "Erro: usuário não encontrado. Por favor, cadastre-se novamente.\n\n"
                     "Digite 'menu' para voltar ao início."
                 )
 
-            all_slots = self.list_slots_employees()
-            if not all_slots:
-                return "Erro ao obter horários disponíveis. Tente novamente mais tarde."
-
-            options = all_slots.get(time_period, [])
-            if not options:
+            stmt = (
+                db.session.query(ScheduleService.id, ScheduleService.time_register, Employee.username, Products.description)
+                .join(Employee, ScheduleService.employee_id == Employee.id)
+                .join(Products, ScheduleService.product_id == Products.id)
+                .filter(
+                    ScheduleService.user_id == user_id,
+                    ScheduleService.is_deleted.is_(False),
+                    ScheduleService.is_check.is_(False)
+                )
+                .order_by(ScheduleService.time_register)
+            )
+            schedules = db.session.execute(stmt).all()
+            if not schedules:
+                print(f"INFO: No active schedules found for user {self.sender_number}")
                 return (
-                    "Não há horários disponíveis nesse período. Escolha outro.\n\n"
-                    "Digite 'voltar' para retornar."
+                    "Você não tem agendamentos ativos no momento.\n\n"
+                    + RESPONSE_DICTIONARY["default"]
                 )
 
-            self.session.set(
-                self.sender_number,
-                f"awaiting_slot:{employee_id}:{product_id}:{time_period}",
+            agendamentos = [
+                f"ID {s.id}: {s.time_register.astimezone(ZoneInfo('America/Sao_Paulo')).strftime('%d/%m/%Y %H:%M')} "
+                f"com {s.username} para {s.description}"
+                for s in schedules
+            ]
+            agendamentos_str = "\n".join(agendamentos)
+            print(f"DEBUG: Active schedules for {self.sender_number}: {agendamentos_str}")
+            return RESPONSE_DICTIONARY["meus_agendamentos"].format(agendamentos=agendamentos_str)
+        except Exception as e:
+            print(f"ERROR: Failed to list schedules for {self.sender_number}: {e}")
+            return (
+                "Erro ao listar agendamentos. Tente novamente.\n\n"
+                + RESPONSE_DICTIONARY["default"]
             )
-            formatted = "\n".join(
-                f"{i + 1}. {h}" for i, h in enumerate(options)
-            )
-            print("FORMATTED", formatted)
-            print(type(formatted))
-            self.session.set(f"{self.sender_number}_slots", options)
-
-            chunks = [options[i : i + 6] for i in range(0, len(options), 6)]
-            print("CHUNKS", chunks)
-            result_message = ""
-            for chunk_i, chunk in enumerate(chunks):
-                formatted = "\n".join(
-                    f"{i + 1 + chunk_i * 6}. {h}" for i, h in enumerate(chunk)
-                )
-                result_message += f"Horários disponíveis:\n{formatted}\n\n"
-                print(
-                    "RESULTADO COLETADO DENTRO DO RESULT MESSAGE",
-                    result_message,
-                )
-
-            result_message += (
-                "Digite o número desejado ou 'voltar' para retornar."
-            )
-            print(result_message)
-            return result_message
-
-        elif state.startswith("awaiting_slot"):
-            if self.message == "voltar":
-                _, employee_id, product_id, _ = state.split(":")
-                self.session.set(
-                    self.sender_number,
-                    f"awaiting_time:{employee_id}:{product_id}",
-                )
-                return self.handle_schedule_flow()
-
-            options = self.session.get(f"{self.sender_number}_slots") or []
-            if not self.message.isdigit() or int(self.message) not in range(
-                1, len(options) + 1
-            ):
-                return (
-                    "Seleção inválida. Escolha um número da lista.\n\n"
-                    "Digite 'voltar' para retornar."
-                )
-
-            _, employee_id, product_id, _ = state.split(":")
-            user_id = self.identify_user()
-            selected_time_str = options[int(self.message) - 1]
-            today = datetime.now(ZoneInfo("America/Sao_Paulo")).date()
-            time_obj = datetime.strptime(selected_time_str, "%H:%M").time()
-            datetime_obj = datetime.combine(today, time_obj).astimezone(
-                ZoneInfo("UTC")
-            )
-
-            self.register_schedule(
-                user_id, product_id, employee_id, datetime_obj
-            )  # register shedule
-
-        return self.session.reset_to_default(
-            self.sender_number, RESPONSE_DICTIONARY
-        )
 
     def cancel_schedule(self):
-        if self.message == "menu":
-            return self.session.reset_to_default(
-                self.sender_number, RESPONSE_DICTIONARY
-            )
-        if not self.message.isdigit():
-            return (
-                "Por favor, informe um ID numérico válido do agendamento.\n\n"
-                "Digite 'menu' para voltar ao início."
-            )
-        user_id = self.identify_user()
-        if not user_id:
-            self.session.set(self.sender_number, "awaiting_register_data")
-            return "Erro: usuário não encontrado. Por favor, cadastre-se novamente digitando 2.\n\nDigite 'menu' para voltar ao início."
         try:
-            stmt = delete(ScheduleService).where(
-                ScheduleService.id == int(self.message),
-                ScheduleService.user_id == user_id,
-            )
-            result = db.session.execute(stmt)
-            db.session.commit()
-            if result.rowcount:
-                return self.session.reset_to_default(
-                    self.sender_number,
-                    {
-                        "success": (
-                            "✅ Agendamento cancelado com sucesso.\n\n"
-                            + RESPONSE_DICTIONARY["default"]
-                        )
-                    },
+            if self.message == "menu":
+                print(f"DEBUG: User requested menu, resetting state for {self.sender_number}")
+                return self._reset_session()
+
+            user_id = self.identify_user()
+            if not user_id:
+                self.session.set(self.sender_number, "undefined")
+                print(f"ERROR: User not found, set state to undefined for {self.sender_number}")
+                return (
+                    "Erro: usuário não encontrado. Por favor, cadastre-se novamente.\n\n"
+                    "Digite 'menu' para voltar ao início."
                 )
-            return self.session.reset_to_default(
-                self.sender_number,
-                {
-                    "error": (
-                        "Agendamento não encontrado.\n\n"
+
+            if self.session.get(self.sender_number) != "awaiting_cancel_id":
+                stmt = (
+                    db.session.query(ScheduleService.id, ScheduleService.time_register, Employee.username, Products.description)
+                    .join(Employee, ScheduleService.employee_id == Employee.id)
+                    .join(Products, ScheduleService.product_id == Products.id)
+                    .filter(
+                        ScheduleService.user_id == user_id,
+                        ScheduleService.is_deleted.is_(False),
+                        ScheduleService.is_check.is_(False)
+                    )
+                    .order_by(ScheduleService.time_register)
+                )
+                schedules = db.session.execute(stmt).all()
+                if not schedules:
+                    print(f"INFO: No active schedules found for user {self.sender_number}")
+                    return (
+                        "Você não tem agendamentos ativos para cancelar.\n\n"
                         + RESPONSE_DICTIONARY["default"]
                     )
-                },
+
+                agendamentos = [
+                    f"ID {s.id}: {s.time_register.astimezone(ZoneInfo('America/Sao_Paulo')).strftime('%d/%m/%Y %H:%M')} "
+                    f"com {s.username} para {s.description}"
+                    for s in schedules
+                ]
+                agendamentos_str = "\n".join(agendamentos)
+                self.session.set(self.sender_number, "awaiting_cancel_id")
+                print(f"DEBUG: Set state to awaiting_cancel_id for {self.sender_number}")
+                return RESPONSE_DICTIONARY["cancelar"].format(agendamentos=agendamentos_str)
+
+            if not self.message.isdigit():
+                print(f"WARNING: Invalid cancellation ID input: {self.message}")
+                return (
+                    "Por favor, informe um ID numérico válido do agendamento.\n\n"
+                    "Digite 'menu' para voltar ao início."
+                )
+
+            schedule_id = int(self.message)
+            stmt = (
+                db.session.query(ScheduleService)
+                .filter(
+                    ScheduleService.id == schedule_id,
+                    ScheduleService.user_id == user_id,
+                    ScheduleService.is_deleted.is_(False),
+                    ScheduleService.is_check.is_(True)
+                )
+            )
+            schedule = db.session.execute(stmt).scalar_one_or_none()
+            if not schedule:
+                print(f"WARNING: Agendamento não encontrado para ID {schedule_id}")
+                return (
+                    "Agendamento não encontrado ou já cancelado.\n\n"
+                    + RESPONSE_DICTIONARY["default"]
+                )
+
+            stmt = delete(ScheduleService).where(
+                ScheduleService.id == schedule_id
+            )
+            db.session.execute(stmt)
+            db.session.commit()
+            print(f"INFO: Agendamento ID {schedule_id} cancelado com sucesso para {self.sender_number}")
+            return self._reset_session(
+                {
+                    "success": (
+                        f"✅ Agendamento ID {schedule_id} cancelado com sucesso.\n\n"
+                        + RESPONSE_DICTIONARY["default"]
+                    )
+                }
             )
         except Exception as e:
             db.session.rollback()
-            logdb("error", message=f"Failed to cancel schedule: {e}")
-            return self.session.reset_to_default(
-                self.sender_number,
+            print(f"ERROR: Failed to cancel schedule: {e}")
+            return self._reset_session(
                 {
                     "error": (
                         "Erro ao cancelar agendamento. Tente novamente.\n\n"
                         + RESPONSE_DICTIONARY["default"]
                     )
-                },
+                }
+            )
+
+    def validate_product(self, product_id: int) -> bool:
+        """Valida se o product_id existe e não está deletado."""
+        try:
+            stmt = select(Products.id).where(Products.id == product_id, Products.is_deleted.is_(False))
+            result = db.session.execute(stmt).scalar_one_or_none()
+            is_valid = result is not None
+            print(f"DEBUG: Product validation for ID {product_id}: {is_valid}")
+            return is_valid
+        except Exception as e:
+            print(f"ERROR: Failed to validate product {product_id}: {e}")
+            return False
+
+    def register_schedule(self, user_id: int, product_id: int, employee_id: int, datetime_obj: datetime):
+        try:
+            # Verificar conflitos
+            stmt = (
+                db.session.query(ScheduleService)
+                .join(Products, ScheduleService.product_id == Products.id)
+                .filter(
+                    ScheduleService.employee_id == employee_id,
+                    ScheduleService.is_deleted.is_(False),
+                    ScheduleService.is_check.is_(False),
+                    ScheduleService.time_register <= datetime_obj,
+                    (ScheduleService.time_register + Products.time_to_spend) > datetime_obj
+                )
+            )
+            conflict = db.session.execute(stmt).first()
+            if conflict:
+                print(f"ERROR: Scheduling conflict for employee_id={employee_id} at {datetime_obj}")
+                return (
+                    "Erro: horário já ocupado. Escolha outro horário.\n\n"
+                    + RESPONSE_DICTIONARY["default"]
+                )
+
+            # Inserir agendamento
+            print(f"DEBUG: Attempting to insert schedule: user_id={user_id}, product_id={product_id}, employee_id={employee_id}, time={datetime_obj}")
+            stmt = insert(ScheduleService).values(
+                product_id=int(product_id),
+                employee_id=int(employee_id),
+                user_id=user_id,
+                time_register=datetime_obj,
+                is_awayalone=False,
+                is_check=False,
+            )
+            result = db.session.execute(stmt)
+            db.session.commit()
+            schedule_id = result.inserted_primary_key[0]
+            print(f"INFO: Schedule inserted successfully for user_id {user_id}, product_id={product_id}, employee_id={employee_id}, time={datetime_obj}, schedule_id={schedule_id}")
+
+            try:
+                stmt_employee = select(Employee.username).where(Employee.id == employee_id, Employee.is_deleted.is_(False))
+                employee_name = db.session.execute(stmt_employee).scalar_one_or_none() or "Barbeiro"
+            except Exception as e:
+                print(f"ERROR: Failed to fetch employee name for ID {employee_id}: {e}")
+                employee_name = "Barbeiro"
+
+            try:
+                stmt_product = select(Products.description).where(Products.id == product_id, Products.is_deleted.is_(False))
+                product_name = db.session.execute(stmt_product).scalar_one_or_none() or "Serviço"
+            except Exception as e:
+                print(f"ERROR: Failed to fetch product name for ID {product_id}: {e}")
+                product_name = "Serviço"
+
+            self._reset_session()
+            print(f"INFO: Session reset for {self.sender_number} after scheduling")
+
+            return (
+                f"✅ Agendamento confirmado para {datetime_obj.astimezone(ZoneInfo('America/Sao_Paulo')).strftime('%H:%M')} "
+                f"com {employee_name} para o serviço {product_name}!\n\n"
+                + RESPONSE_DICTIONARY["default"]
+            )
+        except Exception as e:
+            print(f"ERROR: Failed to insert schedule for {self.sender_number}: {e}")
+            db.session.rollback()
+            return (
+                "Erro ao realizar agendamento. Tente novamente.\n\n"
+                + RESPONSE_DICTIONARY["default"]
             )

@@ -1,4 +1,5 @@
 # src/bot/users.py
+import os
 import re
 import secrets
 
@@ -14,7 +15,7 @@ from src.utils.log import logdb
 
 load_dotenv()
 
-URL_WEBAPP = "http://192.168.1.7:5173/"
+URL_WEBAPP = os.getenv("URL_WEBAPP")
 
 
 class RegisterUser:

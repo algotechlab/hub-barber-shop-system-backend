@@ -1,4 +1,5 @@
 # src/bot/response_dictionary.py
+
 RESPONSE_DICTIONARY = {
     "default": (
         "Olá, seja bem-vindo à nossa barbearia! 💈\n\n"
@@ -7,29 +8,56 @@ RESPONSE_DICTIONARY = {
         "2️⃣ Quero me cadastrar\n"
         "3️⃣ Horários de atendimento\n"
         "4️⃣ Tenho uma dúvida\n"
-        "5️⃣ Cancelar agendamento\n\n"
+        "5️⃣ Cancelar agendamento\n"
+        "6️⃣ Meus agendamentos\n\n"
         "Digite o número da opção desejada ou envie 'menu' para voltar ao início."
     ),
+    "period_selection": (
+        "Escolha o período desejado:\n\n"
+        "1️⃣ 🌅 Manhã (08:00 - 12:00)\n"
+        "2️⃣ ☀️ Tarde (13:00 - 18:00)\n"
+        "3️⃣ 🌙 Noite (18:00 - 20:00)\n\n"
+        "Digite o número do período ou 'menu' para voltar ao início."
+    ),
     "cancelar": (
-        "Por favor, informe o ID do agendamento que deseja cancelar.\n"
+        "Seus agendamentos ativos:\n\n{agendamentos}\n\n"
+        "Por favor, envie o número do agendamento que deseja cancelar.\n\n"
         "Digite 'menu' para voltar ao início."
     ),
+    "meus_agendamentos": (
+        "Seus agendamentos ativos:\n\n{agendamentos}\n\n"
+        "Digite 'menu' para voltar ao início."
+    )
 }
 
-
-RESPONSE_DICTIONARY_TIMES = {
-    "default": (
-        "Horários de atendimento:\n"
-        "Segunda-feira: 08:00 - 18:00\n"
-        "Terca-feira: 08:00 - 18:00\n"
-        "Quarta-feira: 08:00 - 18:00\n"
-        "Quinta-feira: 08:00 - 18:00\n"
-        "Sexta-feira: 08:00 - 18:00\n"
-        "Sábado: 08:00 - 18:00\n"
-        "Domingo: Fechado\n\n"
-        "Digite 'menu' para voltar ao início."
-    ),
-    "manha": ("08:00 - 12:00\n"),
-    "tarde": ("13:00 - 18:00\n"),
-    "noite": ("18:00 - 20:30\n"),
+TIME_SLOTS_CONFIG = {
+    "manha": {
+        "label": "🌅 Manhã",
+        "period": "08:00 - 12:00",
+        "slots": [
+            "08:00", "08:20", "08:40",
+            "09:00", "09:20", "09:40",
+            "10:00", "10:20", "10:40",
+            "11:00", "11:20", "11:40"
+        ]
+    },
+    "tarde": {
+        "label": "☀️ Tarde",
+        "period": "13:00 - 18:00",
+        "slots": [
+            "13:00", "13:20", "13:40",
+            "14:00", "14:20", "14:40",
+            "15:00", "15:20", "15:40",
+            "16:00", "16:20", "16:40",
+            "17:00", "17:20", "17:40"
+        ]
+    },
+    "noite": {
+        "label": "🌙 Noite",
+        "period": "18:00 - 20:00",
+        "slots": [
+            "18:00", "18:20", "18:40",
+            "19:00", "19:20", "19:40"
+        ]
+    }
 }

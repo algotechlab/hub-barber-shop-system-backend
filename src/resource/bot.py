@@ -136,7 +136,7 @@ class Webhook(Resource):
             rate_count = session.client.incr(rate_key)
             if rate_count == 1:
                 session.client.expire(rate_key, 60)  # Expira em 1 minuto
-            if rate_count > 5:
+            if rate_count > 15:
                 logdb(
                     "warning",
                     message=f"Rate limit exceeded for {phone_number}",

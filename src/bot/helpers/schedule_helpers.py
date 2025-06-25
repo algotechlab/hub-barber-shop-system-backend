@@ -108,6 +108,7 @@ class HelpersScheduler:
                 },
             )
         except Exception as e:
+            print("Coletando o erro ao inserir o agendamento", e)
             db.session.rollback()
             logdb("error", message=f"Failed to save schedule: {e}")
             return self.session.reset_to_default(
