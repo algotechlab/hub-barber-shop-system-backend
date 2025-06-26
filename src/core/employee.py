@@ -517,7 +517,7 @@ class ManagerEmployeeCore:
             today = datetime.now(local_tz).date()
 
             start = datetime.combine(today, time(8, 0), tzinfo=local_tz)
-            end = datetime.combine(today, time(23, 0), tzinfo=local_tz)
+            end = datetime.combine(today, time(20, 0), tzinfo=local_tz)
             step = timedelta(minutes=20)
 
             hour_slots = []
