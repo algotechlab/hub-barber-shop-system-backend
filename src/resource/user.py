@@ -34,9 +34,6 @@ payload_add_users = user_us.model(
         "lastname": fields.String(
             required=True, example="User name", max_length=120
         ),
-        "password": fields.String(
-            required=True, example="User password", max_length=300
-        ),
         "phone": fields.String(
             required=True, example="User phone", max_length=40
         ),
@@ -55,15 +52,13 @@ payload_update_users = user_us.model(
         "password": fields.String(
             required=False, example="User password", max_length=300
         ),
-        "phone": fields.String(
-            required=False, example="User phone", max_length=40
-        ),
     },
 )
 
 
 @user_us.route("")
 class UserResource(Resource):
+    
     @user_us.doc(description="List Users")
     @user_us.expect(pagination_arguments_users, validate=True)
     @cross_origin()

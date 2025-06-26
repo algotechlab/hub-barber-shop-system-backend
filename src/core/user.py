@@ -17,7 +17,6 @@ from src.utils.pagination import Pagination
 USER_FIELDS = [
     "username",
     "lastname",
-    "password",
     "phone",
 ]
 
@@ -91,7 +90,6 @@ class UserCore:
             if (
                 not data.get("username")
                 or not data.get("lastname")
-                or not data.get("password")
             ):
                 return (
                     jsonify(
@@ -110,9 +108,6 @@ class UserCore:
                 .values(
                     username=data.get("username"),
                     lastname=data.get("lastname"),
-                    password=generate_password_hash(
-                        password=data.get("password"), method="scrypt"
-                    ),
                     phone=data.get("phone"),
                 )
                 .returning(self.user.id, self.user.username)
@@ -131,7 +126,7 @@ class UserCore:
                                 "id": result.id,
                                 "username": result.username,
                             },
-                            "access_token": self.compact_token(access_token),
+                            "access_token": access_token,
                             "message_id": "register_successfully",
                             "error": False,
                         }
