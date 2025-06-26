@@ -18,7 +18,11 @@ from src.bot.response_dictionary import RESPONSE_DICTIONARY, TIME_SLOTS_CONFIG
 load_dotenv()
 
 URL_INSTANCE_EVOLUTION = os.getenv("URL_INSTANCE_EVOLUTION", "http://localhost:8080/message/sendText/chatbot_barber")
-EVOLUTION_APIKEY = os.getenv("EVOLUTION_APIKEY", "E79EDCBE56E7-4C9B-AF67-30939918CF3A")
+# EVOLUTION_APIKEY = os.getenv("EVOLUTION_AP") # todo - adjust config instancie evolution api whatsapp
+
+EVOLUTION_APIKEY = "CAF4D3F98976-485B-BC05-8880DDE44F94"
+
+
 
 class BotCore:
     def __init__(self, message: str, sender_number: str, push_name: str):
