@@ -3,19 +3,20 @@
 import traceback
 
 from flask import jsonify
-from sqlalchemy import select, func, or_, desc
+from sqlalchemy import func, or_, select
+
 from src.db.database import db
 from src.model.model import (
-    Employee,
-    ScheduleService,
-    Products,
-    IndicatedUsers,
     BoxAccounting,
+    Employee,
+    IndicatedUsers,
     Invoice,
+    Products,
+    ScheduleService,
 )
 from src.utils.log import logdb
-from src.utils.pagination import Pagination
 from src.utils.metadata import Metadata
+from src.utils.pagination import Pagination
 
 
 class DashBoardCore:

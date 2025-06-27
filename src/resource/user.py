@@ -58,7 +58,6 @@ payload_update_users = user_us.model(
 
 @user_us.route("")
 class UserResource(Resource):
-    
     @user_us.doc(description="List Users")
     @user_us.expect(pagination_arguments_users, validate=True)
     @cross_origin()

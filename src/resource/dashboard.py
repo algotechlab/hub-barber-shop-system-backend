@@ -4,6 +4,7 @@ import traceback
 from flask import jsonify, request
 from flask_cors import cross_origin
 from flask_restx import Namespace, Resource, reqparse
+
 from src.core.dashboard import DashBoardCore
 
 pagination_arguments_dashboard = reqparse.RequestParser()

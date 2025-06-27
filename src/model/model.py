@@ -33,7 +33,7 @@ class Log(db.Model):
 
 class User(db.Model):
     # todo - remover do banco de dados [password, ]
-    # todo - criar a coluna [updated_by] 
+    # todo - criar a coluna [updated_by]
     __tablename__ = "user"
     __table_args__ = {"schema": "public"}
 

@@ -87,10 +87,7 @@ class UserCore:
                     ),
                     400,
                 )
-            if (
-                not data.get("username")
-                or not data.get("lastname")
-            ):
+            if not data.get("username") or not data.get("lastname"):
                 return (
                     jsonify(
                         (
