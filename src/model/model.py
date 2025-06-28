@@ -58,19 +58,11 @@ class Employee(db.Model):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     username: Mapped[str] = mapped_column(db.String(120), nullable=False)
-    cpf: Mapped[str] = mapped_column(
-        db.String(20), unique=True, nullable=False
-    )
-    rg: Mapped[str] = mapped_column(db.String(20), unique=True, nullable=False)
     date_of_birth: Mapped[datetime] = mapped_column(
         db.DateTime, nullable=False
     )
-    nickname: Mapped[str] = mapped_column(db.String(150), nullable=True)
-    email: Mapped[str] = mapped_column(
-        db.String(100), unique=True, nullable=True
-    )
-    role: Mapped[str] = mapped_column(db.String(20), nullable=False)
     phone: Mapped[str] = mapped_column(db.String(40), nullable=False)
+    role: Mapped[str] = mapped_column(db.String(40), nullable=False)
     session_token: Mapped[str] = mapped_column(db.Text, nullable=True)
     password: Mapped[str] = mapped_column(db.String(300), nullable=False)
     created_at: Mapped[datetime] = mapped_column(

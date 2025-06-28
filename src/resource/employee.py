@@ -36,16 +36,10 @@ payload_add_employees = employee_ns.model(
         "username": fields.String(
             required=True, example="User name", max_length=120
         ),
-        "cpf": fields.String(required=True, example="Cpf", max_length=20),
-        "rg": fields.String(required=True, example="rg", max_length=20),
         "date_of_birth": fields.DateTime(
             dt_format="%Y-%m-%d",
             description="The person's birth date in %Y-%m-%d format",
         ),
-        "nickname": fields.String(
-            required=True, example="Nickname", max_length=300
-        ),
-        "email": fields.String(required=True, example="Email", max_length=300),
         "phone": fields.String(required=True, example="Phone", max_length=40),
         "password": fields.String(
             required=True, example="Password", max_length=300
@@ -59,17 +53,9 @@ payload_update_employees = employee_ns.model(
         "username": fields.String(
             required=False, example="User name", max_length=120
         ),
-        "cpf": fields.String(required=False, example="Cpf", max_length=20),
-        "rg": fields.String(required=False, example="rg", max_length=20),
         "date_of_birth": fields.DateTime(
             dt_format="iso8601",
             description="The person's birth date in ISO 8601 format",
-        ),
-        "nickname": fields.String(
-            required=False, example="Nickname", max_length=300
-        ),
-        "email": fields.String(
-            required=False, example="Email", max_length=300
         ),
         "phone": fields.String(required=False, example="Phone", max_length=40),
         "password": fields.String(

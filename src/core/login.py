@@ -110,7 +110,6 @@ class LoginCore:
             stmt = select(
                 self.employee.id,
                 self.employee.username,
-                self.employee.email,
                 self.employee.role,
             ).where(~self.employee.is_deleted, self.employee.phone == phone)
 
@@ -128,7 +127,7 @@ class LoginCore:
 
             if is_valid:
                 access_token = create_access_token(
-                    identity={"id": result.id, "email": result.email}
+                    identity={"id": result.id, "username": result.username}
                 )
                 return jsonify(
                     {
@@ -152,8 +151,7 @@ class LoginCore:
                     }
                 )
 
-        except Exception as e:
-            print("COLETANDO O ERROR", e)
+        except Exception:
             logdb(
                 "error",
                 message=f"Error login employee. \

@@ -23,11 +23,7 @@ from src.utils.pagination import Pagination
 EMPLOYEE_FIELDS = [
     "id",
     "username",
-    "cpf",
-    "rg",
     "date_of_birth",
-    "nickname",
-    "email",
     "phone",
 ]
 
@@ -42,25 +38,17 @@ class EmployeeCore:
     def add_employee(self, data: dict):
         try:
             # expect data format cpf and rf and phone
-            cpf = data.get("cpf").replace(".", "").replace("-", "")
-            rg = data.get("rg").replace(".", "").replace("-", "")
             phone = (
                 data.get("phone")
                 .replace("(", "")
                 .replace(")", "")
                 .replace("-", "")
             )
-            data["cpf"] = cpf
-            data["rg"] = rg
             data["phone"] = phone
 
             stmt = insert(self.employee).values(
                 username=data.get("username"),
-                cpf=cpf,
-                rg=rg,
                 date_of_birth=data.get("date_of_birth"),
-                nickname=data.get("nickname"),
-                email=data.get("email"),
                 phone=phone,
                 password=generate_password_hash(
                     password=data.get("password"), method="scrypt"
@@ -105,13 +93,9 @@ class EmployeeCore:
         try:
             stmt = select(
                 self.employee.username,
-                self.employee.cpf,
-                self.employee.rg,
                 func.to_char(self.employee.date_of_birth, "DD/MM/YYYY").label(
                     "date_of_birth"
                 ),
-                self.employee.nickname,
-                self.employee.email,
                 self.employee.phone,
             ).where(~self.employee.is_deleted, self.employee.id == id)
 
@@ -173,11 +157,7 @@ class EmployeeCore:
             stmt = select(
                 self.employee.id,
                 self.employee.username,
-                self.employee.cpf,
-                self.employee.rg,
                 self.employee.date_of_birth,
-                self.employee.nickname,
-                self.employee.email,
                 self.employee.phone,
             ).where(~self.employee.is_deleted)
 
@@ -234,20 +214,16 @@ class EmployeeCore:
                 total_count, pagination_params
             )
 
-            return (
-                jsonify(
-                    (
-                        {
-                            "status_code": 200,
-                            "data": Metadata(result).model_to_list(),
-                            "metadata": metadata if metadata else None,
-                            "message_id": "success_list_employees",
-                            "error": False,
-                        }
-                    )
-                ),
-                200,
-            )
+            return jsonify(
+                {
+                    "status_code": 200,
+                    "data": Metadata(result).model_to_list(),
+                    "metadata": metadata if metadata else None,
+                    "message_id": "success_list_employees",
+                    "error": False,
+                }
+            ), 200
+
         except Exception as e:
             logdb(
                 "error",
@@ -259,7 +235,7 @@ class EmployeeCore:
                     "message_id": "error_list_employees",
                     "error": True,
                 }
-            )
+            ), 500
 
     def update_employee(self, id: int, data: dict):
         try:
