@@ -375,9 +375,12 @@ class Scheduler(HelpersScheduler):
                     ScheduleService.is_deleted.is_(False),
                     ScheduleService.is_check.is_(False),
                 )
-                .order_by(ScheduleService.time_register)
+                .order_by(ScheduleService.time_register.desc())  # Ordena do mais recente para o mais antigo
+                .limit(1)  # Pega apenas o último registro
             )
-            schedules = db.session.execute(stmt).all()
+            
+            schedules = db.session.execute(stmt).fetchall()
+            
             if not schedules:
                 print(
                     f"INFO: No active schedules found for user {self.sender_number}"
@@ -387,17 +390,20 @@ class Scheduler(HelpersScheduler):
                     + RESPONSE_DICTIONARY["default"]
                 )
 
-            agendamentos = [
-                f"ID {s.id}: {s.time_register.astimezone(ZoneInfo('America/Sao_Paulo')).strftime('%d/%m/%Y %H:%M')} "
-                f"com {s.username} para {s.description}"
-                for s in schedules
-            ]
-            agendamentos_str = "\n".join(agendamentos)
-            print(
-                f"DEBUG: Active schedules for {self.sender_number}: {agendamentos_str}"
+            # Como agora só tem 1 registro, podemos acessá-lo diretamente
+            s = schedules[0]
+            agendamento_str = (
+                f"Registro do agendamento: {s.id}: *{s.time_register.astimezone(ZoneInfo('America/Sao_Paulo')).strftime('%d/%m/%Y %H:%M')}*" 
+                f"\n\n💇‍♂️ {s.username}"
+                f"\n\n✂️ *{s.description}*"
             )
+            
+            print(
+                f"DEBUG: Last schedule for {self.sender_number}: {agendamento_str}"
+            )
+            
             return RESPONSE_DICTIONARY["meus_agendamentos"].format(
-                agendamentos=agendamentos_str
+                agendamentos=agendamento_str
             )
         except Exception as e:
             print(

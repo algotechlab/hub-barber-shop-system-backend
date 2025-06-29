@@ -64,7 +64,6 @@ class ProductCore:
                     400,
                 )
 
-            image_url = None
             if image_file:
                 uploader = UploadImageProduct(
                     description=data.get("description"),
@@ -198,6 +197,7 @@ class ProductCore:
                 for root, dirs, files in os.walk(base_upload_dir):
                     if f"product_images_{description}" in root:
                         for file in files:
+                            print("Coletando o file", file)
                             if file.endswith((".png", ".jpg", ".jpeg")):
                                 relative_path = os.path.relpath(
                                     os.path.join(root, file),

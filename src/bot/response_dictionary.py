@@ -20,12 +20,13 @@ RESPONSE_DICTIONARY = {
         "Digite o número do período ou 'menu' para voltar ao início."
     ),
     "cancelar": (
-        "Seus agendamentos ativos:\n\n{agendamentos}\n\n"
+        "✅ Seus agendamentos ativos:\n\n{agendamentos}\n\n"
         "Por favor, envie o número do agendamento que deseja cancelar.\n\n"
         "Digite 'menu' para voltar ao início."
     ),
     "meus_agendamentos": (
-        "Seus agendamentos ativos:\n\n{agendamentos}\n\n"
+        "Seus agendamentos ativos:\
+        \n\n{agendamentos}\n\n"
         "Digite 'menu' para voltar ao início."
     ),
 }
