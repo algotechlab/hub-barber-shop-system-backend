@@ -189,11 +189,13 @@ class BotCore:
     def get_response(self) -> str:
         try:
             
-            stmt = select(Employee.id).where(Employee.phone == self.sender_number, Employee.is_deleted.is_(False))
+            stmt = select(Employee.phone).where(Employee.is_deleted.is_(False))
             employee_id = db.session.execute(stmt).scalar_one_or_none()
-            if employee_id and self.message.lower() in ["confirmar", "recusar"]:
-                print(f"DEBUG: Processing employee response from {self.sender_number}")
-                return self.scheduler.process_employee_response(employee_id, self.message)
+            if employee_id == self.sender_number:
+                if self.message.lower() in ["confirmar", "recusar"]:
+                    print("ENTRANDO NO FLUXO QUE SOMENTE O BARBEIRO TEM ACESSO")
+                    return self.scheduler.process_employee_response(employee_id, self.message)
+
             if self.message == "menu":
                 print(
                     f"DEBUG: User requested menu, resetting state for {self.sender_number}"
