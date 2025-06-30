@@ -561,29 +561,60 @@ class Scheduler(HelpersScheduler):
             schedule_id = schedule_data["schedule_id"]
             client_number = schedule_data["client_number"]
             datetime_obj = datetime.fromisoformat(schedule_data["datetime"])
+            product_id = schedule_data["product_id"]
+            user_id = schedule_data["user_id"]
 
             if response.lower() == "confirmar":
-                print("Agendamento confirmado")
+                stmt = (
+                    update(ScheduleService)
+                    .where(ScheduleService.id == schedule_id)
+                    .values(is_check=True)
+                )
+                db.session.execute(stmt)
+                db.session.commit()
+                self.session.delete(f"pending_schedule:{employee_id}")
                 print(f"INFO: Schedule {schedule_id} confirmed by employee {employee_id}")
 
-                # Notificar o cliente
+                # Buscar informações para a mensagem ao cliente
+                stmt_product = select(Products.description).where(
+                    Products.id == product_id, Products.is_deleted.is_(False)
+                )
+                product_name = db.session.execute(stmt_product).scalar_one_or_none() or "Serviço"
+                stmt_employee = select(Employee.username).where(
+                    Employee.id == employee_id, Employee.is_deleted.is_(False)
+                )
+                employee_name = db.session.execute(stmt_employee).scalar_one_or_none() or "Barbeiro"
+
                 client_message = (
-                    f"✅ Seu agendamento foi confirmado pelo barbeiro para {datetime_obj.astimezone(ZoneInfo('America/Sao_Paulo')).strftime('%d/%m/%Y %H:%M')}!\n\n"
+                    f"✅ Seu agendamento foi confirmado pelo barbeiro *{employee_name}* "
+                    f"para {datetime_obj.astimezone(ZoneInfo('America/Sao_Paulo')).strftime('%d/%m/%Y %H:%M')} "
+                    f"({product_name})!\n\n"
+                    + RESPONSE_DICTIONARY["default"]
                 )
                 self._send_client_message(client_number=client_number, client_message=client_message)
                 return "Agendamento confirmado com sucesso!"
 
             elif response.lower() == "recusar":
-                # Cancelar o agendamento
                 stmt = delete(ScheduleService).where(ScheduleService.id == schedule_id)
                 db.session.execute(stmt)
                 db.session.commit()
                 self.session.delete(f"pending_schedule:{employee_id}")
                 print(f"INFO: Schedule {schedule_id} rejected by employee {employee_id}")
 
-                # Notificar o cliente ( + RESPONSE_DICTIONARY["default"] )
+                # Buscar informações para a mensagem ao cliente
+                stmt_product = select(Products.description).where(
+                    Products.id == product_id, Products.is_deleted.is_(False)
+                )
+                product_name = db.session.execute(stmt_product).scalar_one_or_none() or "Serviço"
+                stmt_employee = select(Employee.username).where(
+                    Employee.id == employee_id, Employee.is_deleted.is_(False)
+                )
+                employee_name = db.session.execute(stmt_employee).scalar_one_or_none() or "Barbeiro"
+
                 client_message = (
-                    f"❌ Seu agendamento para {datetime_obj.astimezone(ZoneInfo('America/Sao_Paulo')).strftime('%d/%m/%Y %H:%M')} foi recusado pelo barbeiro. Por favor, escolha outro horário.\n\n"
+                    f"❌ Seu agendamento para {datetime_obj.astimezone(ZoneInfo('America/Sao_Paulo')).strftime('%d/%m/%Y %H:%M')} "
+                    f"({product_name}) com *{employee_name}* foi recusado pelo barbeiro. "
+                    f"Por favor, escolha outro horário.\n\n"
                     + RESPONSE_DICTIONARY["default"]
                 )
                 self._send_client_message(client_number=client_number, client_message=client_message)
@@ -623,6 +654,7 @@ class Scheduler(HelpersScheduler):
     def send_message_employee(self, employee_id: int, user_id: int, product_id: int, datetime_obj: datetime) -> bool:
         try:
             # Buscar o telefone do barbeiro
+            print("PROOCESSANDO A FUNÇÃO QUE PROCESSAR O EMPLOYEE")
             stmt = select(Employee.phone, Employee.username).where(
                 Employee.id == employee_id, Employee.is_deleted.is_(False)
             )
@@ -658,7 +690,6 @@ class Scheduler(HelpersScheduler):
                 "text": message,
                 "delay": 2000,
             }
-            print("COLETANDO O PAYLAOD", payload)
             headers = {
                 "apikey": EVOLUTION_APIKEY,
                 "Content-Type": "application/json",
@@ -776,7 +807,7 @@ class Scheduler(HelpersScheduler):
             )
             return (
                 f"✅ Agendamento confirmado para {datetime_obj.astimezone(ZoneInfo('America/Sao_Paulo')).strftime('%H:%M')} "
-                f"com *{employee_name}* para o serviço *{product_name}*2!\n\n"
+                f"com *{employee_name}* para o serviço *{product_name}*!\n\n"
                 f"Aguardando o barbeiro *{employee_name}* confirmar o agendamento.\n\n"
                 + RESPONSE_DICTIONARY["default"]
             )

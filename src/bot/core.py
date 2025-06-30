@@ -188,13 +188,20 @@ class BotCore:
     
     def get_response(self) -> str:
         try:
-            
-            stmt = select(Employee.phone).where(Employee.is_deleted.is_(False))
+            # Verificar se o remetente é um barbeiro
+            stmt = select(Employee.id).where(
+                Employee.phone == self.sender_number,
+                Employee.is_deleted.is_(False)
+            )
             employee_id = db.session.execute(stmt).scalar_one_or_none()
-            if employee_id == self.sender_number:
+            if employee_id:
+                print(f"DEBUG: Identified as employee: {employee_id} for {self.sender_number}")
                 if self.message.lower() in ["confirmar", "recusar"]:
-                    print("ENTRANDO NO FLUXO QUE SOMENTE O BARBEIRO TEM ACESSO")
+                    print(f"DEBUG: Processing employee response from {self.sender_number}")
                     return self.scheduler.process_employee_response(employee_id, self.message)
+                else:
+                    print(f"WARNING: Invalid message from employee {self.sender_number}: {self.message}")
+                    return "Por favor, responda apenas com 'Confirmar' ou 'Recusar'."
 
             if self.message == "menu":
                 print(
