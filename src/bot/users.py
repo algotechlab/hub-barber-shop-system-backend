@@ -1,11 +1,9 @@
 # src/bot/users.py
 import os
 import re
-import secrets
 
 from dotenv import load_dotenv
 from sqlalchemy import insert
-from werkzeug.security import generate_password_hash
 
 from src.bot.response_dictionary import RESPONSE_DICTIONARY
 from src.db.database import db
@@ -30,9 +28,6 @@ class RegisterUser:
             re.match(r"^[A-Za-zÀ-ÿ\s]{2,}\s+[A-Za-zÀ-ÿ\s]{2,}$", name.strip())
         )
 
-    def __generate_password(self) -> str:
-        return secrets.token_hex(4)
-
     def __handle_register_data(self) -> str:
         if self.message == "menu":
             return self.session.reset_to_default(
@@ -40,19 +35,16 @@ class RegisterUser:
             )
         if self._validate_name(self.message):
             try:
-                password = self.__generate_password()
                 stmt = insert(User).values(
                     username=self.push_name,
                     lastname=self.message,
                     phone=self.sender_number,
-                    password=generate_password_hash(password, method="scrypt"),
                 )
                 db.session.execute(stmt)
                 db.session.commit()
                 self.session.set(self.sender_number, "registered")
                 return (
                     f"{self.push_name}: Cadastro concluído com sucesso! 🎉\n"
-                    f"Sua senha é *{password}*\n\n"
                     f"Para acessar nosso sistema, clique no link abaixo:\n{URL_WEBAPP}\n\n"
                     "Agora você pode marcar um horário digitando 1."
                 )
@@ -68,7 +60,7 @@ class RegisterUser:
                         )
                     },
                 )
-        return "Por favor, envie seu nome completo (nome e sobrenome).\n\nDigite 'menu' para voltar ao início."
+        return "👥 Por favor, envie seu nome completo *(nome e sobrenome)* para realizar um agendamento.\n\nDigite 'menu' para voltar ao início."
 
     def process(self) -> str:
         return self.__handle_register_data()

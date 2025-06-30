@@ -9,6 +9,7 @@ import requests
 from dotenv import load_dotenv
 from sqlalchemy import select
 
+from src.model.model import Employee
 from src.bot.response_dictionary import RESPONSE_DICTIONARY, TIME_SLOTS_CONFIG
 from src.bot.schedule import Scheduler
 from src.bot.users import RegisterUser
@@ -184,9 +185,15 @@ class BotCore:
             f"DEBUG: Set state to awaiting_time_slot, period {selected_period} for {self.sender_number}"
         )
         return self._generate_time_slots_message(selected_period)
-
+    
     def get_response(self) -> str:
         try:
+            
+            stmt = select(Employee.id).where(Employee.phone == self.sender_number, Employee.is_deleted.is_(False))
+            employee_id = db.session.execute(stmt).scalar_one_or_none()
+            if employee_id and self.message.lower() in ["confirmar", "recusar"]:
+                print(f"DEBUG: Processing employee response from {self.sender_number}")
+                return self.scheduler.process_employee_response(employee_id, self.message)
             if self.message == "menu":
                 print(
                     f"DEBUG: User requested menu, resetting state for {self.sender_number}"
@@ -212,7 +219,7 @@ class BotCore:
                     print(
                         f"DEBUG: User not identified, set state to undefined for {self.sender_number}"
                     )
-                    return "Por favor, envie seu nome completo (nome e sobrenome).\n\nDigite 'menu' para voltar ao início."
+                    return "👥 Por favor, envie seu nome completo *(nome e sobrenome)*.\n\nDigite 'menu' para voltar ao início."
                 self.session.set(self.sender_number, "undefined")
                 print(
                     f"DEBUG: Set state to undefined for {self.sender_number}"
@@ -220,39 +227,24 @@ class BotCore:
                 return self.scheduler.handle_schedule()
 
             elif self.message == "2":
-                self.session.set(self.sender_number, "undefined")
-                print(
-                    f"DEBUG: Set state to undefined for {self.sender_number}"
-                )
-                return "Por favor, envie seu nome completo (nome e sobrenome).\n\nDigite 'menu' para voltar ao início."
-
-            elif self.message == "3":
                 print(
                     f"DEBUG: User requested operating hours for {self.sender_number}"
                 )
                 return (
-                    "Nossos horários de atendimento são:\n"
-                    "Segunda a Sábado: 9h às 18h\n\n"
-                    "Para agendar, digite 1.\nDigite 'menu' para voltar ao início."
+                    "🗓️⏱️👥 Nossos horários de atendimento são:\n"
+                    "*Segunda a Sábado e Feriado*: 8h às 20h\n\n"
+                    "*Domingo*: 8h às 18h\n\n"
+                    "Para agendar, digite 1️⃣.\nDigite 'menu' para voltar ao início."
                 )
 
-            elif self.message == "4":
-                print(
-                    f"DEBUG: User requested support for {self.sender_number}"
-                )
-                return (
-                    "Envie sua dúvida que te ajudo! 😊\n\n"
-                    "Digite 'menu' para voltar ao início."
-                )
-
-            elif self.message == "5":
+            elif self.message == "3":
                 self.session.set(self.sender_number, "awaiting_cancel_id")
                 print(
                     f"DEBUG: Set state to awaiting_cancel_id for {self.sender_number}"
                 )
                 return self.scheduler.cancel_schedule()
 
-            elif self.message == "6":
+            elif self.message == "4":
                 print(
                     f"DEBUG: User requested their schedules for {self.sender_number}"
                 )

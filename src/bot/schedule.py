@@ -1,15 +1,27 @@
 # src/bot/schedule.py
 
+import requests
+import os
+import json
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import delete, insert, select
+from sqlalchemy import delete, insert, select, update
 
 from src.bot.helpers.schedule_helpers import HelpersScheduler
 from src.bot.response_dictionary import RESPONSE_DICTIONARY, TIME_SLOTS_CONFIG
 from src.db.database import db
-from src.model.model import Employee, Products, ScheduleService
+from src.model.model import Employee, Products, ScheduleService, User
 from src.service.redis import SessionManager
+
+
+URL_INSTANCE_EVOLUTION = os.getenv(
+    "URL_INSTANCE_EVOLUTION",
+    "http://localhost:8080/message/sendText/chatbot_barber",
+)
+# EVOLUTION_APIKEY = os.getenv("EVOLUTION_AP")
+
+EVOLUTION_APIKEY = "CAF4D3F98976-485B-BC05-8880DDE44F94"
 
 
 class Scheduler(HelpersScheduler):
@@ -43,7 +55,6 @@ class Scheduler(HelpersScheduler):
             try:
                 employees = self.get_employees()
                 if not employees:
-                    print("WARNING: Nenhum barbeiro disponível encontrado")
                     return self._reset_session(
                         {
                             "error": "Não há barbeiros disponíveis no momento.\n\n"
@@ -51,15 +62,13 @@ class Scheduler(HelpersScheduler):
                         }
                     )
                 self.session.set(self.sender_number, "awaiting_employee")
-                print(
-                    f"DEBUG: Set state to awaiting_employee for {self.sender_number}"
-                )
                 return (
-                    f"Escolha um barbeiro:\n{employees}\n\n"
+                    f"⚠️ *Para escolher um barbeiro, digite o ID do barbeiro.*\n\n"
+                    f"💇‍♂️💇‍♂️ *Escolha um barbeiro disponível:*"
+                    f"\n{employees}\n\n"
                     "Digite 'menu' para voltar ao início."
                 )
             except Exception as e:
-                print(f"ERROR: Error getting employees: {e}")
                 return self._reset_session()
 
         elif state == "awaiting_employee":
@@ -181,8 +190,6 @@ class Scheduler(HelpersScheduler):
                         f"DEBUG: Returning to awaiting_period:{employee_id}:{product_id} for {self.sender_number}"
                     )
                     return RESPONSE_DICTIONARY["period_selection"]
-
-                import json
 
                 options = json.loads(
                     self.session.get(f"{self.sender_number}_slots") or "[]"
@@ -456,13 +463,13 @@ class Scheduler(HelpersScheduler):
                         f"INFO: No active schedules found for user {self.sender_number}"
                     )
                     return (
-                        "Você não tem agendamentos ativos para cancelar.\n\n"
+                        "💤🗓️Você não tem agendamentos *ativos* para cancelar.\n\n"
                         + RESPONSE_DICTIONARY["default"]
                     )
 
                 agendamentos = [
-                    f"ID {s.id}: {s.time_register.astimezone(ZoneInfo('America/Sao_Paulo')).strftime('%d/%m/%Y %H:%M')} "
-                    f"com {s.username} para {s.description}"
+                    f"*ID {s.id}*: {s.time_register.astimezone(ZoneInfo('America/Sao_Paulo')).strftime('%d/%m/%Y %H:%M')}"
+                    f"com *{s.username}* para *{s.description}*"
                     for s in schedules
                 ]
                 agendamentos_str = "\n".join(agendamentos)
@@ -496,10 +503,10 @@ class Scheduler(HelpersScheduler):
                     f"WARNING: Agendamento não encontrado para ID {schedule_id}"
                 )
                 return (
-                    "Agendamento não encontrado ou já cancelado.\n\n"
+                    "🗓️👥 *Agendamento não encontrado ou já cancelado.*\n\n"
                     + RESPONSE_DICTIONARY["default"]
                 )
-
+                
             stmt = delete(ScheduleService).where(
                 ScheduleService.id == schedule_id
             )
@@ -540,6 +547,141 @@ class Scheduler(HelpersScheduler):
             return is_valid
         except Exception as e:
             print(f"ERROR: Failed to validate product {product_id}: {e}")
+            return False
+
+    # TODO ANALISAR ISSO COM OS FATOS
+    def process_employee_response(self, employee_id: int, response: str) -> str:
+        try:
+            pending_data = self.session.get(f"pending_schedule:{employee_id}")
+            if not pending_data:
+                print(f"ERROR: No pending schedule found for employee {employee_id}")
+                return "Nenhum agendamento pendente para confirmar."
+
+            schedule_data = json.loads(pending_data)
+            schedule_id = schedule_data["schedule_id"]
+            client_number = schedule_data["client_number"]
+            datetime_obj = datetime.fromisoformat(schedule_data["datetime"])
+
+            if response.lower() == "confirmar":
+                print("Agendamento confirmado")
+                print(f"INFO: Schedule {schedule_id} confirmed by employee {employee_id}")
+
+                # Notificar o cliente
+                client_message = (
+                    f"✅ Seu agendamento foi confirmado pelo barbeiro para {datetime_obj.astimezone(ZoneInfo('America/Sao_Paulo')).strftime('%d/%m/%Y %H:%M')}!\n\n"
+                )
+                self._send_client_message(client_number=client_number, client_message=client_message)
+                return "Agendamento confirmado com sucesso!"
+
+            elif response.lower() == "recusar":
+                # Cancelar o agendamento
+                stmt = delete(ScheduleService).where(ScheduleService.id == schedule_id)
+                db.session.execute(stmt)
+                db.session.commit()
+                self.session.delete(f"pending_schedule:{employee_id}")
+                print(f"INFO: Schedule {schedule_id} rejected by employee {employee_id}")
+
+                # Notificar o cliente ( + RESPONSE_DICTIONARY["default"] )
+                client_message = (
+                    f"❌ Seu agendamento para {datetime_obj.astimezone(ZoneInfo('America/Sao_Paulo')).strftime('%d/%m/%Y %H:%M')} foi recusado pelo barbeiro. Por favor, escolha outro horário.\n\n"
+                    + RESPONSE_DICTIONARY["default"]
+                )
+                self._send_client_message(client_number=client_number, client_message=client_message)
+                return "Agendamento recusado."
+
+            else:
+                return "Por favor, responda com 'Confirmar' ou 'Recusar'."
+        except Exception as e:
+            db.session.rollback()
+            print(f"ERROR: Failed to process employee response: {e}")
+            return "Erro ao processar sua resposta. Tente novamente."
+
+    def _send_client_message(self, client_number: str, message: str):
+        try:
+            payload = {
+                "number": client_number,
+                "text": message,
+                "delay": 2000,
+            }
+            headers = {
+                "apikey": EVOLUTION_APIKEY,
+                "Content-Type": "application/json",
+            }
+            response = requests.post(
+                url=URL_INSTANCE_EVOLUTION,
+                json=payload,
+                headers=headers,
+                timeout=5
+            )
+            if response.status_code == 201:
+                print(f"INFO: Message sent to client {client_number}")
+            else:
+                print(f"ERROR: Failed to send message to client {client_number}: {response.status_code}, {response.text}")
+        except Exception as e:
+            print(f"ERROR: Failed to send message to client {client_number}: {e}")
+
+    def send_message_employee(self, employee_id: int, user_id: int, product_id: int, datetime_obj: datetime) -> bool:
+        try:
+            # Buscar o telefone do barbeiro
+            stmt = select(Employee.phone, Employee.username).where(
+                Employee.id == employee_id, Employee.is_deleted.is_(False)
+            )
+            result = db.session.execute(stmt).first()
+            if not result:
+                print(f"ERROR: Employee with ID {employee_id} not found or deleted")
+                return False
+            employee_phone, employee_name = result
+
+            # Buscar informações do cliente
+            stmt_user = select(User.username).where(User.id == user_id)
+            user_name = db.session.execute(stmt_user).scalar_one_or_none() or "Cliente"
+
+            # Buscar informações do serviço
+            stmt_product = select(Products.description).where(
+                Products.id == product_id, Products.is_deleted.is_(False)
+            )
+            product_name = db.session.execute(stmt_product).scalar_one_or_none() or "Serviço"
+
+            # Formatando a mensagem para o barbeiro
+            formatted_time = datetime_obj.astimezone(ZoneInfo("America/Sao_Paulo")).strftime("%d/%m/%Y %H:%M")
+            message = (
+                f"📅 *Novo Agendamento*\n"
+                f"Cliente: {user_name}\n"
+                f"Serviço: {product_name}\n"
+                f"Horário: {formatted_time}\n"
+                f"Por favor, confirme se você pode atender este agendamento respondendo 'Confirmar' ou 'Recusar'."
+            )
+
+            # Enviando a mensagem via Evolution API
+            payload = {
+                "number": employee_phone,
+                "text": message,
+                "delay": 2000,
+            }
+            print("COLETANDO O PAYLAOD", payload)
+            headers = {
+                "apikey": EVOLUTION_APIKEY,
+                "Content-Type": "application/json",
+            }
+            response = requests.post(
+                url=URL_INSTANCE_EVOLUTION,
+                json=payload,
+                headers=headers,
+                timeout=5
+            )
+
+            if response.status_code == 201:
+                print(f"INFO: Message sent to employee {employee_name} ({employee_phone}) for schedule at {formatted_time}")
+                return True
+            else:
+                print(
+                    f"ERROR: Failed to send message to employee {employee_id}: {response.status_code}, {response.text}"
+                )
+                return False
+
+        except Exception as e:
+            db.session.rollback()
+            print(f"ERROR: Failed to send message to employee {employee_id}: {e}")
             return False
 
     def register_schedule(
@@ -625,9 +767,17 @@ class Scheduler(HelpersScheduler):
                 f"INFO: Session reset for {self.sender_number} after scheduling"
             )
 
+            # send message employee
+            self.send_message_employee(
+                employee_id=employee_id,
+                user_id=user_id,
+                product_id=product_id,
+                datetime_obj=datetime_obj,
+            )
             return (
                 f"✅ Agendamento confirmado para {datetime_obj.astimezone(ZoneInfo('America/Sao_Paulo')).strftime('%H:%M')} "
-                f"com {employee_name} para o serviço {product_name}!\n\n"
+                f"com *{employee_name}* para o serviço *{product_name}*2!\n\n"
+                f"Aguardando o barbeiro *{employee_name}* confirmar o agendamento.\n\n"
                 + RESPONSE_DICTIONARY["default"]
             )
         except Exception as e:

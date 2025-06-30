@@ -5,11 +5,9 @@ RESPONSE_DICTIONARY = {
         "Olá, seja bem-vindo à nossa barbearia! 💈\n\n"
         "Como posso te ajudar hoje?\n"
         "1️⃣ Quero fazer um agendamento\n"
-        "2️⃣ Quero me cadastrar\n"
-        "3️⃣ Horários de atendimento\n"
-        "4️⃣ Tenho uma dúvida\n"
-        "5️⃣ Cancelar agendamento\n"
-        "6️⃣ Meus agendamentos\n\n"
+        "2️⃣ Horários de atendimento\n"
+        "3️⃣ Cancelar agendamento\n"
+        "4️⃣ Meus agendamentos\n\n"
         "Digite o número da opção desejada ou envie 'menu' para voltar ao início."
     ),
     "period_selection": (
