@@ -170,8 +170,8 @@ class ScheduleCore:
 
             # send message to client
             message = (
-                f"✅ Agendamento registrado para {summary['datetime']}"
-                f"com barbeiro {summary['employee_name']} para o serviço {summary['product_name']}!\n\n"
+                f"✅ Agendamento registrado para {summary['datetime']}\n\n"
+                f"Com barbeiro {summary['employee_name']} para o serviço {summary['product_name']}!\n\n"
                 f"Aguardando o barbeiro {summary['employee_name']} confirmar o agendamento.\n\n"
                 "Digite 'menu' para voltar ao início."
             )
