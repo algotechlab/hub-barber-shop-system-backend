@@ -1,12 +1,13 @@
 # src/core/schedule.py
 
 import traceback
+import json
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from flask import jsonify
 from sqlalchemy import func, insert, or_, select, update
-
+from src.bot.schedule import Scheduler
 from src.db.database import db
 from src.model.model import (
     BlockScheduleService,
@@ -17,10 +18,11 @@ from src.model.model import (
     ScheduleService,
     User,
 )
+from src.service.redis import SessionManager
 from src.utils.log import logdb
 from src.utils.metadata import Metadata
 
-schedule_FIELDS = [
+SCHEDULE_FIELDS = [
     "product_id",
     "employee_id",
     "time_register",
@@ -37,37 +39,152 @@ class ScheduleCore:
         self.invoice = Invoice
         self.box_accounting = BoxAccounting
         self.block_schedule_service = BlockScheduleService
+        self.session = SessionManager()
 
     def __parser_iso_format(self, dt_str: str) -> datetime:
         if dt_str.endswith("Z"):
             dt_str = dt_str.replace("Z", "+00:00")
         return datetime.fromisoformat(dt_str)
 
+    def dispach_summary_client(self, product_id: int, employee_id: int, schedule_data: str):
+        try:
+            datetime_obj = self.__parser_iso_format(schedule_data)
+            stmt_product = select(self.product.description).where(
+                self.product.id == product_id, self.product.is_deleted.is_(False)
+            )
+            product_name = db.session.execute(stmt_product).scalar_one_or_none() or "Serviço"
+            stmt_employee = select(self.employee.username).where(
+                self.employee.id == employee_id, self.employee.is_deleted.is_(False)
+            )
+            employee_name = db.session.execute(stmt_employee).scalar_one_or_none() or "Barbeiro"
+            return {
+                "product_name": product_name,
+                "employee_name": employee_name,
+                "datetime": datetime_obj.astimezone(ZoneInfo("America/Sao_Paulo")).strftime("%d/%m/%Y %H:%M")
+            }
+        except Exception as e:
+            logdb(
+                "error",
+                message=f"Error dispach summary client: {e}{traceback.format_exc()}",
+            )
+            return None
+
     def add_schedule(self, data: dict):
         try:
             time_register_str = self.__parser_iso_format(
                 dt_str=data.get("time_register")
             )
+            user_id = data.get("user_id")
+            product_id = data.get("product_id")
+            employee_id = data.get("employee_id")
 
+            # Validar entrada
+            if not all([user_id, product_id, employee_id, time_register_str]):
+                return (
+                    jsonify({
+                        "status_code": 400,
+                        "message_id": "missing_parameters",
+                        "error": True,
+                        "message": "Missing required parameters: user_id, product_id, employee_id, or time_register"
+                    }),
+                    400,
+                )
+
+            # Verificar se o usuário existe e obter o número de telefone
+            stmt_user = select(self.user.phone).where(
+                self.user.id == user_id, self.user.is_deleted.is_(False)
+            )
+            client_number = db.session.execute(stmt_user).scalar_one_or_none()
+            if not client_number:
+                return (
+                    jsonify({
+                        "status_code": 404,
+                        "message_id": "user_not_found",
+                        "error": True,
+                        "message": f"User with ID {user_id} not found"
+                    }),
+                    404,
+                )
+
+            # Inserir o agendamento no banco
             stmt = insert(self.schedule).values(
-                product_id=data.get("product_id"),
-                employee_id=data.get("employee_id"),
+                product_id=product_id,
+                employee_id=employee_id,
                 time_register=time_register_str,
-                user_id=data.get("user_id"),
+                user_id=user_id,
                 is_awayalone=False,
                 is_check=False,
             )
-            db.session.execute(stmt)
+            result = db.session.execute(stmt)
             db.session.commit()
+            schedule_id = result.inserted_primary_key[0]
+
+            # Obter informações para as mensagens
+            summary = self.dispach_summary_client(product_id, employee_id, data.get("time_register"))
+            if not summary:
+                db.session.rollback()
+                return (
+                    jsonify({
+                        "status_code": 500,
+                        "message_id": "failed_to_generate_summary",
+                        "error": True,
+                        "message": "Failed to generate schedule summary"
+                    }),
+                    500,
+                )
+
+            # Instanciar o Scheduler para enviar mensagens
+            scheduler = Scheduler(message="", sender_number=client_number)
+
+            # Salvar estado pendente no Redis
+            self.session.set(
+                f"pending_schedule:{employee_id}",
+                json.dumps({
+                    "schedule_id": schedule_id,
+                    "client_number": client_number,
+                    "datetime": time_register_str.isoformat(),
+                    "product_id": product_id,
+                    "user_id": user_id
+                }),
+                expire_seconds=3600  # Expira em 1 hora
+            )
+
+            # Enviar mensagem ao barbeiro
+            success = scheduler.send_message_employee(
+                employee_id=employee_id,
+                user_id=user_id,
+                product_id=product_id,
+                datetime_obj=time_register_str,
+            )
+            if not success:
+                db.session.rollback()
+                return (
+                    jsonify({
+                        "status_code": 500,
+                        "message_id": "failed_to_notify_employee",
+                        "error": True,
+                        "message": "Failed to notify employee"
+                    }),
+                    500,
+                )
+
+            # send message to client
+            message = (
+                f"✅ Agendamento registrado para {summary['datetime']}"
+                f"com barbeiro {summary['employee_name']} para o serviço {summary['product_name']}!\n\n"
+                f"Aguardando o barbeiro {summary['employee_name']} confirmar o agendamento.\n\n"
+                "Digite 'menu' para voltar ao início."
+            )
+            scheduler._send_client_message(client_number=client_number, message=message)
 
             return (
-                jsonify(
-                    {
-                        "status_code": 200,
-                        "message_id": "success_add_schedule",
-                        "error": False,
-                    }
-                ),
+                jsonify({
+                    "status_code": 200,
+                    "message_id": "success_add_schedule",
+                    "error": False,
+                    "message": "Schedule added successfully",
+                    "data": summary
+                }),
                 200,
             )
 
@@ -75,17 +192,16 @@ class ScheduleCore:
             db.session.rollback()
             logdb(
                 "error",
-                message=f"Error add schedule: \
-                {e}{traceback.format_exc()}",
+                message=f"Error add schedule: {e}{traceback.format_exc()}",
             )
             return (
-                jsonify(
-                    {
-                        "status_code": 500,
-                        "message_id": "something_went_wrong",
-                        "traceback": traceback.format_exc(),
-                    }
-                ),
+                jsonify({
+                    "status_code": 500,
+                    "message_id": "something_went_wrong",
+                    "traceback": traceback.format_exc(),
+                    "error": True,
+                    "message": "Failed to add schedule"
+                }),
                 500,
             )
 
@@ -401,7 +517,7 @@ class ScheduleCore:
                 )
 
             for key, value in data.items():
-                if value is not None and key in schedule_FIELDS:
+                if value is not None and key in SCHEDULE_FIELDS:
                     setattr(self.schedule, key, value)
 
             self.schedule.updated_by = self.user_id

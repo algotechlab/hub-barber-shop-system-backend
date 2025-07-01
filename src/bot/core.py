@@ -40,7 +40,6 @@ class BotCore:
 
     def _handle_state_flow(self, state: str) -> str:
         """Gerencia o fluxo baseado no estado atual do usuário"""
-        print(f"DEBUG: Handling state {state} for {self.sender_number}")
         state_handlers = {
             "undefined": self._handle_registration,
             "awaiting_cancel_id": self._handle_cancellation,

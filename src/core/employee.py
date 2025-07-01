@@ -53,6 +53,7 @@ class EmployeeCore:
                 password=generate_password_hash(
                     password=data.get("password"), method="scrypt"
                 ),
+                role="Administrator",
             )
 
             db.session.execute(stmt)
@@ -241,36 +242,23 @@ class EmployeeCore:
         try:
             if not id:
                 return (
-                    jsonify(
-                        (
-                            {
-                                "status_code": 400,
-                                "message_id": "not_id_found",
-                            }
-                        )
-                    ),
+                    jsonify({"status_code": 400, "message_id": "not_id_found"}),
                     400,
                 )
 
             employee = self.employee.query.filter_by(id=id).first()
             if not employee:
                 return (
-                    jsonify(
-                        (
-                            {
-                                "status_code": 404,
-                                "message_id": "employee_not_found",
-                                "error": True,
-                            }
-                        )
-                    ),
+                    jsonify({
+                        "status_code": 404,
+                        "message_id": "employee_not_found",
+                        "error": True,
+                    }),
                     404,
                 )
-
             update_data = {}
-
             for key, value in data.items():
-                if value is not None and key in EMPLOYEE_FIELDS:
+                if value is not None:
                     updated_value = (
                         generate_password_hash(value, method="scrypt")
                         if key == "password"
@@ -280,46 +268,42 @@ class EmployeeCore:
                     if hasattr(employee, key):
                         setattr(employee, key, updated_value)
                         update_data[key] = updated_value
+                    else:
+                        logdb(
+                            "error",
+                            message=f"Field {key} not found in Employee model",
+                        )
 
             if not update_data:
-                return jsonify(
-                    {
-                        "status_code": 400,
-                        "message_id": "no_valid_fields",
-                        "error": True,
-                    }
-                )
+                return jsonify({
+                    "status_code": 400,
+                    "message_id": "no_fields_to_update",
+                    "error": True,
+                    "received_data": data,
+                }), 400
 
-            stmt = (
-                update(self.employee)
-                .where(~self.employee.is_deleted, self.employee.id == id)
-                .values(**update_data)
-            )
-
-            db.session.execute(stmt)
             db.session.commit()
 
-            return jsonify(
-                {
-                    "status_code": 200,
-                    "message_id": "success_update_employee",
-                    "error": False,
-                }
-            )
+            return jsonify({
+                "status_code": 200,
+                "message_id": "success_update_employee",
+                "error": False,
+            }), 200
 
         except Exception as e:
+            print("Erro ao atualizar funcionário:", e)
             db.session.rollback()
             logdb(
                 "error",
                 message=f"Error edit employee. {e}\n{traceback.format_exc()}",
             )
-            return jsonify(
-                {
-                    "status_code": 500,
-                    "message_id": "error_update_employee",
-                    "error": True,
-                }
-            )
+            return jsonify({
+                "status_code": 500,
+                "message_id": "error_update_employee",
+                "error": True,
+            }), 500
+
+
 
     def delete_employee(self, id: int):
         try:

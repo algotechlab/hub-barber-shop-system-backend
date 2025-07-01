@@ -1,4 +1,6 @@
 # src/core/login.py
+
+import re
 import hashlib
 import traceback
 
@@ -25,15 +27,26 @@ class LoginCore:
         return hashlib.sha256(token.encode()).hexdigest()
 
     def get_login(self, data: dict):
-        user = self.user.query.filter_by(phone=data.get("phone")).first()
+        raw_phone = data.get("phone", "").strip()
+
+        if not raw_phone:
+            return jsonify({
+                "status_code": 400,
+                "message_id": "missing_phone_number",
+                "error": True
+            }), 400
+
+        clean_phone = re.sub(r"\D", "", raw_phone)
+        if not clean_phone.startswith("55"):
+            clean_phone = "55" + clean_phone
+            
+        user = self.user.query.filter_by(phone=clean_phone).first()
 
         if not user:
-            return jsonify(
-                {
-                    "status_code": 404,
-                    "message_id": "user_not_found",
-                }
-            ), 404
+            return jsonify({
+                "status_code": 404,
+                "message_id": "user_not_found",
+            }), 404
 
         self.user_id = user.id
         self.email = None
@@ -45,34 +58,31 @@ class LoginCore:
 
         result = db.session.execute(stmt).fetchone()
 
-        if user:
+        try:
             access_token = create_access_token(
                 identity={"id": self.user_id, "email": self.email}
             )
             db.session.commit()
 
-            return jsonify(
-                {
-                    "status_code": 200,
-                    "message_id": "user_logged_in_successfully",
-                    "data": Metadata(result).model_to_list(),
-                    "metadata": {
-                        "access_token": self.compact_token(access_token)
-                    },
-                }
-            )
-        else:
+            return jsonify({
+                "status_code": 200,
+                "message_id": "user_logged_in_successfully",
+                "data": Metadata(result).model_to_list(),
+                "metadata": {
+                    "access_token": self.compact_token(access_token)
+                },
+            })
+
+        except Exception:
             logdb(
                 "error",
-                message=f"Error login employee. \
-                \n{traceback.format_exc()}",
+                message=f"Error login employee.\n{traceback.format_exc()}",
             )
-            return jsonify(
-                {
-                    "status_code": 401,
-                    "message_id": "invalid_password",
-                }
-            )
+            return jsonify({
+                "status_code": 500,
+                "message_id": "internal_error_on_login",
+            }), 500
+
 
     def reset_password_authorization(self, data: dict):
         try:

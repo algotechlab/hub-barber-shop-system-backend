@@ -587,7 +587,7 @@ class Scheduler(HelpersScheduler):
 
                 client_message = (
                     f"✅ Seu agendamento foi confirmado pelo barbeiro *{employee_name}* "
-                    f"para {datetime_obj.astimezone(ZoneInfo('America/Sao_Paulo')).strftime('%d/%m/%Y %H:%M')} "
+                    f"para {datetime_obj.astimezone(ZoneInfo('America/Sao_Paulo')).strftime('%d/%m/%Y %H:%M')}"
                     f"({product_name})!\n\n"
                     + RESPONSE_DICTIONARY["default"]
                 )
