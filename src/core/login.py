@@ -1,6 +1,5 @@
 # src/core/login.py
 
-import re
 import hashlib
 import traceback
 
@@ -27,20 +26,7 @@ class LoginCore:
         return hashlib.sha256(token.encode()).hexdigest()
 
     def get_login(self, data: dict):
-        raw_phone = data.get("phone", "").strip()
-
-        if not raw_phone:
-            return jsonify({
-                "status_code": 400,
-                "message_id": "missing_phone_number",
-                "error": True
-            }), 400
-
-        clean_phone = re.sub(r"\D", "", raw_phone)
-        if not clean_phone.startswith("55"):
-            clean_phone = "55" + clean_phone
-            
-        user = self.user.query.filter_by(phone=clean_phone).first()
+        user = self.user.query.filter_by(phone=data.get("phone")).first()
 
         if not user:
             return jsonify({
@@ -131,7 +117,7 @@ class LoginCore:
                         "status_code": 404,
                         "message_id": "employee_not_found",
                     }
-                )
+                ), 404
 
             is_valid = check_password_hash(employee.password, password)
 
