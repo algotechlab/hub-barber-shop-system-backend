@@ -653,8 +653,6 @@ class Scheduler(HelpersScheduler):
 
     def send_message_employee(self, employee_id: int, user_id: int, product_id: int, datetime_obj: datetime) -> bool:
         try:
-            # Buscar o telefone do barbeiro
-            print("PROOCESSANDO A FUNÇÃO QUE PROCESSAR O EMPLOYEE")
             stmt = select(Employee.phone, Employee.username).where(
                 Employee.id == employee_id, Employee.is_deleted.is_(False)
             )
