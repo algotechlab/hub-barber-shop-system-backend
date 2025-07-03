@@ -19,6 +19,7 @@ class Middleware:
 app = create_app()
 app.wsgi_app = Middleware(app.wsgi_app)
 
+
 if __name__ == "__main__":
     app.run(
         port=config_by_name[flask_env].PORT,
