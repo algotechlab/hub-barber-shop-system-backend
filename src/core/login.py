@@ -1,6 +1,4 @@
 # src/core/login.py
-
-import hashlib
 import traceback
 
 from flask import jsonify
@@ -21,9 +19,6 @@ class LoginCore:
         self.email = None
         self.user_id = None
         self.employee = Employee
-
-    def compact_token(self, token):
-        return hashlib.sha256(token.encode()).hexdigest()
 
     def get_login(self, data: dict):
         user = self.user.query.filter_by(phone=data.get("phone")).first()
@@ -55,7 +50,7 @@ class LoginCore:
                 "message_id": "user_logged_in_successfully",
                 "data": Metadata(result).model_to_list(),
                 "metadata": {
-                    "access_token": self.compact_token(access_token)
+                    "access_token": access_token
                 },
             })
 
@@ -130,10 +125,10 @@ class LoginCore:
                         "status_code": 200,
                         "data": Metadata(result).model_to_list(),
                         "metadata": {
-                            "access_token": self.compact_token(access_token)
+                            "access_token": access_token
                         },
                     }
-                )
+                ), 200
             else:
                 logdb(
                     "error",
@@ -145,7 +140,7 @@ class LoginCore:
                         "status_code": 401,
                         "message_id": "invalid_password",
                     }
-                )
+                ), 401
 
         except Exception:
             logdb(
@@ -160,5 +155,4 @@ class LoginCore:
                         "message_id": "error_processing",
                     }
                 ),
-                500,
-            )
+            ), 500
