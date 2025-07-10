@@ -5,11 +5,11 @@ import traceback
 from datetime import datetime, timedelta
 
 from flask import jsonify, url_for
-from sqlalchemy import func, select, text, update
+from sqlalchemy import func, select, text, update, insert
 from werkzeug.utils import secure_filename
 
 from src.db.database import db
-from src.model.model import Products
+from src.model.model import Products, ProductsEmployees
 from src.utils.log import logdb
 from src.utils.pagination import Pagination
 from src.utils.product import UploadImageProduct
@@ -36,7 +36,47 @@ class ProductCore:
     def __init__(self, user_id: int, *args, **kwargs):
         self.products = Products
         self.user_id = user_id
+        self.products_employees = ProductsEmployees
 
+    def add_products_employees(self, data: dict):
+        try:
+            stmt = insert(
+                self.products_employees
+            ).values(
+                employee_id=data.get("employee_id"),
+                product_id=data.get("product_id"),
+                is_check=True
+            )
+            db.session.execute(stmt)
+            db.session.commit()
+            return (
+                jsonify(
+                    {
+                        "status_code": 200,
+                        "message_id": "sucess_add_associate_product_employee",
+                        "error": False,
+                    }
+                ),
+                200,
+            )
+        except Exception as e:
+            db.session.rollback()
+            logdb(
+                "error",
+                message=f"Error add product associate employee: {e}\n{traceback.format_exc()}",
+            )
+            return (
+                jsonify(
+                    {
+                        "status_code": 500,
+                        "message_id": "error_processing_add_product",
+                        "error": True,
+                        "traceback": str(e),
+                    }
+                ),
+                500,
+            )
+    
     def _parse_time_to_spend(self, hhmmss: str) -> timedelta:
         try:
             if not hhmmss or not isinstance(hhmmss, str):
@@ -300,7 +340,7 @@ class ProductCore:
                 ),
                 500,
             )
-
+    
     def delete_product(self, id: int):
         try:
             stmt = (
@@ -330,6 +370,46 @@ class ProductCore:
             logdb(
                 "error",
                 message=f"Error delete product: {e}\n{traceback.format_exc()}",
+            )
+            return (
+                jsonify(
+                    {
+                        "status_code": 500,
+                        "message_id": "something_went_wrong",
+                        "traceback": traceback.format_exc(),
+                        "error": True,
+                    }
+                ),
+                500,
+            )
+
+    def delete_product_associate_employee(self, id: int):
+        try:
+            stmt = (
+                update(self.products_employees)
+                .where(self.products_employees.id == id)
+                .values(
+                    is_deleted=True,
+                    deleted_at=datetime.now(),
+                    deleted_by=self.user_id,
+                )
+            )
+            db.session.execute(stmt)
+            db.session.commit()
+            
+            return jsonify(
+                {
+                    "status_code": 200,
+                    "message_id": "success_delete_associate_product_employee",
+                    "error": False,
+                }
+            ), 200
+            
+        except Exception as e:
+            db.session.rollback()
+            logdb(
+                "error",
+                message=f"Error delete product associate employee: {e}\n{traceback.format_exc()}",
             )
             return (
                 jsonify(

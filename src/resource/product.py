@@ -74,6 +74,17 @@ payload_update_products = product_ns.model(
     },
 )
 
+paylaod_add_associate_employee = product_ns.model(
+    "PayloadAddAssociateEmployee",
+    {
+        "employee_id": fields.Integer(
+            required=True, description="Employee ID", example=1
+        ), 
+        "product_id": fields.Integer(
+            required=True, description="Product ID", example=1
+        )
+    }
+)
 
 payload_parser = reqparse.RequestParser()
 payload_parser.add_argument(
@@ -170,7 +181,6 @@ class ProductManagerResource(Resource):
                 )
             ), 500
 
-
 @product_ns.route("/<int:id>")
 class ProductManagerResourceId(Resource):
     @product_ns.doc(description="Update products")
@@ -199,6 +209,45 @@ class ProductManagerResourceId(Resource):
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
             return ProductCore(user_id=user_id).delete_product(id=id)
+        except Exception:
+            return jsonify(
+                {
+                    "status_code": 500,
+                    "message_id": "something_went_wrong",
+                    "traceback": traceback.format_exc(),
+                }
+            )
+
+@product_ns.route("/employees")
+class ProductManangeAssociateEmployees(Resource):
+    
+    @product_ns.doc(description="Add products associate employees")
+    @product_ns.expect(paylaod_add_associate_employee, validate=True)
+    @cross_origin()
+    def post(self):
+        """Add products asscoaite employees"""
+        try:
+            user_id = request.headers.get("Id", request.environ.get("Id"))
+            return ProductCore(user_id=user_id).add_products_employees(
+                data=request.get_json()
+            )
+        except Exception:
+            return {
+                "status_code": 500,
+                "message_id": "something_went_wrong",
+                "traceback": traceback.format_exc(),
+                "error": True,
+            }, 500
+
+@product_ns.route("/employees/<int:id>")
+class ProductManangeAssociateEmployeesId(Resource):
+    @product_ns.doc(description="Delete products associate employees")
+    @cross_origin()
+    def delete(self, id: int):
+        """Delete products associate employees"""
+        try:
+            user_id = request.headers.get("Id", request.environ.get("Id"))
+            return ProductCore(user_id=user_id).delete_product_associate_employee(id=id)
         except Exception:
             return jsonify(
                 {
