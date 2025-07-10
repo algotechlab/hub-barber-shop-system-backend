@@ -105,6 +105,7 @@ class LoginCore:
             ).where(~self.employee.is_deleted, self.employee.phone == phone)
 
             result = db.session.execute(stmt).fetchone()
+            print("Coletando o erro do result", result)
 
             if not result:
                 return jsonify(
@@ -142,7 +143,8 @@ class LoginCore:
                     }
                 ), 401
 
-        except Exception:
+        except Exception as e:
+            print("Error coletado com sucesso", e)
             logdb(
                 "error",
                 message=f"Error login employee. \
