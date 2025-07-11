@@ -94,7 +94,7 @@ class LoginCore:
 
     def get_login_employee(self, data: dict):
         try:
-            phone = mask_phone_number(data.get("phone"))
+            phone = data.get("phone")
             password = data.get("password")
             employee = self.employee.query.filter_by(phone=phone).first()
 
@@ -105,7 +105,6 @@ class LoginCore:
             ).where(~self.employee.is_deleted, self.employee.phone == phone)
 
             result = db.session.execute(stmt).fetchone()
-            print("Coletando o erro do result", result)
 
             if not result:
                 return jsonify(
@@ -116,7 +115,6 @@ class LoginCore:
                 ), 404
 
             is_valid = check_password_hash(employee.password, password)
-
             if is_valid:
                 access_token = create_access_token(
                     identity={"id": result.id, "username": result.username}

@@ -27,6 +27,7 @@ EMPLOYEE_FIELDS = [
     "phone",
 ]
 
+CHECK_ROLE_EMPLOYEE = "Administrador"
 
 class EmployeeCore:
     def __init__(self, user_id: int, *args, **kwargs):
@@ -53,7 +54,7 @@ class EmployeeCore:
                 password=generate_password_hash(
                     password=data.get("password"), method="scrypt"
                 ),
-                role="Administrator",
+                role=f"{CHECK_ROLE_EMPLOYEE}",
             )
 
             db.session.execute(stmt)
