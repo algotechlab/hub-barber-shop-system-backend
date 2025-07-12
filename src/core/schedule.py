@@ -37,7 +37,6 @@ class ScheduleCore:
         self.invoice = Invoice
         self.box_accounting = BoxAccounting
         self.block_schedule_service = BlockScheduleService
-        self.session = SessionManager()
 
     def __parser_iso_format(self, dt_str: str) -> datetime:
         if dt_str.endswith("Z"):
