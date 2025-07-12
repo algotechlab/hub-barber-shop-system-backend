@@ -6,7 +6,6 @@ from flask_restx import Api
 from src.db.database import db
 from src.resource.analytical import analytical_ns
 from src.resource.avaliable import avaliable_ns
-from src.resource.bot import webhook_ns
 from src.resource.dashboard import dashboard_ns
 from src.resource.employee import employee_ns
 from src.resource.finance import finance_ns
@@ -69,7 +68,6 @@ def create_app():
     api.add_namespace(schedule_ns)
     api.add_namespace(avaliable_ns)
     api.add_namespace(subscription_ns)
-    api.add_namespace(webhook_ns)
     api.add_namespace(finance_ns)
     api.add_namespace(analytical_ns)
     api.add_namespace(dashboard_ns)
