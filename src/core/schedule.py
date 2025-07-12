@@ -17,7 +17,6 @@ from src.model.model import (
     ScheduleService,
     User,
 )
-from src.service.redis import SessionManager
 from src.utils.log import logdb
 from src.utils.metadata import Metadata
 

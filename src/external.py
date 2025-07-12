@@ -14,7 +14,6 @@ from src.resource.product import product_ns
 from src.resource.shedule import schedule_ns
 from src.resource.subscription import subscription_ns
 from src.resource.user import user_us
-from src.service.redis import SessionManager
 from src.settings._base import config_by_name, flask_env
 
 
@@ -48,9 +47,6 @@ def create_app():
         app,
         resources={r"/*": {"origins": "*"}, r"/static/*": {"origins": "*"}},
     )
-
-    session_manager = SessionManager()
-    session_manager.clear_all()
 
     app.config["JWT_SECRET_KEY"] = "bsconsig"
     app.config["JWT_TOKEN_LOCATION"] = ["headers"]
