@@ -24,10 +24,12 @@ class LoginCore:
         user = self.user.query.filter_by(phone=data.get("phone")).first()
 
         if not user:
-            return jsonify({
-                "status_code": 404,
-                "message_id": "user_not_found",
-            }), 404
+            return jsonify(
+                {
+                    "status_code": 404,
+                    "message_id": "user_not_found",
+                }
+            ), 404
 
         self.user_id = user.id
         self.email = None
@@ -45,25 +47,26 @@ class LoginCore:
             )
             db.session.commit()
 
-            return jsonify({
-                "status_code": 200,
-                "message_id": "user_logged_in_successfully",
-                "data": Metadata(result).model_to_list(),
-                "metadata": {
-                    "access_token": access_token
-                },
-            })
+            return jsonify(
+                {
+                    "status_code": 200,
+                    "message_id": "user_logged_in_successfully",
+                    "data": Metadata(result).model_to_list(),
+                    "metadata": {"access_token": access_token},
+                }
+            )
 
         except Exception:
             logdb(
                 "error",
                 message=f"Error login employee.\n{traceback.format_exc()}",
             )
-            return jsonify({
-                "status_code": 500,
-                "message_id": "internal_error_on_login",
-            }), 500
-
+            return jsonify(
+                {
+                    "status_code": 500,
+                    "message_id": "internal_error_on_login",
+                }
+            ), 500
 
     def reset_password_authorization(self, data: dict):
         try:
@@ -123,9 +126,7 @@ class LoginCore:
                     {
                         "status_code": 200,
                         "data": Metadata(result).model_to_list(),
-                        "metadata": {
-                            "access_token": access_token
-                        },
+                        "metadata": {"access_token": access_token},
                     }
                 ), 200
             else:

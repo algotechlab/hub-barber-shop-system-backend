@@ -40,12 +40,10 @@ class ProductCore:
 
     def add_products_employees(self, data: dict):
         try:
-            stmt = insert(
-                self.products_employees
-            ).values(
+            stmt = insert(self.products_employees).values(
                 employee_id=data.get("employee_id"),
                 product_id=data.get("product_id"),
-                is_check=True
+                is_check=True,
             )
             db.session.execute(stmt)
             db.session.commit()
@@ -76,7 +74,7 @@ class ProductCore:
                 ),
                 500,
             )
-    
+
     def _parse_time_to_spend(self, hhmmss: str) -> timedelta:
         try:
             if not hhmmss or not isinstance(hhmmss, str):
@@ -340,7 +338,7 @@ class ProductCore:
                 ),
                 500,
             )
-    
+
     def delete_product(self, id: int):
         try:
             stmt = (
@@ -396,7 +394,7 @@ class ProductCore:
             )
             db.session.execute(stmt)
             db.session.commit()
-            
+
             return jsonify(
                 {
                     "status_code": 200,
@@ -404,7 +402,7 @@ class ProductCore:
                     "error": False,
                 }
             ), 200
-            
+
         except Exception as e:
             db.session.rollback()
             logdb(

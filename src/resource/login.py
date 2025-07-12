@@ -80,16 +80,13 @@ class LoginResource(Resource):
 
 @login_ns.route("/employee")
 class ResourceLoginManagerEmployee(Resource):
-    
     @login_ns.doc(description="Get User Login Employee")
     @login_ns.expect(login_payload_employee, validate=True)
     @cross_origin()
     def post(self):
         """Get user login Employee"""
         try:
-            return LoginCore().get_login_employee(
-                data=request.get_json()
-            )
+            return LoginCore().get_login_employee(data=request.get_json())
         except Exception as e:
             print("Errro coletado com sucesso", e)
             return jsonify(

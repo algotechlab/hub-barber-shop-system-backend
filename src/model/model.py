@@ -99,12 +99,13 @@ class Products(db.Model):
     def __repr__(self):
         return f"""{self.description} created successfully"""
 
+
 class ProductsEmployees(db.Model):
     __tablename__ = "products_employees"
     __table_args__ = {"schema": "finance"}
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    product_id : Mapped[int] = mapped_column(
+    product_id: Mapped[int] = mapped_column(
         ForeignKey("finance.products.id"), nullable=False
     )
     employee_id: Mapped[int] = mapped_column(
@@ -119,9 +120,10 @@ class ProductsEmployees(db.Model):
     deleted_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=True)
     deleted_by: Mapped[int] = mapped_column(db.Integer, nullable=True)
     is_deleted: Mapped[bool] = mapped_column(db.Boolean, default=False)
-    
+
     def __repr__(self):
         return f"""{self.id} created successfully"""
+
 
 class ScheduleService(db.Model):
     __tablename__ = "schedule_service"

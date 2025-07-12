@@ -29,6 +29,7 @@ EMPLOYEE_FIELDS = [
 
 CHECK_ROLE_EMPLOYEE = "Administrador"
 
+
 class EmployeeCore:
     def __init__(self, user_id: int, *args, **kwargs):
         self.employee = Employee
@@ -243,18 +244,22 @@ class EmployeeCore:
         try:
             if not id:
                 return (
-                    jsonify({"status_code": 400, "message_id": "not_id_found"}),
+                    jsonify(
+                        {"status_code": 400, "message_id": "not_id_found"}
+                    ),
                     400,
                 )
 
             employee = self.employee.query.filter_by(id=id).first()
             if not employee:
                 return (
-                    jsonify({
-                        "status_code": 404,
-                        "message_id": "employee_not_found",
-                        "error": True,
-                    }),
+                    jsonify(
+                        {
+                            "status_code": 404,
+                            "message_id": "employee_not_found",
+                            "error": True,
+                        }
+                    ),
                     404,
                 )
             update_data = {}
@@ -276,20 +281,24 @@ class EmployeeCore:
                         )
 
             if not update_data:
-                return jsonify({
-                    "status_code": 400,
-                    "message_id": "no_fields_to_update",
-                    "error": True,
-                    "received_data": data,
-                }), 400
+                return jsonify(
+                    {
+                        "status_code": 400,
+                        "message_id": "no_fields_to_update",
+                        "error": True,
+                        "received_data": data,
+                    }
+                ), 400
 
             db.session.commit()
 
-            return jsonify({
-                "status_code": 200,
-                "message_id": "success_update_employee",
-                "error": False,
-            }), 200
+            return jsonify(
+                {
+                    "status_code": 200,
+                    "message_id": "success_update_employee",
+                    "error": False,
+                }
+            ), 200
 
         except Exception as e:
             print("Erro ao atualizar funcionário:", e)
@@ -298,13 +307,13 @@ class EmployeeCore:
                 "error",
                 message=f"Error edit employee. {e}\n{traceback.format_exc()}",
             )
-            return jsonify({
-                "status_code": 500,
-                "message_id": "error_update_employee",
-                "error": True,
-            }), 500
-
-
+            return jsonify(
+                {
+                    "status_code": 500,
+                    "message_id": "error_update_employee",
+                    "error": True,
+                }
+            ), 500
 
     def delete_employee(self, id: int):
         try:
