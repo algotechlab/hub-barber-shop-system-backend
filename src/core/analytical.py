@@ -6,7 +6,7 @@ from flask import jsonify
 from sqlalchemy import func, select
 
 from src.db.database import db
-from src.model.model import Employee, Products, ScheduleService, User
+from src.model.model import Employee, Products, User
 from src.utils.log import logdb
 from src.utils.metadata import Metadata
 
@@ -14,7 +14,7 @@ from src.utils.metadata import Metadata
 class AnalyticalCore:
     def __init__(self, user_id: int, *args, **kwargs):
         self.user_id = user_id
-        self.schedule_service = ScheduleService
+        self.schedule_service = None  # TODO refatorar
         self.products = Products
         self.employee = Employee
         self.user = User

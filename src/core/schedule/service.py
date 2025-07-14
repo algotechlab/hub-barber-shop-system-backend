@@ -2,25 +2,18 @@
 
 import traceback
 from datetime import datetime
-from zoneinfo import ZoneInfo
 
 from flask import jsonify
-from sqlalchemy import func, insert, or_, select, update
+from sqlalchemy import insert, select, update
 
 from src.db.database import db
-from src.model.model import (
-    BoxAccounting,
-    Employee,
-    Invoice,
-    Products,
-    ScheduleService,
-    User,
-)
-from src.model.model import (
-    ScheduleBlock as BlockScheduleService,
-)
+from src.log.log import setup_logger
+from src.model.schedule.service import ScheduleService
 from src.utils.log import logdb
 from src.utils.metadata import Metadata
+
+log = setup_logger()
+
 
 SCHEDULE_FIELDS = [
     "product_id",
@@ -29,75 +22,25 @@ SCHEDULE_FIELDS = [
 ]
 
 
-class ScheduleCore:
+class ServiceCore:
     def __init__(self, user_id: int, *args, **kwargs):
         self.user_id = user_id
         self.schedule = ScheduleService
-        self.product = Products
-        self.employee = Employee
-        self.user = User
-        self.invoice = Invoice
-        self.box_accounting = BoxAccounting
-        self.block_schedule_service = BlockScheduleService
-
-    def __parser_iso_format(self, dt_str: str) -> datetime:
-        if dt_str.endswith("Z"):
-            dt_str = dt_str.replace("Z", "+00:00")
-        return datetime.fromisoformat(dt_str)
+        # self.block_schedule_service = ScheduleBlock # TODO refatorar
 
     def add_schedule(self, data: dict):
         try:
-            time_register_str = self.__parser_iso_format(
-                dt_str=data.get("time_register")
-            )
             user_id = data.get("user_id")
             product_id = data.get("product_id")
             employee_id = data.get("employee_id")
+            time_register = data.get("time_register")
 
-            # Validar entrada
-            if not all([user_id, product_id, employee_id, time_register_str]):
-                return (
-                    jsonify(
-                        {
-                            "status_code": 400,
-                            "message_id": "missing_parameters",
-                            "error": True,
-                            "message": "Missing required parameters: user_id, product_id, employee_id, or time_register",
-                        }
-                    ),
-                    400,
-                )
-
-            # Verificar se o usuário existe e obter o número de telefone
-            stmt_user = select(self.user.phone).where(
-                self.user.id == user_id, self.user.is_deleted.is_(False)
-            )
-            client_number = db.session.execute(stmt_user).scalar_one_or_none()
-            if not client_number:
-                return (
-                    jsonify(
-                        {
-                            "status_code": 404,
-                            "message_id": "user_not_found",
-                            "error": True,
-                            "message": f"User with ID {user_id} not found",
-                        }
-                    ),
-                    404,
-                )
-
-            # Inserir o agendamento no banco
-            stmt = insert(self.schedule).values(
+            self.schedule.add_schedule(
+                user_id=user_id,
                 product_id=product_id,
                 employee_id=employee_id,
-                time_register=time_register_str,
-                user_id=user_id,
-                is_awayalone=False,
-                is_check=False,
+                time_register=time_register,
             )
-            result = db.session.execute(stmt)
-            db.session.commit()
-            schedule_id = result.inserted_primary_key[0]
 
             return (
                 jsonify(
@@ -132,73 +75,18 @@ class ScheduleCore:
 
     def list_schedule(self, data: dict):
         try:
-            stmt = (
-                select(
-                    self.schedule.id,
-                    self.employee.id.label("employee_id"),
-                    self.user.id.label("user_id"),
-                    self.employee.username.label("name_employee"),
-                    self.product.id.label("product_id"),
-                    self.product.description.label("description"),
-                    self.schedule.time_register.label("time_register"),
-                    func.to_char(
-                        self.product.time_to_spend, "HH24:MI:SS"
-                    ).label("time_to_spend"),
-                    self.user.username.label("name_client"),
-                    self.user.phone.label("phone"),
-                    (
-                        self.schedule.time_register
-                        + self.product.time_to_spend
-                    ).label("end_time"),
-                )
-                .join(
-                    self.employee,
-                    self.schedule.employee_id == self.employee.id,
-                )
-                .join(
-                    self.product, self.schedule.product_id == self.product.id
-                )
-                .join(self.user, self.user.id == self.schedule.user_id)
-                .where(self.schedule.is_deleted.is_(False))
-                .where(self.schedule.is_check.is_(True))
-                .where(~self.product.is_deleted)
-            )
-
-            filter_by = data.get("filter_by")
-            if filter_by:
-                filter_value = f"%{filter_by}%"
-                stmt = stmt.filter(
-                    or_(
-                        func.unaccent(self.employee.username).ilike(
-                            func.unaccent(filter_value)
-                        ),
-                        func.unaccent(self.user.username).ilike(
-                            func.unaccent(filter_value)
-                        ),
-                    )
-                )
-
-            result_raw = db.session.execute(stmt).fetchall()
-
-            if not result_raw:
+            schedule = self.schedule.get_all_services(data)
+            if not schedule:
                 return (
                     jsonify(
                         {
                             "status_code": 404,
                             "message_id": "schedule_not_found",
-                            "error": False,
+                            "error": True,
                         }
                     ),
                     404,
                 )
-
-            converted_result = []
-            for row in result_raw:
-                row_dict = dict(row._mapping)
-                time_register = row_dict.get("time_register")
-                end_time = row_dict.get("end_time")
-
-                converted_result.append(row_dict)
 
             return (
                 jsonify(
@@ -206,19 +94,15 @@ class ScheduleCore:
                         "status_code": 200,
                         "message_id": "success_list_schedule",
                         "error": False,
-                        "data": converted_result,
+                        "data": schedule,
                     }
                 ),
                 200,
             )
 
         except Exception as e:
-            logdb(
-                "error",
-                message=f"Error in list_schedule: \
-                {str(e)}\n{traceback.format_exc()}",
-            )
             db.session.rollback()
+            log.error(f"Error in list_schedule: {e}")
             return (
                 jsonify(
                     {
@@ -232,39 +116,8 @@ class ScheduleCore:
 
     def get_schedule(self):
         try:
-            stmt = (
-                select(
-                    self.schedule.id,
-                    self.employee.id.label("employee_id"),
-                    self.user.id.label("user_id"),
-                    self.employee.username.label("name_employee"),
-                    self.product.description.label("description"),
-                    self.schedule.time_register.label("time_register"),
-                    func.to_char(
-                        self.product.time_to_spend, "HH24:MI:SS"
-                    ).label("time_to_spend"),
-                    self.user.username.label("name_client"),
-                    self.user.phone.label("phone"),
-                    (
-                        self.schedule.time_register
-                        + self.product.time_to_spend
-                    ).label("end_time"),
-                )
-                .join(
-                    self.employee,
-                    self.employee.id == self.schedule.employee_id,
-                )
-                .join(
-                    self.product, self.schedule.product_id == self.product.id
-                )
-                .join(self.user, self.schedule.user_id == self.user.id)
-                .where(self.schedule.is_deleted == False)
-                .where(self.schedule.is_check == False)
-                .where(self.schedule.user_id == int(self.user_id))
-            )
-            result_raw = db.session.execute(stmt).fetchall()
-
-            if not result_raw:
+            schedule = self.schedule.get_by_id_schedule(user_id=self.user_id)
+            if not schedule:
                 return (
                     jsonify(
                         {
@@ -275,31 +128,6 @@ class ScheduleCore:
                     ),
                     404,
                 )
-            converted_result = []
-            for row in result_raw:
-                row_dict = dict(row._mapping)
-                time_register = row_dict.get("time_register")
-                end_time = row_dict.get("end_time")
-
-                # Formatar time_register
-                if time_register and isinstance(time_register, datetime):
-                    if time_register.tzinfo is None:
-                        time_register = time_register.replace(
-                            tzinfo=ZoneInfo("UTC")
-                        )
-                    row_dict["time_register"] = time_register.astimezone(
-                        ZoneInfo("America/Sao_Paulo")
-                    ).strftime("%d-%m-%Y %H:%M:%S")
-
-                # Formatar end_time
-                if end_time and isinstance(end_time, datetime):
-                    if end_time.tzinfo is None:
-                        end_time = end_time.replace(tzinfo=ZoneInfo("UTC"))
-                    row_dict["end_time"] = end_time.astimezone(
-                        ZoneInfo("America/Sao_Paulo")
-                    ).strftime("%d-%m-%Y %H:%M:%S")
-
-                converted_result.append(row_dict)
 
             return (
                 jsonify(
@@ -307,19 +135,15 @@ class ScheduleCore:
                         "status_code": 200,
                         "message_id": "success_list_schedule",
                         "error": False,
-                        "data": converted_result,
+                        "data": schedule,
                     }
                 ),
                 200,
             )
 
         except Exception as e:
-            logdb(
-                "error",
-                message=f"Error in get_schedule: \
-                {str(e)}\n{traceback.format_exc()}",
-            )
             db.session.rollback()
+            log.error(f"Error in get_schedule: {e}")
             return (
                 jsonify(
                     {

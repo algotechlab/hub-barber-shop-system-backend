@@ -13,11 +13,11 @@ from src.db.database import db
 from src.model.model import (
     Employee,
     Products,
-    ScheduleService,
 )
-from src.model.model import (
-    ScheduleBlock as BlockScheduleService,
-)
+
+# from src.model.model import (
+#     ScheduleBlock as BlockScheduleService,
+# )
 from src.utils.log import logdb
 from src.utils.metadata import Metadata
 from src.utils.pagination import Pagination
@@ -35,7 +35,7 @@ CHECK_ROLE_EMPLOYEE = "Administrador"
 class EmployeeCore:
     def __init__(self, user_id: int, *args, **kwargs):
         self.employee = Employee
-        self.schedule = ScheduleService
+        self.schedule = None  # TODO refatorar
         self.product = Products
         self.user_id = user_id
 

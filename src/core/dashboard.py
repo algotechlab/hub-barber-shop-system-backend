@@ -12,7 +12,6 @@ from src.model.model import (
     IndicatedUsers,
     Invoice,
     Products,
-    ScheduleService,
 )
 from src.utils.log import logdb
 from src.utils.metadata import Metadata
@@ -23,7 +22,7 @@ class DashBoardCore:
     def __init__(self, user_id: int, *args, **kwargs):
         self.user_id = user_id
         self.employee = Employee
-        self.schedule = ScheduleService
+        self.schedule = None  # TODO refatorar
         self.products = Products
         self.indicator_users = IndicatedUsers
         self.box_accounting = BoxAccounting

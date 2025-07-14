@@ -13,7 +13,6 @@ from src.model.model import (
     InvoiceOutPut,
     Payments,
     Products,
-    ScheduleService,
     User,
 )
 from src.utils.log import logdb
@@ -27,7 +26,7 @@ class FinanceCore:
         self.finance_payments = Payments
         self.invoice = Invoice
         self.box_accounting = BoxAccounting
-        self.schedule = ScheduleService
+        self.schedule = None  # TODO refatorar
         self.products = Products
         self.invoice_out_put = InvoiceOutPut
         self.user = User

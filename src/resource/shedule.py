@@ -6,7 +6,7 @@ from flask import jsonify, request
 from flask_cors import cross_origin
 from flask_restx import Namespace, Resource, fields, reqparse
 
-from src.core.schedule import ScheduleCore
+from src.core.schedule.service import ServiceCore
 
 pagination_arguments_schedule = reqparse.RequestParser()
 pagination_arguments_schedule.add_argument(
@@ -25,7 +25,7 @@ payload_add_schedule = schedule_ns.model(
         ),
         "user_id": fields.Integer(required=True, description="User id"),
         "time_register": fields.DateTime(
-            required=True, description="Time register time spent in HH:MM:SS"
+            required=True, description="2025-07-14 08:30:00"
         ),
     },
 )
@@ -82,7 +82,7 @@ class scheduleManageResource(Resource):
         """Add schedule"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return ScheduleCore(user_id=user_id).add_schedule(
+            return ServiceCore(user_id=user_id).add_schedule(
                 data=request.get_json()
             )
         except Exception:
@@ -104,7 +104,7 @@ class scheduleManageResource(Resource):
         """List schedule"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return ScheduleCore(user_id=user_id).list_schedule(
+            return ServiceCore(user_id=user_id).list_schedule(
                 data=request.args.to_dict()
             )
         except Exception:
@@ -131,7 +131,7 @@ class scheduleManagerResourceId(Resource):
         """Check schedule"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return ScheduleCore(user_id=user_id).check_schedule(
+            return ServiceCore(user_id=user_id).check_schedule(
                 id=id, data=request.get_json()
             )
         except Exception:
@@ -151,7 +151,7 @@ class scheduleManagerResourceId(Resource):
         """Update schedule"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return ScheduleCore(user_id=user_id).update_schedule(
+            return ServiceCore(user_id=user_id).update_schedule(
                 id=id, data=request.get_json()
             )
         except Exception:
@@ -170,7 +170,7 @@ class scheduleManagerResourceId(Resource):
         """Delete schedule"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return ScheduleCore(user_id=user_id).delete_schedule(
+            return ServiceCore(user_id=user_id).delete_schedule(
                 id=id,
             )
         except Exception:
@@ -195,7 +195,7 @@ class scheduleManagerUserId(Resource):
         """List schedule user_id logged of platform"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return ScheduleCore(user_id=user_id).get_schedule()
+            return ServiceCore(user_id=user_id).get_schedule()
         except Exception:
             return (
                 jsonify(
@@ -219,7 +219,7 @@ class BlockSheduleResoruce(Resource):
         """Block shedule service"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return ScheduleCore(user_id=user_id).add_block_schedule(
+            return ServiceCore(user_id=user_id).add_block_schedule(
                 data=request.get_json()
             )
         except Exception:
@@ -241,7 +241,7 @@ class BlockSheduleResoruce(Resource):
         """List block schedule"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return ScheduleCore(user_id=user_id).list_block_schedule()
+            return ServiceCore(user_id=user_id).list_block_schedule()
         except Exception:
             return (
                 jsonify(
@@ -264,7 +264,7 @@ class BlockScheduleResourceId(Resource):
         """Delete block schedule"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return ScheduleCore(user_id=user_id).delete_block_schedule(
+            return ServiceCore(user_id=user_id).delete_block_schedule(
                 id=id,
             )
         except Exception:
