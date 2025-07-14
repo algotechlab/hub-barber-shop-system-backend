@@ -5,7 +5,7 @@ import traceback
 from datetime import datetime, timedelta
 
 from flask import jsonify, url_for
-from sqlalchemy import func, select, text, update, insert
+from sqlalchemy import func, insert, select, text, update
 from werkzeug.utils import secure_filename
 
 from src.db.database import db

@@ -9,7 +9,6 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from src.db.database import db
 from src.model.model import Employee, User
 from src.utils.log import logdb
-from src.utils.maskphone import mask_phone_number
 from src.utils.metadata import Metadata
 
 

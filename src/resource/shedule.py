@@ -85,7 +85,7 @@ class scheduleManageResource(Resource):
             return ScheduleCore(user_id=user_id).add_schedule(
                 data=request.get_json()
             )
-        except Exception as e:
+        except Exception:
             return (
                 jsonify(
                     {

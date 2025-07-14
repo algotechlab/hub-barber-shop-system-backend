@@ -2,7 +2,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import ForeignKey, Interval, Numeric, func
+from sqlalchemy import ForeignKey, Interval, Numeric, func, text
 from sqlalchemy.dialects.postgresql import INTERVAL
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -126,8 +126,8 @@ class ProductsEmployees(db.Model):
 
 
 class ScheduleService(db.Model):
-    __tablename__ = "schedule_service"
-    __table_args__ = {"schema": "public"}
+    __tablename__ = "service"
+    __table_args__ = {"schema": "schedule"}
 
     id: Mapped[int] = mapped_column(primary_key=True)
     time_register: Mapped[datetime] = mapped_column(
@@ -265,7 +265,7 @@ class Invoice(db.Model):
         ForeignKey("finance.payments.id"), nullable=False
     )
     schedule_id: Mapped[int] = mapped_column(
-        ForeignKey("public.schedule_service.id"), nullable=False
+        ForeignKey("schedule.service.id"), nullable=False
     )
     created_at: Mapped[datetime] = mapped_column(
         db.DateTime, default=func.now(), nullable=False
@@ -305,30 +305,35 @@ class BoxAccounting(db.Model):
         return f"""<BoxAccounting id={self.id}"""
 
 
-class BlockScheduleService(db.Model):
-    __tablename__ = "block_schedule_service"
-    __table_args__ = {"schema": "public"}
+class ScheduleBlock(db.Model):
+    __tablename__ = "block"
+    __table_args__ = {"schema": "schedule"}
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    time_register: Mapped[datetime] = mapped_column(
-        db.DateTime, nullable=False
-    )
-    time_block: Mapped[str] = mapped_column(INTERVAL, nullable=False)
-    employee_id: Mapped[int] = mapped_column(
-        ForeignKey("public.employee.id"), nullable=False
-    )
-    created_at: Mapped[datetime] = mapped_column(
-        db.DateTime, default=func.now(), nullable=False
-    )
-    updated_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=True)
-    updated_by: Mapped[int] = mapped_column(db.Integer, nullable=True)
-    deleted_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=True)
-    deleted_by: Mapped[int] = mapped_column(db.Integer, nullable=True)
-    is_deleted: Mapped[bool] = mapped_column(db.Boolean, default=False)
-    is_block: Mapped[bool] = mapped_column(db.Boolean, default=False)
 
-    def __repr__(self):
-        return f"""<Created BlockScheduleService id={self.id}>"""
+    start_time: Mapped[datetime] = mapped_column(db.DateTime)
+    end_time: Mapped[datetime] = mapped_column(db.DateTime)
+
+    employee_id: Mapped[int] = mapped_column(
+        db.Integer, ForeignKey("public.employee.id")
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        db.DateTime, nullable=False, server_default=text("now()")
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(db.DateTime)
+    updated_by: Mapped[int] = mapped_column(db.Integer)
+    deleted_at: Mapped[datetime] = mapped_column(db.DateTime)
+    deleted_by: Mapped[int] = mapped_column(db.Integer)
+
+    is_block: Mapped[bool] = mapped_column(
+        db.Boolean, server_default=text("false"), nullable=False
+    )
+
+    is_deleted: Mapped[bool] = mapped_column(
+        db.Boolean, server_default=text("false"), nullable=False
+    )
 
 
 class InvoiceOutPut(db.Model):

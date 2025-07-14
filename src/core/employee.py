@@ -11,10 +11,12 @@ from werkzeug.security import generate_password_hash
 
 from src.db.database import db
 from src.model.model import (
-    BlockScheduleService,
     Employee,
     Products,
     ScheduleService,
+)
+from src.model.model import (
+    ScheduleBlock as BlockScheduleService,
 )
 from src.utils.log import logdb
 from src.utils.metadata import Metadata

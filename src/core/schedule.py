@@ -1,21 +1,23 @@
 # src/core/schedule.py
 
 import traceback
-import json
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from flask import jsonify
 from sqlalchemy import func, insert, or_, select, update
+
 from src.db.database import db
 from src.model.model import (
-    BlockScheduleService,
     BoxAccounting,
     Employee,
     Invoice,
     Products,
     ScheduleService,
     User,
+)
+from src.model.model import (
+    ScheduleBlock as BlockScheduleService,
 )
 from src.utils.log import logdb
 from src.utils.metadata import Metadata
@@ -42,41 +44,6 @@ class ScheduleCore:
         if dt_str.endswith("Z"):
             dt_str = dt_str.replace("Z", "+00:00")
         return datetime.fromisoformat(dt_str)
-
-    def dispach_summary_client(
-        self, product_id: int, employee_id: int, schedule_data: str
-    ):
-        try:
-            datetime_obj = self.__parser_iso_format(schedule_data)
-            stmt_product = select(self.product.description).where(
-                self.product.id == product_id,
-                self.product.is_deleted.is_(False),
-            )
-            product_name = (
-                db.session.execute(stmt_product).scalar_one_or_none()
-                or "Serviço"
-            )
-            stmt_employee = select(self.employee.username).where(
-                self.employee.id == employee_id,
-                self.employee.is_deleted.is_(False),
-            )
-            employee_name = (
-                db.session.execute(stmt_employee).scalar_one_or_none()
-                or "Barbeiro"
-            )
-            return {
-                "product_name": product_name,
-                "employee_name": employee_name,
-                "datetime": datetime_obj.astimezone(
-                    ZoneInfo("America/Sao_Paulo")
-                ).strftime("%d/%m/%Y %H:%M"),
-            }
-        except Exception as e:
-            logdb(
-                "error",
-                message=f"Error dispach summary client: {e}{traceback.format_exc()}",
-            )
-            return None
 
     def add_schedule(self, data: dict):
         try:
@@ -192,8 +159,8 @@ class ScheduleCore:
                     self.product, self.schedule.product_id == self.product.id
                 )
                 .join(self.user, self.user.id == self.schedule.user_id)
-                .where(~self.schedule.is_deleted)
-                .where(~self.schedule.is_check)
+                .where(self.schedule.is_deleted.is_(False))
+                .where(self.schedule.is_check.is_(True))
                 .where(~self.product.is_deleted)
             )
 
@@ -230,24 +197,6 @@ class ScheduleCore:
                 row_dict = dict(row._mapping)
                 time_register = row_dict.get("time_register")
                 end_time = row_dict.get("end_time")
-
-                # Formatar time_register
-                if time_register and isinstance(time_register, datetime):
-                    if time_register.tzinfo is None:
-                        time_register = time_register.replace(
-                            tzinfo=ZoneInfo("UTC")
-                        )
-                    row_dict["time_register"] = time_register.astimezone(
-                        ZoneInfo("America/Sao_Paulo")
-                    ).strftime("%d-%m-%Y %H:%M:%S")
-
-                # Formatar end_time
-                if end_time and isinstance(end_time, datetime):
-                    if end_time.tzinfo is None:
-                        end_time = end_time.replace(tzinfo=ZoneInfo("UTC"))
-                    row_dict["end_time"] = end_time.astimezone(
-                        ZoneInfo("America/Sao_Paulo")
-                    ).strftime("%d-%m-%Y %H:%M:%S")
 
                 converted_result.append(row_dict)
 
@@ -598,14 +547,15 @@ class ScheduleCore:
             stmt = (
                 select(
                     self.block_schedule_service.id,
-                    self.block_schedule_service.employee_id,
-                    func.to_char(
-                        self.block_schedule_service.time_register,
-                        "YYYY-MM-DD HH:MM:SS",
-                    ).label("time_register"),
-                    func.to_char(
-                        self.block_schedule_service.time_block, "HH:MM"
-                    ).label("duration"),
+                    self.block_schedule_service.start_time,
+                    self.block_schedule_service.end_time,
+                    self.employee.id.label("employee_id"),
+                    self.employee.username.label("name_employee"),
+                )
+                .join(
+                    self.employee,
+                    self.block_schedule_service.employee_id
+                    == self.employee.id,
                 )
                 .where(
                     self.block_schedule_service.is_block == True,
@@ -637,6 +587,7 @@ class ScheduleCore:
                 }
             )
         except Exception as e:
+            print("Coletando o meu erro", e)
             logdb(
                 "error",
                 message=f"Error list block schedule: \
