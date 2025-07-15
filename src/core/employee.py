@@ -378,10 +378,10 @@ class EmployeeCore:
 class ManagerEmployeeCore:
     def __init__(self, user_id: int, *args, **kwargs):
         self.employee = Employee
-        self.schedule = ScheduleService
+        # self.schedule = ScheduleService
         self.product = Products
         self.user_id = user_id
-        self.block_schedule = BlockScheduleService
+        # self.block_schedule = BlockScheduleService
 
     def list_available_employees(self, hour: datetime):
         try:
