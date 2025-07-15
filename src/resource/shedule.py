@@ -184,7 +184,7 @@ class scheduleManagerResourceId(Resource):
             )
 
 
-@schedule_ns.route("/manageruser")
+@schedule_ns.route("/manageruser")  # todo - esse endpoint vai ser alterado
 class scheduleManagerUserId(Resource):
     @schedule_ns.doc(
         description="List schedule filter user_id logged of platform"

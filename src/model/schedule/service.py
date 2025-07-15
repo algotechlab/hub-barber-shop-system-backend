@@ -1,7 +1,5 @@
 # src/models/schedule/__init__.py
 
-# TODO - crud refatoração schedule
-
 
 from datetime import datetime
 
@@ -18,6 +16,12 @@ from src.model.model import (
 from src.utils.metadata import Metadata
 
 log = setup_logger()
+
+SCHEDULE_FIELDS = [
+    "product_id",
+    "employee_id",
+    "time_register",
+]
 
 
 class ScheduleService(db.Model):
@@ -155,7 +159,7 @@ class ScheduleService(db.Model):
             raise e
 
     @classmethod
-    def check_schedule(cls, schedule_id: int, data: dict):
+    def check_schedule(cls, schedule_id: int):
         try:
             schedule = db.session.query(cls).filter_by(id=schedule_id).first()
 
@@ -169,5 +173,46 @@ class ScheduleService(db.Model):
 
         except Exception as e:
             log.error(f"Error checking schedule: {e}")
+            db.session.rollback()
+            raise e
+
+    @classmethod
+    def update_schedule(cls, schedule_id: int, data: dict):
+        try:
+            schedule = db.session.query(cls).filter_by(id=schedule_id).first()
+
+            if not schedule:
+                log.error(f"Schedule with ID {schedule_id} not found.")
+                raise ValueError(f"Schedule with ID {schedule_id} not found.")
+
+            for key, value in data.items():
+                if value is not None and key in SCHEDULE_FIELDS:
+                    setattr(schedule, key, value)
+
+            schedule.updated_at = datetime.now()
+            db.session.add(schedule)
+            db.session.commit()
+            return schedule
+
+        except Exception as e:
+            log.error(f"Error updating schedule: {e}")
+            db.session.rollback()
+            raise e
+
+    @classmethod
+    def delete_schedule(cls, schedule_id: int):
+        try:
+            schedule = db.session.query(cls).filter_by(id=schedule_id).first()
+
+            if not schedule:
+                log.error(f"Schedule with ID {schedule_id} not found.")
+                raise ValueError(f"Schedule with ID {schedule_id} not found.")
+
+            schedule.is_deleted = True
+            db.session.commit()
+            return schedule.id
+
+        except Exception as e:
+            log.error(f"Error deleting schedule: {e}")
             db.session.rollback()
             raise e
