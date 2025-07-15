@@ -7,6 +7,7 @@ from flask_cors import cross_origin
 from flask_restx import Namespace, Resource, fields, reqparse
 
 from src.core.schedule.service import ServiceCore
+from src.core.schedule.block import Block
 
 pagination_arguments_schedule = reqparse.RequestParser()
 pagination_arguments_schedule.add_argument(
@@ -219,7 +220,7 @@ class BlockSheduleResoruce(Resource):
         """Block shedule service"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return ServiceCore(user_id=user_id).add_block_schedule(
+            return Block(user_id=user_id).add_block_schedule(
                 data=request.get_json()
             )
         except Exception:
@@ -241,7 +242,7 @@ class BlockSheduleResoruce(Resource):
         """List block schedule"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return ServiceCore(user_id=user_id).list_block_schedule()
+            return Block(user_id=user_id).list_block_schedule()
         except Exception:
             return (
                 jsonify(
@@ -264,7 +265,7 @@ class BlockScheduleResourceId(Resource):
         """Delete block schedule"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return ServiceCore(user_id=user_id).delete_block_schedule(
+            return Block(user_id=user_id).delete_block_schedule(
                 id=id,
             )
         except Exception:

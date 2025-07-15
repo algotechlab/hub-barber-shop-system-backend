@@ -4,7 +4,7 @@ import traceback
 
 from flask import jsonify
 
-from log.log import setup_logger
+from src.log.log import setup_logger
 from src.db.database import db
 from src.model.schedule.block import ScheduleBlock
 

@@ -5,7 +5,7 @@ from datetime import datetime
 from sqlalchemy import ForeignKey, select, text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from log.log import setup_logger
+from src.log.log import setup_logger
 from src.db.database import db
 from src.model.model import Employee
 from src.utils.metadata import Metadata
