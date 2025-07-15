@@ -1,14 +1,14 @@
 # src/core/schedule/schedule_block.py
 
 import traceback
-from datetime import datetime
 
 from flask import jsonify
-from sqlalchemy import insert, select, update
 
+from log.log import setup_logger
 from src.db.database import db
 from src.model.schedule.block import ScheduleBlock
-from src.utils.metadata import Metadata
+
+log = setup_logger()
 
 
 class Block:
@@ -18,14 +18,11 @@ class Block:
 
     def add_block_schedule(self, data: dict):
         try:
-            stmt = insert(self.block_schedule_service).values(
-                time_register=data.get("time_register"),
+            self.schedule_block.add_block_schedule(
+                start_time=data.get("start_time"),
+                end_time=data.get("end_time"),
                 employee_id=data.get("employee_id"),
-                time_block=data.get("duration"),
-                is_block=True,
             )
-            db.session.execute(stmt)
-            db.session.commit()
             return (
                 jsonify(
                     {
@@ -39,11 +36,7 @@ class Block:
 
         except Exception as e:
             db.session.rollback()
-            logdb(
-                "error",
-                message=f"Error block schedule: \
-                {e}\n{traceback.format_exc()}",
-            )
+            log.error(f"Error block schedule: {e}\n{traceback.format_exc()}")
             return (
                 jsonify(
                     {
@@ -57,29 +50,8 @@ class Block:
 
     def list_block_schedule(self):
         try:
-            stmt = (
-                select(
-                    self.block_schedule_service.id,
-                    self.block_schedule_service.start_time,
-                    self.block_schedule_service.end_time,
-                    self.employee.id.label("employee_id"),
-                    self.employee.username.label("name_employee"),
-                )
-                .join(
-                    self.employee,
-                    self.block_schedule_service.employee_id
-                    == self.employee.id,
-                )
-                .where(
-                    self.block_schedule_service.is_block == True,
-                    self.block_schedule_service.is_deleted == False,
-                )
-                .order_by(self.block_schedule_service.id)
-            )
-
-            result = db.session.execute(stmt).fetchall()
-
-            if not result:
+            schedule = self.schedule_block.list_block_schedule()
+            if not schedule:
                 return (
                     jsonify(
                         {
@@ -94,17 +66,14 @@ class Block:
             return jsonify(
                 {
                     "status_code": 200,
-                    "data": Metadata(result).model_to_list(),
+                    "data": schedule,
                     "message_id": "list_block_schedule_success",
                     "error": False,
                 }
             )
         except Exception as e:
-            print("Coletando o meu erro", e)
-            logdb(
-                "error",
-                message=f"Error list block schedule: \
-                {e}\n{traceback.format_exc()}",
+            log.error(
+                f"Error listing block schedule: {e}\n{traceback.format_exc()}"
             )
             return (
                 jsonify(
@@ -119,23 +88,7 @@ class Block:
 
     def delete_block_schedule(self, id: int):
         try:
-            stmt = (
-                update(self.block_schedule_service)
-                .where(
-                    ~self.block_schedule_service.is_deleted,
-                    self.block_schedule_service.id == id,
-                )
-                .values(
-                    deleted_by=self.user_id,
-                    deleted_at=datetime.now(),
-                    is_deleted=True,
-                    is_block=False,
-                )
-            )
-
-            db.session.execute(stmt)
-            db.session.commit()
-
+            self.schedule_block.delete_block_schedule(id)
             return jsonify(
                 {
                     "status_code": 200,
@@ -144,11 +97,8 @@ class Block:
             )
 
         except Exception as e:
-            print("Error coletado", e)
-            logdb(
-                "error",
-                message=f"Error list block schedule: \
-                {e}\n{traceback.format_exc()}",
+            log.error(
+                f"Error deleting block schedule: {e}\n{traceback.format_exc()}"
             )
             return (
                 jsonify(
