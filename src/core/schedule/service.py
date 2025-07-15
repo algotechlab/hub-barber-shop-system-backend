@@ -12,19 +12,10 @@ from src.utils.log import logdb
 
 log = setup_logger()
 
-
-SCHEDULE_FIELDS = [
-    "product_id",
-    "employee_id",
-    "time_register",
-]
-
-
 class ServiceCore:
     def __init__(self, user_id: int, *args, **kwargs):
         self.user_id = user_id
         self.schedule = ScheduleService
-        # self.block_schedule_service = ScheduleBlock # TODO refatorar
 
     def add_schedule(self, data: dict):
         try:
