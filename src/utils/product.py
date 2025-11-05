@@ -34,9 +34,7 @@ class UploadImageProduct:
             raise ValueError("No image provided")
 
         filename = secure_filename(image_stream.filename)
-        extension = (
-            filename.rsplit(".", 1)[1].lower() if "." in filename else ""
-        )
+        extension = filename.rsplit(".", 1)[1].lower() if "." in filename else ""
         if extension not in ALLOWED_EXTENSIONS:
             raise ValueError(
                 "Invalid file extension. Only PNG, JPG, and JPEG are allowed"

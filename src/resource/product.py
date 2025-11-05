@@ -33,12 +33,8 @@ product_ns = Namespace("product", description="Manager products")
 payload_add_products = product_ns.model(
     "Product",
     {
-        "description": fields.String(
-            required=True, description="Product description"
-        ),
-        "value_operation": fields.Float(
-            required=True, description="Operation value"
-        ),
+        "description": fields.String(required=True, description="Product description"),
+        "value_operation": fields.Float(required=True, description="Operation value"),
         "time_to_spend": fields.String(
             required=True, description="Time spent in HH:MM:SS"
         ),
@@ -46,21 +42,15 @@ payload_add_products = product_ns.model(
             required=True,
             description="Commission percentage (e.g., 50.0 for 50%)",
         ),
-        "category": fields.String(
-            required=True, description="Product category"
-        ),
+        "category": fields.String(required=True, description="Product category"),
     },
 )
 
 payload_update_products = product_ns.model(
     "Product",
     {
-        "description": fields.String(
-            required=False, description="Product description"
-        ),
-        "value_operation": fields.Float(
-            required=False, description="Operation value"
-        ),
+        "description": fields.String(required=False, description="Product description"),
+        "value_operation": fields.Float(required=False, description="Operation value"),
         "time_to_spend": fields.String(
             required=False, description="Time spent in HH:MM:SS"
         ),
@@ -68,9 +58,7 @@ payload_update_products = product_ns.model(
             required=False,
             description="Commission percentage (e.g., 50.0 for 50%)",
         ),
-        "category": fields.String(
-            required=False, description="Product category"
-        ),
+        "category": fields.String(required=False, description="Product category"),
     },
 )
 
@@ -167,9 +155,7 @@ class ProductManagerResource(Resource):
         """List products"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return ProductCore(user_id=user_id).list_products(
-                request.args.to_dict()
-            )
+            return ProductCore(user_id=user_id).list_products(request.args.to_dict())
         except Exception:
             return (
                 jsonify(
@@ -249,9 +235,7 @@ class ProductManangeAssociateEmployeesId(Resource):
         """Delete products associate employees"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return ProductCore(
-                user_id=user_id
-            ).delete_product_associate_employee(id=id)
+            return ProductCore(user_id=user_id).delete_product_associate_employee(id=id)
         except Exception:
             return jsonify(
                 {

@@ -10,10 +10,7 @@ from sqlalchemy.orm import aliased
 from werkzeug.security import generate_password_hash
 
 from src.db.database import db
-from src.model.model import (
-    Employee,
-    Products,
-)
+from src.model.model import Employee, Products
 
 # from src.model.model import (
 #     ScheduleBlock as BlockScheduleService,
@@ -42,12 +39,7 @@ class EmployeeCore:
     def add_employee(self, data: dict):
         try:
             # expect data format cpf and rf and phone
-            phone = (
-                data.get("phone")
-                .replace("(", "")
-                .replace(")", "")
-                .replace("-", "")
-            )
+            phone = data.get("phone").replace("(", "").replace(")", "").replace("-", "")
             data["phone"] = phone
 
             stmt = insert(self.employee).values(
@@ -176,14 +168,10 @@ class EmployeeCore:
                         )
                     )
                 except Exception:
-                    stmt = stmt.filter(
-                        self.employee.username.ilike(filter_value)
-                    )
+                    stmt = stmt.filter(self.employee.username.ilike(filter_value))
 
             # Ordenação dinâmica
-            sort_column = getattr(
-                self.employee, pagination_params.order_by, None
-            )
+            sort_column = getattr(self.employee, pagination_params.order_by, None)
             if sort_column:
                 stmt = stmt.order_by(
                     sort_column.asc()
@@ -196,8 +184,7 @@ class EmployeeCore:
             ).scalar()
 
             paginated_stmt = stmt.offset(
-                (pagination_params.current_page - 1)
-                * pagination_params.rows_per_page
+                (pagination_params.current_page - 1) * pagination_params.rows_per_page
             ).limit(pagination_params.rows_per_page)
 
             result = db.session.execute(paginated_stmt).fetchall()
@@ -215,40 +202,42 @@ class EmployeeCore:
                     404,
                 )
 
-            metadata = pagination.build_metadata(
-                total_count, pagination_params
-            )
+            metadata = pagination.build_metadata(total_count, pagination_params)
 
-            return jsonify(
-                {
-                    "status_code": 200,
-                    "data": Metadata(result).model_to_list(),
-                    "metadata": metadata if metadata else None,
-                    "message_id": "success_list_employees",
-                    "error": False,
-                }
-            ), 200
+            return (
+                jsonify(
+                    {
+                        "status_code": 200,
+                        "data": Metadata(result).model_to_list(),
+                        "metadata": metadata if metadata else None,
+                        "message_id": "success_list_employees",
+                        "error": False,
+                    }
+                ),
+                200,
+            )
 
         except Exception as e:
             logdb(
                 "error",
                 message=f"Error list employees. {e}\n{traceback.format_exc()}",
             )
-            return jsonify(
-                {
-                    "status_code": 500,
-                    "message_id": "error_list_employees",
-                    "error": True,
-                }
-            ), 500
+            return (
+                jsonify(
+                    {
+                        "status_code": 500,
+                        "message_id": "error_list_employees",
+                        "error": True,
+                    }
+                ),
+                500,
+            )
 
     def update_employee(self, id: int, data: dict):
         try:
             if not id:
                 return (
-                    jsonify(
-                        {"status_code": 400, "message_id": "not_id_found"}
-                    ),
+                    jsonify({"status_code": 400, "message_id": "not_id_found"}),
                     400,
                 )
 
@@ -283,24 +272,30 @@ class EmployeeCore:
                         )
 
             if not update_data:
-                return jsonify(
-                    {
-                        "status_code": 400,
-                        "message_id": "no_fields_to_update",
-                        "error": True,
-                        "received_data": data,
-                    }
-                ), 400
+                return (
+                    jsonify(
+                        {
+                            "status_code": 400,
+                            "message_id": "no_fields_to_update",
+                            "error": True,
+                            "received_data": data,
+                        }
+                    ),
+                    400,
+                )
 
             db.session.commit()
 
-            return jsonify(
-                {
-                    "status_code": 200,
-                    "message_id": "success_update_employee",
-                    "error": False,
-                }
-            ), 200
+            return (
+                jsonify(
+                    {
+                        "status_code": 200,
+                        "message_id": "success_update_employee",
+                        "error": False,
+                    }
+                ),
+                200,
+            )
 
         except Exception as e:
             print("Erro ao atualizar funcionário:", e)
@@ -309,13 +304,16 @@ class EmployeeCore:
                 "error",
                 message=f"Error edit employee. {e}\n{traceback.format_exc()}",
             )
-            return jsonify(
-                {
-                    "status_code": 500,
-                    "message_id": "error_update_employee",
-                    "error": True,
-                }
-            ), 500
+            return (
+                jsonify(
+                    {
+                        "status_code": 500,
+                        "message_id": "error_update_employee",
+                        "error": True,
+                    }
+                ),
+                500,
+            )
 
     def delete_employee(self, id: int):
         try:
@@ -357,9 +355,7 @@ class EmployeeCore:
             db.session.rollback()
             logdb(
                 "error",
-                message=(
-                    f"Error delete employee. {e}\n{traceback.format_exc()}"
-                ),
+                message=(f"Error delete employee. {e}\n{traceback.format_exc()}"),
             )
             return (
                 jsonify(
@@ -399,14 +395,11 @@ class ManagerEmployeeCore:
                 select(
                     ScheduleAlias.employee_id.label("employee_id"),
                     ScheduleAlias.time_register.label("inicio"),
-                    (
-                        ScheduleAlias.time_register
-                        + ProductAlias.time_to_spend
-                    ).label("fim"),
+                    (ScheduleAlias.time_register + ProductAlias.time_to_spend).label(
+                        "fim"
+                    ),
                 )
-                .join(
-                    ProductAlias, ScheduleAlias.product_id == ProductAlias.id
-                )
+                .join(ProductAlias, ScheduleAlias.product_id == ProductAlias.id)
                 .where(
                     ScheduleAlias.is_deleted.is_(False),
                     ScheduleAlias.is_check.is_(False),
@@ -417,9 +410,7 @@ class ManagerEmployeeCore:
             blocks_subq = select(
                 BlockSchedule.employee_id.label("employee_id"),
                 BlockSchedule.time_register.label("inicio"),
-                (BlockSchedule.time_register + BlockSchedule.time_block).label(
-                    "fim"
-                ),
+                (BlockSchedule.time_register + BlockSchedule.time_block).label("fim"),
             ).where(
                 BlockSchedule.is_deleted.is_(False),
                 BlockSchedule.is_block.is_(True),
@@ -459,13 +450,16 @@ class ManagerEmployeeCore:
 
             employees = [{"id": row[0], "username": row[1]} for row in result]
 
-            return jsonify(
-                {
-                    "status_code": 200,
-                    "message_id": "success_list_employees",
-                    "data": employees,
-                }
-            ), 200
+            return (
+                jsonify(
+                    {
+                        "status_code": 200,
+                        "message_id": "success_list_employees",
+                        "data": employees,
+                    }
+                ),
+                200,
+            )
 
         except Exception as e:
             logdb(
@@ -522,13 +516,16 @@ class ManagerEmployeeCore:
 
                 start += step
 
-            return jsonify(
-                {
-                    "status_code": 200,
-                    "data": hour_slots,
-                    "message_id": "success_schedule_slots",
-                }
-            ), 200
+            return (
+                jsonify(
+                    {
+                        "status_code": 200,
+                        "data": hour_slots,
+                        "message_id": "success_schedule_slots",
+                    }
+                ),
+                200,
+            )
 
         except Exception as e:
             logdb(
@@ -536,10 +533,13 @@ class ManagerEmployeeCore:
                 message=f"Erro ao gerar slots: \
                 {e}\n{traceback.format_exc()}",
             )
-            return jsonify(
-                {
-                    "status_code": 500,
-                    "message_id": "error_generate_slots",
-                    "error": True,
-                }
-            ), 500
+            return (
+                jsonify(
+                    {
+                        "status_code": 500,
+                        "message_id": "error_generate_slots",
+                        "error": True,
+                    }
+                ),
+                500,
+            )

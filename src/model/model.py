@@ -13,9 +13,7 @@ class Log(db.Model):
     __tablename__ = "logs"
     __table_args__ = {"schema": "audit_logs"}
 
-    id: Mapped[int] = mapped_column(
-        db.Integer, primary_key=True, autoincrement=True
-    )
+    id: Mapped[int] = mapped_column(db.Integer, primary_key=True, autoincrement=True)
     timestamp: Mapped[datetime] = mapped_column(db.DateTime, nullable=False)
     logger_name: Mapped[str] = mapped_column(db.Text, nullable=False)
     level: Mapped[str] = mapped_column(db.Text, nullable=False)
@@ -56,9 +54,7 @@ class Employee(db.Model):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     username: Mapped[str] = mapped_column(db.String(120), nullable=False)
-    date_of_birth: Mapped[datetime] = mapped_column(
-        db.DateTime, nullable=False
-    )
+    date_of_birth: Mapped[datetime] = mapped_column(db.DateTime, nullable=False)
     phone: Mapped[str] = mapped_column(db.String(40), nullable=False)
     role: Mapped[str] = mapped_column(db.String(40), nullable=False)
     session_token: Mapped[str] = mapped_column(db.Text, nullable=True)
@@ -84,9 +80,7 @@ class Products(db.Model):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     description: Mapped[str] = mapped_column(db.String(30), nullable=False)
-    value_operation: Mapped[Numeric] = mapped_column(
-        db.Numeric(2, 10), default=0.00
-    )
+    value_operation: Mapped[Numeric] = mapped_column(db.Numeric(2, 10), default=0.00)
     time_to_spend: Mapped[Interval] = mapped_column(Interval, nullable=False)
     commission: Mapped[float] = mapped_column(db.Float, nullable=False)
     category: Mapped[str] = mapped_column(db.String(20), nullable=False)
@@ -179,15 +173,9 @@ class SubscriptionUser(db.Model):
     subscription_id: Mapped[int] = mapped_column(
         ForeignKey("public.subscription.id"), nullable=False
     )
-    user_id: Mapped[int] = mapped_column(
-        ForeignKey("public.user.id"), nullable=False
-    )
-    start_subscription: Mapped[datetime] = mapped_column(
-        db.DateTime, nullable=False
-    )
-    end_subscription: Mapped[datetime] = mapped_column(
-        db.DateTime, nullable=False
-    )
+    user_id: Mapped[int] = mapped_column(ForeignKey("public.user.id"), nullable=False)
+    start_subscription: Mapped[datetime] = mapped_column(db.DateTime, nullable=False)
+    end_subscription: Mapped[datetime] = mapped_column(db.DateTime, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         db.DateTime, default=func.now(), nullable=False
     )
@@ -232,9 +220,7 @@ class Invoice(db.Model):
     __table_args__ = {"schema": "finance"}
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(
-        ForeignKey("public.user.id"), nullable=False
-    )
+    user_id: Mapped[int] = mapped_column(ForeignKey("public.user.id"), nullable=False)
     product_id: Mapped[int] = mapped_column(
         ForeignKey("public.products.id"), nullable=False
     )
@@ -262,9 +248,7 @@ class BoxAccounting(db.Model):
     __table_args__ = {"schema": "finance"}
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    value_operation: Mapped[float] = mapped_column(
-        db.Numeric(10, 2), default=0.00
-    )
+    value_operation: Mapped[float] = mapped_column(db.Numeric(10, 2), default=0.00)
     tip: Mapped[float] = mapped_column(db.Numeric(10, 2), default=0.00)
     invoice_id: Mapped[int] = mapped_column(
         ForeignKey("finance.invoice.id"), nullable=False
@@ -287,9 +271,7 @@ class InvoiceOutPut(db.Model):
     __table_args__ = {"schema": "finance"}
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    value_operation: Mapped[float] = mapped_column(
-        db.Numeric(10, 2), default=0.00
-    )
+    value_operation: Mapped[float] = mapped_column(db.Numeric(10, 2), default=0.00)
     types_payments: Mapped[str] = mapped_column(db.String(30), nullable=False)
     description: Mapped[str] = mapped_column(db.String(255), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
@@ -310,9 +292,7 @@ class IndicatedUsers(db.Model):
     __table_args__ = {"schema": "campaign"}
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(
-        ForeignKey("public.user.id"), nullable=False
-    )
+    user_id: Mapped[int] = mapped_column(ForeignKey("public.user.id"), nullable=False)
     employee_id: Mapped[int] = mapped_column(
         ForeignKey("public.employee.id"), nullable=False
     )

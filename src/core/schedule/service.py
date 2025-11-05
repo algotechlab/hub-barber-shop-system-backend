@@ -12,6 +12,7 @@ from src.utils.log import logdb
 
 log = setup_logger()
 
+
 class ServiceCore:
     def __init__(self, user_id: int, *args, **kwargs):
         self.user_id = user_id

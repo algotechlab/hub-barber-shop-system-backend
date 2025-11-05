@@ -22,8 +22,7 @@ class Metadata:
         # Caso seja uma instância ORM
         try:
             return {
-                c.key: getattr(obj, c.key)
-                for c in inspect(obj).mapper.column_attrs
+                c.key: getattr(obj, c.key) for c in inspect(obj).mapper.column_attrs
             }
         except Exception:
             raise ValueError(
@@ -50,16 +49,13 @@ class Metadata:
                 column.name: getattr(self.objects, column.name)
                 for column in self.objects.__table__.columns
             }
-        raise ValueError(
-            "Objeto não possui __table__ para extração de colunas."
-        )
+        raise ValueError("Objeto não possui __table__ para extração de colunas.")
 
 
 def model_to_dict(model):
     """Converte um modelo SQLAlchemy em dicionário sem campos internos."""
     return {
-        column.name: getattr(model, column.name)
-        for column in model.__table__.columns
+        column.name: getattr(model, column.name) for column in model.__table__.columns
     }
 
 
@@ -75,10 +71,7 @@ def model_to_list(model):
 
 def model_instance_to_dict(model):
     return [
-        {
-            column.name: getattr(item, column.name)
-            for column in item.__table__.columns
-        }
+        {column.name: getattr(item, column.name) for column in item.__table__.columns}
         for item in model
     ]
 

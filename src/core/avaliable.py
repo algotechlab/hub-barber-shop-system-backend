@@ -35,13 +35,16 @@ class AvaliableCore:
                     404,
                 )
 
-            return jsonify(
-                {
-                    "status_code": 200,
-                    "message_id": "success_count_start",
-                    "data": Metadata(result).model_to_list(),
-                }
-            ), 200
+            return (
+                jsonify(
+                    {
+                        "status_code": 200,
+                        "message_id": "success_count_start",
+                        "data": Metadata(result).model_to_list(),
+                    }
+                ),
+                200,
+            )
 
         except Exception as e:
             logdb(
@@ -72,9 +75,7 @@ class AvaliableCore:
                 self.avaliable.star,
             ).join(self.user, self.avaliable.user_id == self.user.id)
 
-            sort_column = getattr(
-                self.avaliable, pagination_params.order_by, None
-            )
+            sort_column = getattr(self.avaliable, pagination_params.order_by, None)
             if sort_column:
                 stmt = stmt.order_by(
                     sort_column.asc()
@@ -87,13 +88,11 @@ class AvaliableCore:
             ).scalar()
 
             paginated_stmt = stmt.offset(
-                (pagination_params.current_page - 1)
-                * pagination_params.rows_per_page
+                (pagination_params.current_page - 1) * pagination_params.rows_per_page
             ).limit(pagination_params.rows_per_page)
 
             paginated_stmt = stmt.offset(
-                (pagination_params.current_page - 1)
-                * pagination_params.rows_per_page
+                (pagination_params.current_page - 1) * pagination_params.rows_per_page
             ).limit(pagination_params.rows_per_page)
 
             result = db.session.execute(paginated_stmt).fetchall()
@@ -105,9 +104,7 @@ class AvaliableCore:
                     "error": True,
                 }, 404
 
-            metadata = pagination.build_metadata(
-                total_count, pagination_params
-            )
+            metadata = pagination.build_metadata(total_count, pagination_params)
 
             if not result:
                 return (
@@ -120,14 +117,17 @@ class AvaliableCore:
                     404,
                 )
 
-            return jsonify(
-                {
-                    "status_code": 200,
-                    "message_id": "success_list_avaliable",
-                    "data": Metadata(result).model_to_list(),
-                    "metadata": metadata if metadata else "",
-                }
-            ), 200
+            return (
+                jsonify(
+                    {
+                        "status_code": 200,
+                        "message_id": "success_list_avaliable",
+                        "data": Metadata(result).model_to_list(),
+                        "metadata": metadata if metadata else "",
+                    }
+                ),
+                200,
+            )
 
         except Exception as e:
             db.session.rollback()
@@ -159,12 +159,15 @@ class AvaliableCore:
 
             db.session.execute(stmt)
             db.session.commit()
-            return jsonify(
-                {
-                    "status_code": 200,
-                    "message_id": "success_add_avaliable",
-                }
-            ), 200
+            return (
+                jsonify(
+                    {
+                        "status_code": 200,
+                        "message_id": "success_add_avaliable",
+                    }
+                ),
+                200,
+            )
 
         except Exception as e:
             db.session.rollback()

@@ -6,13 +6,7 @@ from flask import jsonify
 from sqlalchemy import func, or_, select
 
 from src.db.database import db
-from src.model.model import (
-    BoxAccounting,
-    Employee,
-    IndicatedUsers,
-    Invoice,
-    Products,
-)
+from src.model.model import BoxAccounting, Employee, IndicatedUsers, Invoice, Products
 from src.utils.log import logdb
 from src.utils.metadata import Metadata
 from src.utils.pagination import Pagination
@@ -73,17 +67,14 @@ class DashBoardCore:
                         )
                     )
                 except Exception:
-                    stmt = stmt.filter(
-                        self.employee.username.ilike(filter_value)
-                    )
+                    stmt = stmt.filter(self.employee.username.ilike(filter_value))
 
             total_count = db.session.execute(
                 select(func.count()).select_from(stmt.subquery())
             ).scalar()
 
             paginated_stmt = stmt.offset(
-                (pagination_params.current_page - 1)
-                * pagination_params.rows_per_page
+                (pagination_params.current_page - 1) * pagination_params.rows_per_page
             ).limit(pagination_params.rows_per_page)
 
             result = db.session.execute(paginated_stmt).fetchall()
@@ -99,9 +90,7 @@ class DashBoardCore:
                     404,
                 )
 
-            metadata = pagination.build_metadata(
-                total_count, pagination_params
-            )
+            metadata = pagination.build_metadata(total_count, pagination_params)
             return (
                 jsonify(
                     {
@@ -204,9 +193,7 @@ class DashBoardCore:
             stmt = (
                 select(
                     self.employee.username,
-                    func.count(self.indicator_users.user_id).label(
-                        "total_indication"
-                    ),
+                    func.count(self.indicator_users.user_id).label("total_indication"),
                 )
                 .join(
                     self.indicator_users,
@@ -269,9 +256,7 @@ class DashBoardCore:
                     func.count(self.indicator_users.user_id).label(
                         "total_service_users"
                     ),
-                    func.count(self.box_accounting.invoice_id).label(
-                        "aprove_service"
-                    ),
+                    func.count(self.box_accounting.invoice_id).label("aprove_service"),
                 )
                 .select_from(self.invoice)
                 .join(

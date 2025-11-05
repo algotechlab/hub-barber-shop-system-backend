@@ -29,9 +29,7 @@ payload_add_avaliable = avaliable_ns.model(
     {
         "star": fields.Integer(required=True, description="Star"),
         "product_id": fields.Integer(required=True, description="Product id"),
-        "employee_id": fields.Integer(
-            required=True, description="Employee id"
-        ),
+        "employee_id": fields.Integer(required=True, description="Employee id"),
         "user_id": fields.Integer(required=True, description="User id"),
         "observer": fields.String(required=True, description="Observer"),
     },
@@ -47,9 +45,7 @@ class ManageAvaliable(Resource):
         """Get list avaliable users"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return AvaliableCore(user_id=user_id).list_avaliable(
-                request.args.to_dict()
-            )
+            return AvaliableCore(user_id=user_id).list_avaliable(request.args.to_dict())
         except Exception:
             return jsonify(
                 {
@@ -66,9 +62,7 @@ class ManageAvaliable(Resource):
         """Add  avaliable users"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return AvaliableCore(user_id=user_id).add_avaliable(
-                request.get_json()
-            )
+            return AvaliableCore(user_id=user_id).add_avaliable(request.get_json())
         except Exception:
             return jsonify(
                 {

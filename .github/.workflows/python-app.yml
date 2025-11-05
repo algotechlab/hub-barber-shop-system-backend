@@ -1,0 +1,57 @@
+name: CI/CD Workflow
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-24.04
+
+    steps:
+      # Checkout do código do repositório
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Configuração do Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # Instalar Poetry
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      # Cache para dependências Poetry
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-${{ hashFiles('pyproject.toml', 'poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+
+      # Instalar dependências (incluindo dev e test)
+      - name: Install dependencies
+        run: poetry install --with dev,test
+
+      # Rodar formatação e lint (usando taskipy)
+      - name: Format and Lint
+        run: |
+          poetry run task format
+          poetry run task check
+
+      # Rodar testes com coverage
+      - name: Run Tests
+        run: poetry run task test
+
+      # Build Docker image
+      - name: Build Docker Image
+        run: poetry run task docker_build

@@ -214,21 +214,16 @@ class UserCore:
             ).scalar()
 
             paginated_stmt = stmt.offset(
-                (pagination_params.current_page - 1)
-                * pagination_params.rows_per_page
+                (pagination_params.current_page - 1) * pagination_params.rows_per_page
             ).limit(pagination_params.rows_per_page)
 
             # Executa a consulta
             result = db.session.execute(paginated_stmt).fetchall()
 
             if not result:
-                return jsonify(
-                    {"status_code": 404, "message_id": "users_not_found"}
-                )
+                return jsonify({"status_code": 404, "message_id": "users_not_found"})
 
-            metadata = pagination.build_metadata(
-                total_count, pagination_params
-            )
+            metadata = pagination.build_metadata(total_count, pagination_params)
 
             return jsonify(
                 {

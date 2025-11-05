@@ -16,9 +16,7 @@ class Invoice(db.Model):
     __table_args__ = {"schema": "finance"}
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(
-        ForeignKey("public.user.id"), nullable=False
-    )
+    user_id: Mapped[int] = mapped_column(ForeignKey("public.user.id"), nullable=False)
     product_id: Mapped[int] = mapped_column(
         ForeignKey("public.products.id"), nullable=False
     )

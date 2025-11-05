@@ -6,8 +6,8 @@ from flask import jsonify, request
 from flask_cors import cross_origin
 from flask_restx import Namespace, Resource, fields, reqparse
 
-from src.core.schedule.service import ServiceCore
 from src.core.schedule.block import Block
+from src.core.schedule.service import ServiceCore
 
 pagination_arguments_schedule = reqparse.RequestParser()
 pagination_arguments_schedule.add_argument(
@@ -21,9 +21,7 @@ payload_add_schedule = schedule_ns.model(
     "scheduleAddPayload",
     {
         "product_id": fields.Integer(required=True, description="Product id"),
-        "employee_id": fields.Integer(
-            required=True, description="Employee id"
-        ),
+        "employee_id": fields.Integer(required=True, description="Employee id"),
         "user_id": fields.Integer(required=True, description="User id"),
         "time_register": fields.DateTime(
             required=True, description="2025-07-14 08:30:00"
@@ -36,9 +34,7 @@ payload_update_schedule = schedule_ns.model(
     "scheduleUpdatePayload",
     {
         "product_id": fields.Integer(required=False, description="Product id"),
-        "employee_id": fields.Integer(
-            required=False, description="Employee id"
-        ),
+        "employee_id": fields.Integer(required=False, description="Employee id"),
         "time_register": fields.DateTime(
             required=False, description="Time register time spent in HH:MM:SS"
         ),
@@ -51,9 +47,7 @@ payload_check_schedule = schedule_ns.model(
         "product_id": fields.Integer(required=True, description="Invoice id"),
         "payment_id": fields.Integer(required=True, description="Payment id"),
         "user_id": fields.Integer(required=True, description="User id"),
-        "value_operation": fields.Float(
-            required=False, description="Operation value"
-        ),
+        "value_operation": fields.Float(required=False, description="Operation value"),
         "tip": fields.Float(required=False, description="Tip"),
     },
 )
@@ -61,9 +55,7 @@ payload_check_schedule = schedule_ns.model(
 paylaod_add_block = schedule_ns.model(
     "BlockSchedule",
     {
-        "employee_id": fields.Integer(
-            required=True, description="Employee id"
-        ),
+        "employee_id": fields.Integer(required=True, description="Employee id"),
         "duration": fields.DateTime(
             required=True, description="Duration block schedule"
         ),
@@ -83,9 +75,7 @@ class scheduleManageResource(Resource):
         """Add schedule"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return ServiceCore(user_id=user_id).add_schedule(
-                data=request.get_json()
-            )
+            return ServiceCore(user_id=user_id).add_schedule(data=request.get_json())
         except Exception:
             return (
                 jsonify(
@@ -187,9 +177,7 @@ class scheduleManagerResourceId(Resource):
 
 @schedule_ns.route("/manageruser")  # todo - esse endpoint vai ser alterado
 class scheduleManagerUserId(Resource):
-    @schedule_ns.doc(
-        description="List schedule filter user_id logged of platform"
-    )
+    @schedule_ns.doc(description="List schedule filter user_id logged of platform")
     @schedule_ns.expect(pagination_arguments_schedule, validate=True)
     @cross_origin()
     def get(self):
@@ -220,9 +208,7 @@ class BlockSheduleResoruce(Resource):
         """Block shedule service"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return Block(user_id=user_id).add_block_schedule(
-                data=request.get_json()
-            )
+            return Block(user_id=user_id).add_block_schedule(data=request.get_json())
         except Exception:
             return (
                 jsonify(

@@ -4,8 +4,8 @@ import traceback
 
 from flask import jsonify
 
-from src.log.log import setup_logger
 from src.db.database import db
+from src.log.log import setup_logger
 from src.model.schedule.block import ScheduleBlock
 
 log = setup_logger()
@@ -72,9 +72,7 @@ class Block:
                 }
             )
         except Exception as e:
-            log.error(
-                f"Error listing block schedule: {e}\n{traceback.format_exc()}"
-            )
+            log.error(f"Error listing block schedule: {e}\n{traceback.format_exc()}")
             return (
                 jsonify(
                     {
@@ -97,9 +95,7 @@ class Block:
             )
 
         except Exception as e:
-            log.error(
-                f"Error deleting block schedule: {e}\n{traceback.format_exc()}"
-            )
+            log.error(f"Error deleting block schedule: {e}\n{traceback.format_exc()}")
             return (
                 jsonify(
                     {

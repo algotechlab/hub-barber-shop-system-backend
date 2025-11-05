@@ -54,7 +54,7 @@ def create_app():
     app.config["JWT_HEADER_TYPE"] = "Bearer"
     # app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=2)
 
-    _jwt = JWTManager(app)
+    JWTManager(app)
 
     # Namespaces registration
     api.add_namespace(user_us)

@@ -48,13 +48,9 @@ class PayloadFactoryLogin:
 
 
 login_payload = PayloadFactoryLogin.login_platform_payload(login_ns)
-login_payload_employee = PayloadFactoryLogin.login_platform_payload_employee(
-    login_ns
-)
+login_payload_employee = PayloadFactoryLogin.login_platform_payload_employee(login_ns)
 rest_password_payload = PayloadFactoryLogin.reset_login_paylaod(login_ns)
-rest_password_master_payload = PayloadFactoryLogin.reset_master_password(
-    login_ns
-)
+rest_password_master_payload = PayloadFactoryLogin.reset_master_password(login_ns)
 
 
 @login_ns.route("")

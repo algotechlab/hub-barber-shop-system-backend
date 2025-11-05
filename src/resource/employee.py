@@ -33,34 +33,26 @@ employee_ns = Namespace("employee", description="Manager Employee")
 payload_add_employees = employee_ns.model(
     "PayloadAddEmployees",
     {
-        "username": fields.String(
-            required=True, example="User name", max_length=120
-        ),
+        "username": fields.String(required=True, example="User name", max_length=120),
         "date_of_birth": fields.DateTime(
             dt_format="%Y-%m-%d",
             description="The person's birth date in %Y-%m-%d format",
         ),
         "phone": fields.String(required=True, example="Phone", max_length=40),
-        "password": fields.String(
-            required=True, example="Password", max_length=300
-        ),
+        "password": fields.String(required=True, example="Password", max_length=300),
     },
 )
 
 payload_update_employees = employee_ns.model(
     "PayloadUpdateEmployees",
     {
-        "username": fields.String(
-            required=False, example="User name", max_length=120
-        ),
+        "username": fields.String(required=False, example="User name", max_length=120),
         "date_of_birth": fields.DateTime(
             dt_format="iso8601",
             description="The person's birth date in ISO 8601 format",
         ),
         "phone": fields.String(required=False, example="Phone", max_length=40),
-        "password": fields.String(
-            required=False, example="Password", max_length=300
-        ),
+        "password": fields.String(required=False, example="Password", max_length=300),
     },
 )
 
@@ -74,9 +66,7 @@ class EmployeeResourceManager(Resource):
         """List employees"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return EmployeeCore(user_id=user_id).list_employees(
-                request.args.to_dict()
-            )
+            return EmployeeCore(user_id=user_id).list_employees(request.args.to_dict())
         except Exception:
             return jsonify(
                 {
@@ -93,9 +83,7 @@ class EmployeeResourceManager(Resource):
         """Add employees"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return EmployeeCore(user_id=user_id).add_employee(
-                request.get_json()
-            )
+            return EmployeeCore(user_id=user_id).add_employee(request.get_json())
         except Exception:
             return jsonify(
                 {
@@ -131,9 +119,7 @@ class EmployeeResourceManagerId(Resource):
         """Update employees"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return EmployeeCore(user_id=user_id).update_employee(
-                id, request.get_json()
-            )
+            return EmployeeCore(user_id=user_id).update_employee(id, request.get_json())
         except Exception:
             return jsonify(
                 {
@@ -168,9 +154,7 @@ class EmployeeResourceSlots(Resource):
         """List employees Avaliable"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return ManagerEmployeeCore(
-                user_id=user_id
-            ).generate_daily_schedule_slots()
+            return ManagerEmployeeCore(user_id=user_id).generate_daily_schedule_slots()
         except Exception:
             return jsonify(
                 {

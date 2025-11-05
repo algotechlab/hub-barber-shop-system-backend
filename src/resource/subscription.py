@@ -30,28 +30,20 @@ subscription_ns = Namespace("subscription", description="Manager subscription")
 payload_add_subscription = subscription_ns.model(
     "SubscriptionAddPayload",
     {
-        "name": fields.String(
-            required=True, description="Name of the subscription"
-        ),
-        "price": fields.String(
-            required=True, description="Price of the subscription"
-        ),
+        "name": fields.String(required=True, description="Name of the subscription"),
+        "price": fields.String(required=True, description="Price of the subscription"),
         "days_to_spend": fields.String(
             required=True,
             description="Time duration (e.g. '30 days', '1 month 15 days')",
         ),
-        "benefits": fields.String(
-            required=True, description="Description of benefits"
-        ),
+        "benefits": fields.String(required=True, description="Description of benefits"),
     },
 )
 
 payload_add_users_subscription = subscription_ns.model(
     "SubscriptionUserAddPayload",
     {
-        "subscription_id": fields.Integer(
-            required=True, description="Subscription ID"
-        ),
+        "subscription_id": fields.Integer(required=True, description="Subscription ID"),
         "user_id": fields.Integer(required=True, description="User ID"),
     },
 )
@@ -59,12 +51,8 @@ payload_add_users_subscription = subscription_ns.model(
 payload_update_subscription = subscription_ns.model(
     "SubscriptionUpdatePayload",
     {
-        "name": fields.String(
-            required=False, description="Name of the subscription"
-        ),
-        "price": fields.String(
-            required=False, description="Price of the subscription"
-        ),
+        "name": fields.String(required=False, description="Name of the subscription"),
+        "price": fields.String(required=False, description="Price of the subscription"),
         "days_to_spend": fields.String(
             required=False,
             description="Time duration (e.g. '30 days', '1 month 15 days')",

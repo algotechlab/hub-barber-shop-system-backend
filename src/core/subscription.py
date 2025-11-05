@@ -29,9 +29,7 @@ class SubscriptionCore:
         try:
             time_to_spend = data.get("days_to_spend")
             if not isinstance(time_to_spend, str):
-                raise ValueError(
-                    "time_to_spend must be a string (e.g., '30 days')"
-                )
+                raise ValueError("time_to_spend must be a string (e.g., '30 days')")
 
             stmt = insert(self.subscription).values(
                 name=data.get("name"),
@@ -130,9 +128,7 @@ class SubscriptionCore:
                 self.subscription.id,
                 self.subscription.name,
                 self.subscription.price,
-                extract("day", self.subscription.days_to_spend).label(
-                    "days_to_spend"
-                ),
+                extract("day", self.subscription.days_to_spend).label("days_to_spend"),
                 self.subscription.benefits,
             ).where(~self.subscription.is_deleted)
 
@@ -145,13 +141,9 @@ class SubscriptionCore:
                         )
                     )
                 except Exception:
-                    stmt = stmt.filter(
-                        self.subscription.name.ilike(filter_value)
-                    )
+                    stmt = stmt.filter(self.subscription.name.ilike(filter_value))
 
-            sort_column = getattr(
-                self.subscription, pagination_params.order_by, None
-            )
+            sort_column = getattr(self.subscription, pagination_params.order_by, None)
             if sort_column:
                 stmt = stmt.order_by(
                     sort_column.asc()
@@ -164,8 +156,7 @@ class SubscriptionCore:
             ).scalar()
 
             paginated_stmt = stmt.offset(
-                (pagination_params.current_page - 1)
-                * pagination_params.rows_per_page
+                (pagination_params.current_page - 1) * pagination_params.rows_per_page
             ).limit(pagination_params.rows_per_page)
 
             # Executa a consulta
@@ -179,9 +170,7 @@ class SubscriptionCore:
                     }
                 )
 
-            metadata = pagination.build_metadata(
-                total_count, pagination_params
-            )
+            metadata = pagination.build_metadata(total_count, pagination_params)
 
             return jsonify(
                 {
@@ -199,12 +188,15 @@ class SubscriptionCore:
                 message=f"Error listing users: \
                 {e}\n{traceback.format_exc()}",
             )
-            return jsonify(
-                {
-                    "status_code": 500,
-                    "message_id": "error_processing_list_subscription",
-                }
-            ), 500
+            return (
+                jsonify(
+                    {
+                        "status_code": 500,
+                        "message_id": "error_processing_list_subscription",
+                    }
+                ),
+                500,
+            )
 
     def update_subscription(self, id: int, data: dict):
         try:
@@ -238,13 +230,16 @@ class SubscriptionCore:
             db.session.execute(stmt)
             db.session.commit()
 
-            return jsonify(
-                {
-                    "status_code": 200,
-                    "message_id": "success_update_subscription",
-                    "error": False,
-                }
-            ), 200
+            return (
+                jsonify(
+                    {
+                        "status_code": 200,
+                        "message_id": "success_update_subscription",
+                        "error": False,
+                    }
+                ),
+                200,
+            )
 
         except Exception as e:
             logdb(
@@ -252,15 +247,18 @@ class SubscriptionCore:
                 message=f"Error update subscription: \
                 {e}\n{traceback.format_exc()}",
             )
-            return jsonify(
-                {
-                    "status_code": 500,
-                    "message_id": "something_went_wrong",
-                    "error": True,
-                    "exception": str(e),
-                    "traceback": traceback.format_exc(),
-                }
-            ), 500
+            return (
+                jsonify(
+                    {
+                        "status_code": 500,
+                        "message_id": "something_went_wrong",
+                        "error": True,
+                        "exception": str(e),
+                        "traceback": traceback.format_exc(),
+                    }
+                ),
+                500,
+            )
 
     def delete_subcription(self, id: int):
         try:

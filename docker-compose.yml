@@ -1,71 +1,6 @@
 version: '3.8'
 
 services:
-  evolution-api:
-    container_name: evolution_api
-    image: atendai/evolution-api:latest
-    depends_on:
-      postgres: 
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    restart: always
-    ports:
-      - "8080:8080"
-    environment:
-      - AUTHENTICATION_API_KEY=apikey321
-      - CONFIG_SESSION_PHONE_VERSION=2.3000.1023204200
-      - DATABASE_ENABLED=true
-      - DATABASE_PROVIDER=postgresql
-      - DATABASE_CONNECTION_URI=postgresql://postgres:postgres@postgres:5432/postgres
-      - CACHE_REDIS_ENABLED=true
-      - CACHE_REDIS_URI=redis://redis:6379/6
-      - CACHE_REDIS_PREFIX_KEY=evolution
-      - CACHE_REDIS_SAVE_INSTANCES=true
-      - CACHE_LOCAL_ENABLED=false
-    volumes:
-      - evolution_instances:/evolution/instances
-    networks:
-      - evolution-net
-
-  postgres:
-    image: postgres:15
-    restart: always
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=postgres
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5441:5432"
-    networks:
-      - evolution-net
-    command: >
-      -c 'listen_addresses=*'
-      -c 'max_connections=200'
-      -c 'shared_buffers=256MB'
-      -c 'work_mem=8MB'
-      -c 'log_min_messages=WARNING'
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  redis:
-    image: redis
-    restart: always
-    ports:
-      - "6379:6379"
-    networks:
-      - evolution-net
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
   flask_db:
     image: postgres:15
     container_name: flask_db
@@ -74,20 +9,22 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=barbershop_db
-      - DATABASE_URL=postgresql://postgres:postgres@flask_db:5432/barbershop_db
-      - ALLOWED_HOSTS=localhost,127.0.0.1
     volumes:
       - flask_db_data:/var/lib/postgresql/data
     ports:
       - "5477:5432"
-    networks:
-      - evolution-net
-    command: >
-      -c 'listen_addresses=*'
-      -c 'max_connections=200'
-      -c 'shared_buffers=256MB'
-      -c 'work_mem=8MB'
-      -c 'log_min_messages=WARNING'
+    command: 
+      - "postgres"
+      - "-c"
+      - "listen_addresses=*"
+      - "-c"
+      - "max_connections=200"
+      - "-c"
+      - "shared_buffers=256MB"
+      - "-c"
+      - "work_mem=8MB"
+      - "-c"
+      - "log_min_messages=WARNING"
 
   flask_app:
     build:
@@ -96,7 +33,6 @@ services:
     container_name: flask_app
     depends_on:
       - flask_db
-      - redis
     restart: always
     ports:
       - "8000:8000"
@@ -106,15 +42,7 @@ services:
       - ALLOWED_HOSTS=localhost,127.0.0.1,flask_app
     volumes:
       - .:/app
-    networks:
-      - evolution-net
     command: gunicorn --config gunicorn.conf.py -b 0.0.0.0:8000 manage:app
 
 volumes:
-  evolution_instances:
-  postgres_data:
   flask_db_data:
-
-networks:
-  evolution-net:
-    driver: bridge

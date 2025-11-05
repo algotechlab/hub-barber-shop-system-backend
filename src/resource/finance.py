@@ -36,9 +36,7 @@ payload_update_finance = finance_ns.model(
             required=False, example=1, description="Payments ID"
         ),
         "tips": fields.Float(required=False, description="Tip"),
-        "value_operation": fields.Float(
-            required=False, description="Operation value"
-        ),
+        "value_operation": fields.Float(required=False, description="Operation value"),
     },
 )
 
@@ -51,9 +49,7 @@ payload_add_finance = finance_ns.model(
         "description": fields.String(
             required=False, description="Description out put finance"
         ),
-        "type_payments": fields.String(
-            required=False, description="Type payments"
-        ),
+        "type_payments": fields.String(required=False, description="Type payments"),
     },
 )
 
@@ -66,9 +62,7 @@ payload_update_out_put_finance = finance_ns.model(
         "description": fields.String(
             required=False, description="Description out put finance"
         ),
-        "type_payments": fields.String(
-            required=False, description="Type payments"
-        ),
+        "type_payments": fields.String(required=False, description="Type payments"),
     },
 )
 

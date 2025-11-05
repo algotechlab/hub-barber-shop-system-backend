@@ -27,9 +27,7 @@ MINUTES = 59
 SECONDS = 59
 
 
-UPLOAD_FILE = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "static"
-)
+UPLOAD_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 
 
 class ProductCore:
@@ -109,16 +107,12 @@ class ProductCore:
                     created_at=datetime.now(),
                 )
                 image_path = uploader.save_image(image_file)
-                image_url = url_for(
-                    "static", filename=image_path, _external=True
-                )
+                image_url = url_for("static", filename=image_path, _external=True)
 
             stmt = self.products.__table__.insert().values(
                 description=data.get("description"),
                 value_operation=float(data.get("value_operation")),
-                time_to_spend=self._parse_time_to_spend(
-                    data.get("time_to_spend")
-                ),
+                time_to_spend=self._parse_time_to_spend(data.get("time_to_spend")),
                 commission=float(data.get("commission")),
                 category=data.get("category"),
             )
@@ -172,17 +166,13 @@ class ProductCore:
 
             stmt = select(
                 self.products.id,
-                func.initcap(func.trim(self.products.description)).label(
-                    "description"
-                ),
+                func.initcap(func.trim(self.products.description)).label("description"),
                 self.products.value_operation,
-                func.to_char(
-                    self.products.time_to_spend, text("'HH24:MI:SS'")
-                ).label("time_to_spend"),
-                self.products.commission,
-                func.initcap(func.trim(self.products.category)).label(
-                    "category"
+                func.to_char(self.products.time_to_spend, text("'HH24:MI:SS'")).label(
+                    "time_to_spend"
                 ),
+                self.products.commission,
+                func.initcap(func.trim(self.products.category)).label("category"),
             ).where(~self.products.is_deleted)
 
             if pagination_params.filter_by:
@@ -193,9 +183,7 @@ class ProductCore:
                     )
                 )
 
-            sort_column = getattr(
-                self.products, pagination_params.order_by, None
-            )
+            sort_column = getattr(self.products, pagination_params.order_by, None)
             if sort_column:
                 stmt = stmt.order_by(
                     sort_column.asc()
@@ -208,8 +196,7 @@ class ProductCore:
             ).scalar()
 
             paginated_stmt = stmt.offset(
-                (pagination_params.current_page - 1)
-                * pagination_params.rows_per_page
+                (pagination_params.current_page - 1) * pagination_params.rows_per_page
             ).limit(pagination_params.rows_per_page)
 
             result = db.session.execute(paginated_stmt).fetchall()
@@ -221,17 +208,13 @@ class ProductCore:
                     "error": True,
                 }, 404
 
-            metadata = pagination.build_metadata(
-                total_count, pagination_params
-            )
+            metadata = pagination.build_metadata(total_count, pagination_params)
 
             formatted_result = []
             base_upload_dir = os.path.join("src", "static", "uploads")
             for row in result:
                 image_url = None
-                description = secure_filename(
-                    row.description.replace(" ", "_")
-                )
+                description = secure_filename(row.description.replace(" ", "_"))
                 for root, dirs, files in os.walk(base_upload_dir):
                     if f"product_images_{description}" in root:
                         for file in files:
@@ -395,13 +378,16 @@ class ProductCore:
             db.session.execute(stmt)
             db.session.commit()
 
-            return jsonify(
-                {
-                    "status_code": 200,
-                    "message_id": "success_delete_associate_product_employee",
-                    "error": False,
-                }
-            ), 200
+            return (
+                jsonify(
+                    {
+                        "status_code": 200,
+                        "message_id": "success_delete_associate_product_employee",
+                        "error": False,
+                    }
+                ),
+                200,
+            )
 
         except Exception as e:
             db.session.rollback()

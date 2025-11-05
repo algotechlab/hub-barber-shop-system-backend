@@ -28,27 +28,17 @@ user_us = Namespace("user", description="Manager users")
 payload_add_users = user_us.model(
     "PayloadAddUser",
     {
-        "username": fields.String(
-            required=True, example="User name", max_length=120
-        ),
-        "lastname": fields.String(
-            required=True, example="User name", max_length=120
-        ),
-        "phone": fields.String(
-            required=True, example="User phone", max_length=40
-        ),
+        "username": fields.String(required=True, example="User name", max_length=120),
+        "lastname": fields.String(required=True, example="User name", max_length=120),
+        "phone": fields.String(required=True, example="User phone", max_length=40),
     },
 )
 
 payload_update_users = user_us.model(
     "PayloadUpdateUser",
     {
-        "username": fields.String(
-            required=False, example="User name", max_length=120
-        ),
-        "lastname": fields.String(
-            required=False, example="User name", max_length=120
-        ),
+        "username": fields.String(required=False, example="User name", max_length=120),
+        "lastname": fields.String(required=False, example="User name", max_length=120),
         "password": fields.String(
             required=False, example="User password", max_length=300
         ),
@@ -118,9 +108,7 @@ class UserResourcerId(Resource):
         """Update users"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return UserCore(user_id=user_id).update_user(
-                id=id, data=request.get_json()
-            )
+            return UserCore(user_id=user_id).update_user(id=id, data=request.get_json())
         except Exception:
             return jsonify(
                 {

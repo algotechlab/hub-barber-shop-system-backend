@@ -36,9 +36,9 @@ class AnalyticalCore:
             # 2. Total gasto
             total_spent_stmt = (
                 select(
-                    func.coalesce(
-                        func.sum(self.products.value_operation), 0
-                    ).label("total_spent")
+                    func.coalesce(func.sum(self.products.value_operation), 0).label(
+                        "total_spent"
+                    )
                 )
                 .select_from(self.schedule_service)
                 .join(
@@ -94,30 +94,36 @@ class AnalyticalCore:
             cuts = db.session.execute(cuts_stmt).fetchall()
             barbers = db.session.execute(barbers_stmt).fetchall()
 
-            return jsonify(
-                {
-                    "status_code": 200,
-                    "data": {
-                        "summary_client": Metadata(summary).model_to_list(),
-                        "total_visits": total_visits,
-                        "total_spent": total_spent,
-                        "cuts": Metadata(cuts).model_to_list(),
-                        "barbers": Metadata(barbers).model_to_list(),
-                    },
-                    "error": False,
-                    "message_id": "success_summary_client",
-                }
-            ), 200
+            return (
+                jsonify(
+                    {
+                        "status_code": 200,
+                        "data": {
+                            "summary_client": Metadata(summary).model_to_list(),
+                            "total_visits": total_visits,
+                            "total_spent": total_spent,
+                            "cuts": Metadata(cuts).model_to_list(),
+                            "barbers": Metadata(barbers).model_to_list(),
+                        },
+                        "error": False,
+                        "message_id": "success_summary_client",
+                    }
+                ),
+                200,
+            )
 
         except Exception as e:
             logdb(
                 "error",
                 message=f"Error summary client shop: {e}\n{traceback.format_exc()}",
             )
-            return jsonify(
-                {
-                    "status_code": 500,
-                    "message_id": "error_summary_client",
-                    "error": True,
-                }
-            ), 500
+            return (
+                jsonify(
+                    {
+                        "status_code": 500,
+                        "message_id": "error_summary_client",
+                        "error": True,
+                    }
+                ),
+                500,
+            )

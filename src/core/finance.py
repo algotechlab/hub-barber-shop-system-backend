@@ -45,13 +45,16 @@ class FinanceCore:
             db.session.execute(stmt)
             db.session.commit()
 
-            return jsonify(
-                {
-                    "status_code": 200,
-                    "message_id": "success_add_out_put_finance",
-                    "error": False,
-                }
-            ), 200
+            return (
+                jsonify(
+                    {
+                        "status_code": 200,
+                        "message_id": "success_add_out_put_finance",
+                        "error": False,
+                    }
+                ),
+                200,
+            )
 
         except Exception as e:
             db.session.rollback()
@@ -92,13 +95,16 @@ class FinanceCore:
                     404,
                 )
 
-            return jsonify(
-                {
-                    "status_code": 200,
-                    "data": Metadata(result).model_to_list(),
-                    "message_id": "success_get_out_put_finance",
-                }
-            ), 200
+            return (
+                jsonify(
+                    {
+                        "status_code": 200,
+                        "data": Metadata(result).model_to_list(),
+                        "message_id": "success_get_out_put_finance",
+                    }
+                ),
+                200,
+            )
 
         except Exception as e:
             db.session.rollback()
@@ -133,13 +139,16 @@ class FinanceCore:
             db.session.execute(stmt)
             db.session.commit()
 
-            return jsonify(
-                {
-                    "status_code": 200,
-                    "message_id": "success_update_out_put_finance",
-                    "error": False,
-                }
-            ), 200
+            return (
+                jsonify(
+                    {
+                        "status_code": 200,
+                        "message_id": "success_update_out_put_finance",
+                        "error": False,
+                    }
+                ),
+                200,
+            )
 
         except Exception as e:
             db.session.rollback()
@@ -163,9 +172,7 @@ class FinanceCore:
         try:
             stmt = select(
                 self.finance_payments.id,
-                func.upper(self.finance_payments.type_payments).label(
-                    "type_payments"
-                ),
+                func.upper(self.finance_payments.type_payments).label("type_payments"),
             ).where(~self.finance_payments.is_deleted)
 
             result = db.session.execute(stmt).fetchall()
@@ -181,13 +188,16 @@ class FinanceCore:
                     404,
                 )
 
-            return jsonify(
-                {
-                    "status_code": 200,
-                    "data": Metadata(result).model_to_list(),
-                    "message_id": "success_list_type_payments",
-                }
-            ), 200
+            return (
+                jsonify(
+                    {
+                        "status_code": 200,
+                        "data": Metadata(result).model_to_list(),
+                        "message_id": "success_list_type_payments",
+                    }
+                ),
+                200,
+            )
 
         except Exception as e:
             db.session.rollback()
@@ -251,13 +261,16 @@ class FinanceCore:
                     404,
                 )
 
-            return jsonify(
-                {
-                    "status_code": 200,
-                    "data": Metadata(result).model_to_list(),
-                    "message_id": "success_list_summary_type_payments",
-                }
-            ), 200
+            return (
+                jsonify(
+                    {
+                        "status_code": 200,
+                        "data": Metadata(result).model_to_list(),
+                        "message_id": "success_list_summary_type_payments",
+                    }
+                ),
+                200,
+            )
 
         except Exception as e:
             db.session.rollback()
@@ -319,13 +332,16 @@ class FinanceCore:
                     404,
                 )
 
-            return jsonify(
-                {
-                    "status_code": 200,
-                    "data": Metadata(result).model_to_list(),
-                    "message_id": "success_list_total_payments",
-                }
-            ), 200
+            return (
+                jsonify(
+                    {
+                        "status_code": 200,
+                        "data": Metadata(result).model_to_list(),
+                        "message_id": "success_list_total_payments",
+                    }
+                ),
+                200,
+            )
 
         except Exception as e:
             db.session.rollback()
@@ -361,9 +377,7 @@ class FinanceCore:
             stmt = (
                 select(
                     self.invoice_out_put.id,
-                    func.sum(self.invoice_out_put.value_operation).label(
-                        "total_exit"
-                    ),
+                    func.sum(self.invoice_out_put.value_operation).label("total_exit"),
                     self.invoice_out_put.description,
                     self.invoice_out_put.types_payments,
                 )
@@ -376,9 +390,9 @@ class FinanceCore:
                 try:
                     stmt = stmt.where(
                         or_(
-                            func.unaccent(
-                                self.invoice_out_put.description
-                            ).ilike(func.unaccent(filter_value)),
+                            func.unaccent(self.invoice_out_put.description).ilike(
+                                func.unaccent(filter_value)
+                            ),
                         )
                     )
                 except Exception:
@@ -395,8 +409,7 @@ class FinanceCore:
             ).scalar()
 
             paginated_stmt = stmt.offset(
-                (pagination_params.current_page - 1)
-                * pagination_params.rows_per_page
+                (pagination_params.current_page - 1) * pagination_params.rows_per_page
             ).limit(pagination_params.rows_per_page)
 
             result = db.session.execute(paginated_stmt).fetchall()
@@ -413,19 +426,20 @@ class FinanceCore:
                     404,
                 )
 
-            metadata = pagination.build_metadata(
-                total_count, pagination_params
+            metadata = pagination.build_metadata(total_count, pagination_params)
+            return (
+                jsonify(
+                    {
+                        "status_code": 200,
+                        "totals:": Metadata(result_totals).model_to_list(),
+                        "data": Metadata(result).model_to_list(),
+                        "message_id": "success_list_out_put_exit_payments",
+                        "erro": False,
+                        "metadata": metadata,
+                    }
+                ),
+                200,
             )
-            return jsonify(
-                {
-                    "status_code": 200,
-                    "totals:": Metadata(result_totals).model_to_list(),
-                    "data": Metadata(result).model_to_list(),
-                    "message_id": "success_list_out_put_exit_payments",
-                    "erro": False,
-                    "metadata": metadata,
-                }
-            ), 200
 
         except Exception as e:
             db.session.rollback()
@@ -517,8 +531,7 @@ class FinanceCore:
             ).scalar()
 
             paginated_stmt = stmt.offset(
-                (pagination_params.current_page - 1)
-                * pagination_params.rows_per_page
+                (pagination_params.current_page - 1) * pagination_params.rows_per_page
             ).limit(pagination_params.rows_per_page)
 
             result = db.session.execute(paginated_stmt).fetchall()
@@ -534,19 +547,20 @@ class FinanceCore:
                     404,
                 )
 
-            metadata = pagination.build_metadata(
-                total_count, pagination_params
-            )
+            metadata = pagination.build_metadata(total_count, pagination_params)
 
-            return jsonify(
-                {
-                    "status_code": 200,
-                    "data": Metadata(result).model_to_list(),
-                    "message_id": "success_list_invoice_payments",
-                    "error": False,
-                    "metadata": metadata,
-                }
-            ), 200
+            return (
+                jsonify(
+                    {
+                        "status_code": 200,
+                        "data": Metadata(result).model_to_list(),
+                        "message_id": "success_list_invoice_payments",
+                        "error": False,
+                        "metadata": metadata,
+                    }
+                ),
+                200,
+            )
 
         except Exception as e:
             db.session.rollback()
@@ -591,13 +605,16 @@ class FinanceCore:
                 db.session.execute(update_box_accounting)
                 db.session.commit()
 
-            return jsonify(
-                {
-                    "status_code": 200,
-                    "message_id": "success_update_invoice_payments",
-                    "error": False,
-                }
-            ), 200
+            return (
+                jsonify(
+                    {
+                        "status_code": 200,
+                        "message_id": "success_update_invoice_payments",
+                        "error": False,
+                    }
+                ),
+                200,
+            )
 
         except Exception as e:
             print("coletando error", e)

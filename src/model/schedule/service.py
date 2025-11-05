@@ -8,11 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from src.db.database import db
 from src.log.log import setup_logger
-from src.model.model import (
-    Employee,
-    Products,
-    User,
-)
+from src.model.model import Employee, Products, User
 from src.utils.metadata import Metadata
 
 log = setup_logger()
@@ -29,9 +25,7 @@ class ScheduleService(db.Model):
     __table_args__ = {"schema": "schedule"}
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    time_register: Mapped[datetime] = mapped_column(
-        db.DateTime, nullable=False
-    )
+    time_register: Mapped[datetime] = mapped_column(db.DateTime, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         db.DateTime, nullable=False, server_default=func.now()
     )
@@ -90,9 +84,7 @@ class ScheduleService(db.Model):
                     ),
                     User.phone.label("phone"),
                     User.username.label("name_client"),
-                    (cls.time_register + Products.time_to_spend).label(
-                        "end_time"
-                    ),
+                    (cls.time_register + Products.time_to_spend).label("end_time"),
                     Employee.username.label("name_employee"),
                 )
                 .join(Employee, cls.employee_id == Employee.id)
@@ -106,12 +98,8 @@ class ScheduleService(db.Model):
                 filter_value = f"%{filter_by}%"
                 stmt = stmt.filter(
                     or_(
-                        func.unaccent(User.username).ilike(
-                            func.unaccent(filter_value)
-                        ),
-                        func.unaccent(User.username).ilike(
-                            func.unaccent(filter_value)
-                        ),
+                        func.unaccent(User.username).ilike(func.unaccent(filter_value)),
+                        func.unaccent(User.username).ilike(func.unaccent(filter_value)),
                     )
                 )
 
@@ -137,9 +125,7 @@ class ScheduleService(db.Model):
                     ),
                     User.phone.label("phone"),
                     User.username.label("name_client"),
-                    (cls.time_register + Products.time_to_spend).label(
-                        "end_time"
-                    ),
+                    (cls.time_register + Products.time_to_spend).label("end_time"),
                     Employee.username.label("name_employee"),
                 )
                 .join(Employee, cls.employee_id == Employee.id)

@@ -23,12 +23,15 @@ class LoginCore:
         user = self.user.query.filter_by(phone=data.get("phone")).first()
 
         if not user:
-            return jsonify(
-                {
-                    "status_code": 404,
-                    "message_id": "user_not_found",
-                }
-            ), 404
+            return (
+                jsonify(
+                    {
+                        "status_code": 404,
+                        "message_id": "user_not_found",
+                    }
+                ),
+                404,
+            )
 
         self.user_id = user.id
         self.email = None
@@ -60,18 +63,19 @@ class LoginCore:
                 "error",
                 message=f"Error login employee.\n{traceback.format_exc()}",
             )
-            return jsonify(
-                {
-                    "status_code": 500,
-                    "message_id": "internal_error_on_login",
-                }
-            ), 500
+            return (
+                jsonify(
+                    {
+                        "status_code": 500,
+                        "message_id": "internal_error_on_login",
+                    }
+                ),
+                500,
+            )
 
     def reset_password_authorization(self, data: dict):
         try:
-            new_password = generate_password_hash(
-                password="123@dg", method="scrypt"
-            )
+            new_password = generate_password_hash(password="123@dg", method="scrypt")
             id = self.user.query.filter_by(id=data.get("id")).update(
                 {"password": new_password, "updated_at": func.now()}
             )
@@ -109,37 +113,46 @@ class LoginCore:
             result = db.session.execute(stmt).fetchone()
 
             if not result:
-                return jsonify(
-                    {
-                        "status_code": 404,
-                        "message_id": "employee_not_found",
-                    }
-                ), 404
+                return (
+                    jsonify(
+                        {
+                            "status_code": 404,
+                            "message_id": "employee_not_found",
+                        }
+                    ),
+                    404,
+                )
 
             is_valid = check_password_hash(employee.password, password)
             if is_valid:
                 access_token = create_access_token(
                     identity={"id": result.id, "username": result.username}
                 )
-                return jsonify(
-                    {
-                        "status_code": 200,
-                        "data": Metadata(result).model_to_list(),
-                        "metadata": {"access_token": access_token},
-                    }
-                ), 200
+                return (
+                    jsonify(
+                        {
+                            "status_code": 200,
+                            "data": Metadata(result).model_to_list(),
+                            "metadata": {"access_token": access_token},
+                        }
+                    ),
+                    200,
+                )
             else:
                 logdb(
                     "error",
                     message=f"Error login employee. \
                     \n{traceback.format_exc()}",
                 )
-                return jsonify(
-                    {
-                        "status_code": 401,
-                        "message_id": "invalid_password",
-                    }
-                ), 401
+                return (
+                    jsonify(
+                        {
+                            "status_code": 401,
+                            "message_id": "invalid_password",
+                        }
+                    ),
+                    401,
+                )
 
         except Exception as e:
             print("Error coletado com sucesso", e)

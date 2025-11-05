@@ -1,10 +1,9 @@
 # src/model/employee/employee.py
 from datetime import datetime
-from decimal import Decimal
 
-from sqlalchemy import ForeignKey, Interval, Numeric, func
-from sqlalchemy.dialects.postgresql import INTERVAL
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import func
+from sqlalchemy.orm import Mapped, mapped_column
+
 from src.db.database import db
 from src.log.log import setup_logger
 
@@ -12,15 +11,14 @@ log = setup_logger()
 
 CHECK_ROLE_EMPLOYEE = "Administrador"
 
+
 class Employee(db.Model):
     __tablename__ = "employee"
     __table_args__ = {"schema": "public"}
 
     id: Mapped[int] = mapped_column(primary_key=True)
     username: Mapped[str] = mapped_column(db.String(120), nullable=False)
-    date_of_birth: Mapped[datetime] = mapped_column(
-        db.DateTime, nullable=False
-    )
+    date_of_birth: Mapped[datetime] = mapped_column(db.DateTime, nullable=False)
     phone: Mapped[str] = mapped_column(db.String(40), nullable=False)
     role: Mapped[str] = mapped_column(db.String(40), nullable=False)
     session_token: Mapped[str] = mapped_column(db.Text, nullable=True)
