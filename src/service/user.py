@@ -21,6 +21,7 @@ class UserService:
     def __init__(self, user_id: int, *args, **kwargs):
         self.user_id = user_id
         self.user = User
+        self.db = db.session
 
     def get_user(self, id: int):
         try:
@@ -31,7 +32,7 @@ class UserService:
                 self.user.phone,
             ).where(self.user.id.__eq__(id), ~self.user.is_deleted)
 
-            result = db.session.execute(stmt).first()
+            result = self.db.execute(stmt).first()
             if not result:
                 return ApiResponse(
                     status_code=404, message_id="user_not_found", error=True
@@ -66,9 +67,9 @@ class UserService:
                 .returning(self.user.id, self.user.username)
             )
 
-            result = db.session.execute(stmt).fetchone()
+            result = self.db.execute(stmt).fetchone()
             access_token = create_access_token(identity={"id": result.id})
-            db.session.commit()
+            self.db.commit()
 
             user_data = {"id": result.id, "username": result.username}
 
@@ -80,12 +81,12 @@ class UserService:
                 error=False,
             ).to_response()
         except IntegrityError:
-            db.session.rollback()
+            self.db.rollback()
             return ApiResponse(
                 status_code=409, message_id="email_already_exists", error=True
             ).to_response()
         except Exception:
-            db.session.rollback()
+            self.db.rollback()
             return ApiResponse(
                 status_code=500, message_id="error_processing_add_user", error=True
             ).to_response()
@@ -147,7 +148,7 @@ class UserService:
                 status_code=500, message_id="error_processing_list_users", error=True
             ).to_response()
 
-    def update_user(self, id: int, data: dict):
+    def update_user(self, id: int, data: dict) -> ApiResponse:
         try:
             user = self.user.query.filter_by(id=id, is_deleted=False).first()
 
@@ -170,13 +171,15 @@ class UserService:
 
             stmt = update(self.user).where(self.user.id == id).values(**update_data)
 
-            db.session.execute(stmt)
-            db.session.commit()
+            self.db.execute(stmt)
+            self.db.commit()
+            self.db.refresh(user)
 
             return ApiResponse(
                 status_code=200, message_id="update_successfully", error=False
             ).to_response()
         except Exception:
+            self.db.session.rollback()
             return ApiResponse(
                 status_code=500, message_id="error_processing_update_user", error=True
             ).to_response()
@@ -191,13 +194,13 @@ class UserService:
 
             user.is_deleted = True
             user.deleted_at = get_utc_now()
-            db.session.commit()
-            db.session.refresh(user)
+            self.db.commit()
+            self.db.refresh(user)
             return ApiResponse(
                 status_code=200, message_id="delete_successfully", error=False
             ).to_response()
-        except Exception as e:
-            print(e)
+        except Exception:
+            self.db.rollback()
             return ApiResponse(
                 status_code=500, message_id="error_processing_delete_user", error=True
             ).to_response()
