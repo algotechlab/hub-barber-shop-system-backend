@@ -56,7 +56,7 @@ default = { cmd = "task clean && task format && task check && task test", help =
 
 
 [tool.black]
-line-length = 88
+line-length = 100
 target-version = ["py312"]
 include = '\.pyi?$'
 exclude = '''

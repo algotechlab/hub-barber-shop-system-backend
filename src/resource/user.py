@@ -1,11 +1,10 @@
-# src/resource/user.py
 import traceback
 
 from flask import jsonify, request
 from flask_cors import cross_origin
 from flask_restx import Namespace, Resource, fields, reqparse
 
-from src.core.user import UserCore
+from src.service.user import UserService
 
 pagination_arguments_users = reqparse.RequestParser()
 pagination_arguments_users.add_argument(
@@ -23,14 +22,15 @@ pagination_arguments_users.add_argument(
 pagination_arguments_users.add_argument(
     "filter_by", help="Filter By", default="", type=str, required=False
 )
-user_us = Namespace("user", description="Manager users")
+user_us = Namespace("users", description="Manager users")
 
 payload_add_users = user_us.model(
     "PayloadAddUser",
     {
         "username": fields.String(required=True, example="User name", max_length=120),
-        "lastname": fields.String(required=True, example="User name", max_length=120),
         "phone": fields.String(required=True, example="User phone", max_length=40),
+        "email": fields.String(required=False, example="User email", max_length=120),
+        "password": fields.String(required=True, example="User password", max_length=300),
     },
 )
 
@@ -38,10 +38,9 @@ payload_update_users = user_us.model(
     "PayloadUpdateUser",
     {
         "username": fields.String(required=False, example="User name", max_length=120),
-        "lastname": fields.String(required=False, example="User name", max_length=120),
-        "password": fields.String(
-            required=False, example="User password", max_length=300
-        ),
+        "phone": fields.String(required=True, example="User phone", max_length=40),
+        "email": fields.String(required=False, example="User email", max_length=120),
+        "password": fields.String(required=False, example="User password", max_length=300),
     },
 )
 
@@ -55,7 +54,7 @@ class UserResource(Resource):
         """List users"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return UserCore(user_id=user_id).list_users(request.args.to_dict())
+            return UserService(user_id=user_id).list_users(request.args.to_dict())
         except Exception:
             return jsonify(
                 {
@@ -72,7 +71,7 @@ class UserResource(Resource):
         """Add users"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return UserCore(user_id=user_id).add_user(request.get_json())
+            return UserService(user_id=user_id).add_user(request.get_json())
         except Exception:
             return jsonify(
                 {
@@ -91,7 +90,7 @@ class UserResourcerId(Resource):
         """Get id"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return UserCore(user_id=user_id).get_user(id=id)
+            return UserService(user_id=user_id).get_user(id=id)
         except Exception:
             return jsonify(
                 {
@@ -108,7 +107,7 @@ class UserResourcerId(Resource):
         """Update users"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return UserCore(user_id=user_id).update_user(id=id, data=request.get_json())
+            return UserService(user_id=user_id).update_user(id=id, data=request.get_json())
         except Exception:
             return jsonify(
                 {
@@ -124,7 +123,7 @@ class UserResourcerId(Resource):
         """Delete users"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return UserCore(user_id=user_id).delete(id=id)
+            return UserService(user_id=user_id).delete(id=id)
         except Exception:
             return jsonify(
                 {

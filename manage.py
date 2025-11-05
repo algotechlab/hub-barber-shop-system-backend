@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 
 from src.external import create_app
-from src.settings._base import config_by_name, flask_env
+from src.core.config import config_by_name, flask_env
 
 load_dotenv()
 

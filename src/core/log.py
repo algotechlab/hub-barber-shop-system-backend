@@ -41,9 +41,7 @@ def setup_logger(name: str = "fastapp-chatbot-manager"):
 
     os.makedirs("logs", exist_ok=True)
 
-    formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(logging.INFO)
