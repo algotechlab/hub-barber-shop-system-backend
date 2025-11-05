@@ -88,7 +88,7 @@ class OwnerService:
                 status_code=200,
                 data=serializer.to_list(),
                 metadata=metadata if metadata else {},
-                message_id="list_users_success",
+                message_id="list_owners_success",
                 error=False,
             ).to_response()
         except Exception:
