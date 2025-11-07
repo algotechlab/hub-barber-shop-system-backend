@@ -4,24 +4,12 @@ from flask import jsonify, request
 from flask_cors import cross_origin
 from flask_restx import Namespace, Resource, fields, reqparse
 
+from src.resource.commons.pagination import PaginationArguments
 from src.service.owner import OwnerService
 
-pagination_arguments_owners = reqparse.RequestParser()
-pagination_arguments_owners.add_argument(
-    "current_page", help="Current Page", default=1, type=int, required=False
-)
-pagination_arguments_owners.add_argument(
-    "rows_per_page", help="Rows per Page", default=10, type=int, required=False
-)
-pagination_arguments_owners.add_argument(
-    "order_by", help="Order By", default="", type=str, required=False
-)
-pagination_arguments_owners.add_argument(
-    "sort_by", help="Sort By", default="", type=str, required=False
-)
-pagination_arguments_owners.add_argument(
-    "filter_by", help="Filter By", default="", type=str, required=False
-)
+pagination_arguments = reqparse.RequestParser()
+PaginationArguments.add_to_parser(pagination_arguments)
+
 owner_ns = Namespace("owners", description="Manager owners")
 
 
@@ -49,7 +37,7 @@ payload_update_owners = owner_ns.model(
 @owner_ns.route("")
 class OwnerResource(Resource):
     @owner_ns.doc(description="List Owners")
-    @owner_ns.expect(pagination_arguments_owners, validate=True)
+    @owner_ns.expect(pagination_arguments, validate=True)
     @cross_origin()
     def get(self):
         """List owners"""

@@ -2,16 +2,15 @@ import traceback
 
 from flask import jsonify, request
 from flask_cors import cross_origin
-from flask_restx import Namespace, Resource, fields
-from flask_restx import reqparse
+from flask_restx import Namespace, Resource, fields, reqparse
 
 from src.resource.commons.pagination import PaginationArguments
 from src.service.employee import EmployeeService
 
-employee_ns = Namespace("employees", description="Manager employees")
-
 pagination_arguments = reqparse.RequestParser()
 PaginationArguments.add_to_parser(pagination_arguments)
+
+employee_ns = Namespace("employees", description="Manager employees")
 
 
 payload_add_employees = employee_ns.model(

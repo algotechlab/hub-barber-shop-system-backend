@@ -4,24 +4,12 @@ from flask import jsonify, request
 from flask_cors import cross_origin
 from flask_restx import Namespace, Resource, fields, reqparse
 
+from src.resource.commons.pagination import PaginationArguments
 from src.service.company import CompanyService
 
-pagination_arguments_owners = reqparse.RequestParser()
-pagination_arguments_owners.add_argument(
-    "current_page", help="Current Page", default=1, type=int, required=False
-)
-pagination_arguments_owners.add_argument(
-    "rows_per_page", help="Rows per Page", default=10, type=int, required=False
-)
-pagination_arguments_owners.add_argument(
-    "order_by", help="Order By", default="", type=str, required=False
-)
-pagination_arguments_owners.add_argument(
-    "sort_by", help="Sort By", default="", type=str, required=False
-)
-pagination_arguments_owners.add_argument(
-    "filter_by", help="Filter By", default="", type=str, required=False
-)
+pagination_arguments = reqparse.RequestParser()
+PaginationArguments.add_to_parser(pagination_arguments)
+
 companies_ns = Namespace("companies", description="Manager companies")
 
 
@@ -55,7 +43,7 @@ payload_update_companies = companies_ns.model(
 @companies_ns.route("")
 class CompanyResource(Resource):
     @companies_ns.doc(description="List Companies")
-    @companies_ns.expect(pagination_arguments_owners, validate=True)
+    @companies_ns.expect(pagination_arguments, validate=True)
     @cross_origin()
     def get(self):
         """List companies"""

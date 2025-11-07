@@ -4,24 +4,12 @@ from flask import jsonify, request
 from flask_cors import cross_origin
 from flask_restx import Namespace, Resource, fields, reqparse
 
+from src.resource.commons.pagination import PaginationArguments
 from src.service.user import UserService
 
-pagination_arguments_users = reqparse.RequestParser()
-pagination_arguments_users.add_argument(
-    "current_page", help="Current Page", default=1, type=int, required=False
-)
-pagination_arguments_users.add_argument(
-    "rows_per_page", help="Rows per Page", default=10, type=int, required=False
-)
-pagination_arguments_users.add_argument(
-    "order_by", help="Order By", default="", type=str, required=False
-)
-pagination_arguments_users.add_argument(
-    "sort_by", help="Sort By", default="", type=str, required=False
-)
-pagination_arguments_users.add_argument(
-    "filter_by", help="Filter By", default="", type=str, required=False
-)
+pagination_arguments = reqparse.RequestParser()
+PaginationArguments.add_to_parser(pagination_arguments)
+
 user_us = Namespace("users", description="Manager users")
 
 payload_add_users = user_us.model(
@@ -48,7 +36,7 @@ payload_update_users = user_us.model(
 @user_us.route("")
 class UserResource(Resource):
     @user_us.doc(description="List Users")
-    @user_us.expect(pagination_arguments_users, validate=True)
+    @user_us.expect(pagination_arguments, validate=True)
     @cross_origin()
     def get(self):
         """List users"""
