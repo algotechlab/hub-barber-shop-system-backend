@@ -30,8 +30,8 @@ def create_app():
         authorizations=authorizations,
         security="Bearer Auth",
         version="1.0",
-        title="Barber Shop API",
-        description="Barber Shop API.",
+        title="algobarber-hub-plataform",
+        description="barber shop api.",
     )
     app.config["CORS_HEADERS"] = "Content-Type"
     CORS(

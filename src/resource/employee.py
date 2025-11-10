@@ -21,6 +21,7 @@ payload_add_employees = employee_ns.model(
         "phone_number": fields.String(
             required=True, example="Employee phone number", max_length=40
         ),
+        "company_id": fields.Integer(required=True, example="Company of employee"),
     },
 )
 
@@ -65,7 +66,70 @@ class EmployeeResource(Resource):
         """Add Employee"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
+            request.headers.get("company_id", request.environ.get("company_id"))
             return EmployeeService(user_id=user_id).add_employee(request.get_json())
+        except Exception:
+            return (
+                jsonify(
+                    {
+                        "status_code": 500,
+                        "message_id": "something_went_wrong",
+                        "traceback": traceback.format_exc(),
+                    }
+                ),
+                500,
+            )
+
+
+@employee_ns.route("/<int:employee_id>")
+class EmployeeManageResourceId(Resource):
+
+    @employee_ns.doc(description="Get employee by ID")
+    @cross_origin()
+    def get(self, employee_id: int):
+        """Get employee by ID"""
+        try:
+            user_id = request.headers.get("Id", request.environ.get("Id"))
+            return EmployeeService(user_id=user_id).get_employee(employee_id)
+        except Exception:
+            return (
+                jsonify(
+                    {
+                        "status_code": 500,
+                        "message_id": "something_went_wrong",
+                        "traceback": traceback.format_exc(),
+                    }
+                ),
+                500,
+            )
+
+    @employee_ns.doc(description="Update owner by ID")
+    @employee_ns.expect(payload_update_employees, validate=True)
+    @cross_origin()
+    def put(self, owner_id: int):
+        """Update owner by ID"""
+        try:
+            user_id = request.headers.get("Id", request.environ.get("Id"))
+            return EmployeeService(user_id=user_id).update_employee(owner_id, request.get_json())
+        except Exception:
+            return (
+                jsonify(
+                    {
+                        "status_code": 500,
+                        "message_id": "something_went_wrong",
+                        "traceback": traceback.format_exc(),
+                    }
+                ),
+                500,
+            )
+
+    @employee_ns.doc(description="Delete owner by ID")
+    @cross_origin()
+    def delete(self, owner_id: int):
+        """Delete owner by ID"""
+        try:
+            user_id = request.headers.get("Id", request.environ.get("Id"))
+            return EmployeeService(user_id=user_id).delete_employee(owner_id)
         except Exception:
             return (
                 jsonify(

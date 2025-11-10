@@ -1,4 +1,4 @@
-<h1 align="center">Backend barbershop-hub</h1>
+<h1 align="center">Backend algo-barbershop-hub</h1>
 
 #### Comandos para o docker
 ```bash

@@ -13,6 +13,7 @@ class Middleware:
     def __call__(self, environ, start_response):
         environ.update({"Id": 139})
         environ.update({"email": "hedrisgts@gmail.com"})
+        environ.update({"company_id": 4})
         return self.app(environ, start_response)
 
 

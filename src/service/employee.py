@@ -7,17 +7,15 @@ from src.utils.metadata import ApiResponse, ModelSerializer
 from src.utils.pagination import Pagination
 from src.utils.utc import get_utc_now
 
-EMPLOYEE_FIELDS = [
-    "first_name",
-    "last_name",
-    "phone_number",
-]
+EMPLOYEE_FIELDS = ["first_name", "last_name", "phone_number", "owner_id"]
 
 
 class EmployeeService:
-    def __init__(self, *args, **kwargs):
+    def __init__(self, user_id: int, company_id: int, *args, **kwargs):
         self.db_session = db.session
         self.model = Employee
+        self.user = user_id
+        self.company_id = company_id
 
     def add_employee(self, employee_data: dict) -> tuple:
         try:
@@ -97,7 +95,7 @@ class EmployeeService:
                 success=False, message="Error occurred while listing employees.", status_code=500
             ).to_response()
 
-    def get_employee_by_id(self, employee_id: int) -> Employee | None:
+    def get_employee(self, employee_id: int) -> Employee | None:
         stmt = select(self.model).where(self.model.id == employee_id, ~self.model.is_deleted)
         result = self.db_session.execute(stmt).scalar_one_or_none()
         return result
