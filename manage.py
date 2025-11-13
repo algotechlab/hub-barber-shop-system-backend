@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 
 from src.external import create_app
-from src.settings._base import config_by_name, flask_env
+from src.core.config import config_by_name, flask_env
 
 load_dotenv()
 
@@ -11,8 +11,9 @@ class Middleware:
         self.app = app
 
     def __call__(self, environ, start_response):
-        environ.update({"Id": 139})
+        environ.update({"Id": 1})
         environ.update({"email": "hedrisgts@gmail.com"})
+        environ.update({"company_id": 4})
         return self.app(environ, start_response)
 
 

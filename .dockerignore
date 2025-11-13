@@ -36,3 +36,41 @@ dist/
 .idea/
 *.sublime-project
 *.sublime-workspace
+
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+
+# Virtual env
+.venv/
+env/
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+logs/
+*.log
+
+# Tests / Coverage
+htmlcov/
+.coverage
+.pytest_cache/
+tests/
+
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose.yml
+
+# Outros
+*.md

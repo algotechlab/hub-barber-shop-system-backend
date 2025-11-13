@@ -1,181 +1,157 @@
-# src/resource/employee
 import traceback
 
 from flask import jsonify, request
 from flask_cors import cross_origin
 from flask_restx import Namespace, Resource, fields, reqparse
 
-from src.core.employee import EmployeeCore, ManagerEmployeeCore
-
-pagination_arguments_employees = reqparse.RequestParser()
-pagination_arguments_employees.add_argument(
-    "current_page", help="Current Page", default=1, type=int, required=False
-)
-pagination_arguments_employees.add_argument(
-    "rows_per_page", help="Rows per Page", default=10, type=int, required=False
-)
-pagination_arguments_employees.add_argument(
-    "order_by", help="Order By", default="", type=str, required=False
-)
-pagination_arguments_employees.add_argument(
-    "sort_by", help="Sort By", default="", type=str, required=False
-)
-pagination_arguments_employees.add_argument(
-    "filter_by", help="Filter By", default="", type=str, required=False
-)
-pagination_arguments_employees.add_argument(
-    "filter_value", help="Filter Value", default="", type=str, required=False
-)
+from src.resource.commons.pagination import PaginationArguments
+from src.service.employee import EmployeeService
 
 
-employee_ns = Namespace("employee", description="Manager Employee")
+pagination_arguments = reqparse.RequestParser()
+PaginationArguments.add_to_parser(pagination_arguments)
+
+employee_ns = Namespace("employees", description="Manager employees")
+
 
 payload_add_employees = employee_ns.model(
-    "PayloadAddEmployees",
+    "PayloadAddEmployee",
     {
-        "username": fields.String(
-            required=True, example="User name", max_length=120
+        "first_name": fields.String(required=True, example="Employee name", max_length=120),
+        "last_name": fields.String(required=True, example="Employee last name", max_length=120),
+        "phone_number": fields.String(
+            required=True, example="Employee phone number", max_length=40
         ),
-        "date_of_birth": fields.DateTime(
-            dt_format="%Y-%m-%d",
-            description="The person's birth date in %Y-%m-%d format",
-        ),
-        "phone": fields.String(required=True, example="Phone", max_length=40),
-        "password": fields.String(
-            required=True, example="Password", max_length=300
-        ),
+        "company_id": fields.Integer(required=True, example="Company of employee"),
     },
 )
 
 payload_update_employees = employee_ns.model(
-    "PayloadUpdateEmployees",
+    "PayloadUpdateEmployee",
     {
-        "username": fields.String(
-            required=False, example="User name", max_length=120
-        ),
-        "date_of_birth": fields.DateTime(
-            dt_format="iso8601",
-            description="The person's birth date in ISO 8601 format",
-        ),
-        "phone": fields.String(required=False, example="Phone", max_length=40),
-        "password": fields.String(
-            required=False, example="Password", max_length=300
+        "first_name": fields.String(required=False, example="Employee name", max_length=120),
+        "last_name": fields.String(required=False, example="Employee last name", max_length=120),
+        "phone_number": fields.String(
+            required=False, example="Employee phone number", max_length=40
         ),
     },
 )
 
 
 @employee_ns.route("")
-class EmployeeResourceManager(Resource):
+class EmployeeResource(Resource):
+
     @employee_ns.doc(description="List Employees")
-    @employee_ns.expect(pagination_arguments_employees, validate=True)
+    @employee_ns.expect(pagination_arguments, validate=True)
     @cross_origin()
     def get(self):
-        """List employees"""
+        """List Employees"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return EmployeeCore(user_id=user_id).list_employees(
+            company_id = request.headers.get("company_id", request.environ.get("company_id"))
+            return EmployeeService(user_id=user_id, company_id=company_id).list_employees(
                 request.args.to_dict()
             )
         except Exception:
-            return jsonify(
-                {
-                    "status_code": 500,
-                    "message_id": "something_went_wrong",
-                    "traceback": traceback.format_exc(),
-                }
+            return (
+                jsonify(
+                    {
+                        "status_code": 500,
+                        "message_id": "something_went_wrong",
+                        "traceback": traceback.format_exc(),
+                    }
+                ),
+                500,
             )
 
-    @employee_ns.doc(description="Add Employees")
+    @employee_ns.doc(description="Add Employee")
     @employee_ns.expect(payload_add_employees, validate=True)
     @cross_origin()
     def post(self):
-        """Add employees"""
+        """Add Employee"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return EmployeeCore(user_id=user_id).add_employee(
+            company_id = request.headers.get("company_id", request.environ.get("company_id"))
+            return EmployeeService(user_id=user_id, company_id=company_id).add_employee(
                 request.get_json()
             )
         except Exception:
-            return jsonify(
-                {
-                    "status_code": 500,
-                    "message_id": "something_went_wrong",
-                    "traceback": traceback.format_exc(),
-                }
+            return (
+                jsonify(
+                    {
+                        "status_code": 500,
+                        "message_id": "something_went_wrong",
+                        "traceback": traceback.format_exc(),
+                    }
+                ),
+                500,
             )
 
 
-@employee_ns.route("/<int:id>")
-class EmployeeResourceManagerId(Resource):
-    @employee_ns.doc(description="Get Employee")
+@employee_ns.route("/<int:employee_id>")
+class EmployeeManageResourceId(Resource):
+
+    @employee_ns.doc(description="Get employee by ID")
     @cross_origin()
-    def get(self, id: int):
-        """Get id"""
+    def get(self, employee_id: int):
+        """Get employee by ID"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return EmployeeCore(user_id=user_id).get_employee(id)
+            company_id = request.headers.get("company_id", request.environ.get("company_id"))
+            return EmployeeService(user_id=user_id, company_id=company_id).get_employee(employee_id)
         except Exception:
-            return jsonify(
-                {
-                    "status_code": 500,
-                    "message_id": "something_went_wrong",
-                    "traceback": traceback.format_exc(),
-                }
+            return (
+                jsonify(
+                    {
+                        "status_code": 500,
+                        "message_id": "something_went_wrong",
+                        "traceback": traceback.format_exc(),
+                    }
+                ),
+                500,
             )
 
-    @employee_ns.doc(description="Update Employees")
+    @employee_ns.doc(description="Update owner by ID")
     @employee_ns.expect(payload_update_employees, validate=True)
     @cross_origin()
-    def put(self, id: int):
-        """Update employees"""
+    def put(self, employee_id: int):
+        """Update owner by ID"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return EmployeeCore(user_id=user_id).update_employee(
-                id, request.get_json()
+            company_id = request.headers.get("company_id", request.environ.get("company_id"))
+            return EmployeeService(user_id=user_id, company_id=company_id).update_employee(
+                employee_id, request.get_json()
             )
         except Exception:
-            return jsonify(
-                {
-                    "status_code": 500,
-                    "message_id": "something_went_wrong",
-                    "traceback": traceback.format_exc(),
-                }
+            return (
+                jsonify(
+                    {
+                        "status_code": 500,
+                        "message_id": "something_went_wrong",
+                        "traceback": traceback.format_exc(),
+                    }
+                ),
+                500,
             )
 
-    @employee_ns.doc(description="Delete Employee")
+    @employee_ns.doc(description="Delete owner by ID")
     @cross_origin()
-    def delete(self, id: int):
-        """Delete employees"""
+    def delete(self, employee_id: int):
+        """Delete owner by ID"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return EmployeeCore(user_id=user_id).delete_employee(id)
-        except Exception:
-            return jsonify(
-                {
-                    "status_code": 500,
-                    "message_id": "something_went_wrong",
-                    "traceback": traceback.format_exc(),
-                }
+            company_id = request.headers.get("company_id", request.environ.get("company_id"))
+            return EmployeeService(user_id=user_id, company_id=company_id).delete_employee(
+                employee_id
             )
-
-
-@employee_ns.route("/slots")
-class EmployeeResourceSlots(Resource):
-    @employee_ns.doc(description="List Employees Avaliable")
-    @cross_origin()
-    def get(self):
-        """List employees Avaliable"""
-        try:
-            user_id = request.headers.get("Id", request.environ.get("Id"))
-            return ManagerEmployeeCore(
-                user_id=user_id
-            ).generate_daily_schedule_slots()
         except Exception:
-            return jsonify(
-                {
-                    "status_code": 500,
-                    "message_id": "something_went_wrong",
-                    "traceback": traceback.format_exc(),
-                }
+            return (
+                jsonify(
+                    {
+                        "status_code": 500,
+                        "message_id": "something_went_wrong",
+                        "traceback": traceback.format_exc(),
+                    }
+                ),
+                500,
             )

@@ -3,18 +3,9 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_restx import Api
 
+from src.core.config import config_by_name, flask_env
 from src.db.database import db
-from src.resource.analytical import analytical_ns
-from src.resource.avaliable import avaliable_ns
-from src.resource.dashboard import dashboard_ns
-from src.resource.employee import employee_ns
-from src.resource.finance import finance_ns
-from src.resource.login import login_ns
-from src.resource.product import product_ns
-from src.resource.shedule import schedule_ns
-from src.resource.subscription import subscription_ns
-from src.resource.user import user_us
-from src.settings._base import config_by_name, flask_env
+from src.resource import all_namespaces
 
 
 def create_app():
@@ -22,7 +13,7 @@ def create_app():
     config_class = config_by_name[flask_env]
     app.config.from_object(config_class)
 
-    db.init_app(app)  # init database
+    db.init_app(app)
 
     authorizations = {
         "Bearer Auth": {
@@ -39,8 +30,8 @@ def create_app():
         authorizations=authorizations,
         security="Bearer Auth",
         version="1.0",
-        title="Barber Shop DG",
-        description="Barber Shop DG.",
+        title="algobarber-hub-plataform",
+        description="barber shop api.",
     )
     app.config["CORS_HEADERS"] = "Content-Type"
     CORS(
@@ -54,18 +45,13 @@ def create_app():
     app.config["JWT_HEADER_TYPE"] = "Bearer"
     # app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=2)
 
-    _jwt = JWTManager(app)
+    @app.route("/")
+    def index():
+        return "Welcome to Barber Shop API!"
+
+    JWTManager(app)
 
     # Namespaces registration
-    api.add_namespace(user_us)
-    api.add_namespace(login_ns)
-    api.add_namespace(employee_ns)
-    api.add_namespace(product_ns)
-    api.add_namespace(schedule_ns)
-    api.add_namespace(avaliable_ns)
-    api.add_namespace(subscription_ns)
-    api.add_namespace(finance_ns)
-    api.add_namespace(analytical_ns)
-    api.add_namespace(dashboard_ns)
-
+    for namespace in all_namespaces():
+        api.add_namespace(namespace)
     return app
