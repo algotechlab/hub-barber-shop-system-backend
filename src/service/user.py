@@ -9,6 +9,7 @@ from src.utils.metadata import ApiResponse, ModelSerializer
 from src.utils.pagination import Pagination
 from src.utils.utc import get_utc_now
 
+
 USER_FIELDS = [
     "username",
     "phone",
@@ -34,7 +35,7 @@ class UserService:
             ).where(
                 self.user.id.__eq__(id),
                 self.user.company_id.__eq__(self.company_id),
-                self.user.is_deleted.__eq__(False)
+                self.user.is_deleted.__eq__(False),
             )
 
             result = self.db.execute(stmt).first()
@@ -160,9 +161,7 @@ class UserService:
     def update_user(self, id: int, data: dict) -> ApiResponse:
         try:
             user = self.user.query.filter_by(
-                id=id,
-                company_id=self.company_id,
-                is_deleted=False
+                id=id, company_id=self.company_id, is_deleted=False
             ).first()
 
             if not user:
@@ -182,13 +181,10 @@ class UserService:
                         setattr(user, key, updated_value)
                         update_data[key] = updated_value
 
-            stmt = update(self.user).where(
-                self.user.id.__eq__(id),
-                self.user.company_id.__eq__(self.company_id)
-            ).values(
-                updated_by=self.user_id,
-                updated_at=get_utc_now(),
-                **update_data
+            stmt = (
+                update(self.user)
+                .where(self.user.id.__eq__(id), self.user.company_id.__eq__(self.company_id))
+                .values(updated_by=self.user_id, updated_at=get_utc_now(), **update_data)
             )
 
             self.db.execute(stmt)
@@ -206,10 +202,7 @@ class UserService:
 
     def delete(self, id: int) -> ApiResponse:
         try:
-            user = self.user.query.filter_by(
-                id=id,
-                company_id=self.company_id
-            ).first()
+            user = self.user.query.filter_by(id=id, company_id=self.company_id).first()
             if not user:
                 return ApiResponse(
                     status_code=404, message_id="user_not_found", error=True

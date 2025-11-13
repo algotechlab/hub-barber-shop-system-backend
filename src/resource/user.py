@@ -45,7 +45,9 @@ class UserResource(Resource):
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
             company_id = request.headers.get("company_id", request.environ.get("company_id"))
-            return UserService(user_id=user_id, company_id=company_id).list_users(request.args.to_dict())
+            return UserService(user_id=user_id, company_id=company_id).list_users(
+                request.args.to_dict()
+            )
         except Exception:
             return jsonify(
                 {
@@ -101,7 +103,9 @@ class UserResourcerId(Resource):
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
             company_id = request.headers.get("company_id", request.environ.get("company_id"))
-            return UserService(user_id=user_id, company_id=company_id).update_user(id=id, data=request.get_json())
+            return UserService(user_id=user_id, company_id=company_id).update_user(
+                id=id, data=request.get_json()
+            )
         except Exception:
             return jsonify(
                 {
