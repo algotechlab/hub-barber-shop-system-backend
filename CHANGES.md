@@ -6,3 +6,6 @@ Alteração do projeto com buildagem docker, utilizando o `task`, para gerenciar
 
 **[v1.0.0] - 2025-10-05:**
 Incluindo novas rotas no sistema com `owner`, e `company`, de acordo com o padrão do sistema, um proprietário pode ter mais de uma companhia, e cada uma tem seu `slug`, de acordo com o dominio registrado do sistema. Fora suas regras de unicidade.
+
+**[v1.0.0] - 2025-11-12:**
+Ajustando corretamente as Fk de acordo com oque a tabela do usuário solicita, também foi ajustado corretamente o controle do `isort`, `.black`, com isso tendo a importação e a quebra de linha corretamente, adicionando o module do colaborador associado a empresa.
