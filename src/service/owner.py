@@ -7,6 +7,7 @@ from src.utils.metadata import ApiResponse, ModelSerializer
 from src.utils.pagination import Pagination
 from src.utils.utc import get_utc_now
 
+
 OWNER_FIELDS = [
     "first_name",
     "last_name",

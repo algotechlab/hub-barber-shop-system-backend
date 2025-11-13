@@ -18,10 +18,11 @@ USER_FIELDS = [
 
 
 class UserService:
-    def __init__(self, user_id: int, *args, **kwargs):
+    def __init__(self, user_id: int, company_id: int, *args, **kwargs):
         self.user_id = user_id
         self.user = User
         self.db = db.session
+        self.company_id = company_id
 
     def get_user(self, id: int):
         try:
@@ -30,7 +31,11 @@ class UserService:
                 self.user.username,
                 self.user.email,
                 self.user.phone,
-            ).where(self.user.id.__eq__(id), ~self.user.is_deleted)
+            ).where(
+                self.user.id.__eq__(id),
+                self.user.company_id.__eq__(self.company_id),
+                self.user.is_deleted.__eq__(False)
+            )
 
             result = self.db.execute(stmt).first()
             if not result:
@@ -63,6 +68,7 @@ class UserService:
                     phone=data.get("phone"),
                     email=data.get("email"),
                     hashed_password=generate_password_hash(data.get("password"), method="scrypt"),
+                    company_id=self.company_id,
                 )
                 .returning(self.user.id, self.user.username)
             )
@@ -104,7 +110,10 @@ class UserService:
                 self.user.id,
                 self.user.username,
                 self.user.phone,
-            ).where(~self.user.is_deleted)
+            ).where(
+                self.user.company_id.__eq__(self.company_id),
+                self.user.is_deleted.__eq__(False),
+            )
 
             if pagination_params.filter_by:
                 filter_value = f"%{pagination_params.filter_by}%"
@@ -150,7 +159,11 @@ class UserService:
 
     def update_user(self, id: int, data: dict) -> ApiResponse:
         try:
-            user = self.user.query.filter_by(id=id, is_deleted=False).first()
+            user = self.user.query.filter_by(
+                id=id,
+                company_id=self.company_id,
+                is_deleted=False
+            ).first()
 
             if not user:
                 return ApiResponse(
@@ -169,7 +182,14 @@ class UserService:
                         setattr(user, key, updated_value)
                         update_data[key] = updated_value
 
-            stmt = update(self.user).where(self.user.id == id).values(**update_data)
+            stmt = update(self.user).where(
+                self.user.id.__eq__(id),
+                self.user.company_id.__eq__(self.company_id)
+            ).values(
+                updated_by=self.user_id,
+                updated_at=get_utc_now(),
+                **update_data
+            )
 
             self.db.execute(stmt)
             self.db.commit()
@@ -179,19 +199,23 @@ class UserService:
                 status_code=200, message_id="update_successfully", error=False
             ).to_response()
         except Exception:
-            self.db.session.rollback()
+            self.db.rollback()
             return ApiResponse(
                 status_code=500, message_id="error_processing_update_user", error=True
             ).to_response()
 
-    def delete(self, id: int):
+    def delete(self, id: int) -> ApiResponse:
         try:
-            user = self.user.query.filter_by(id=id).first()
+            user = self.user.query.filter_by(
+                id=id,
+                company_id=self.company_id
+            ).first()
             if not user:
                 return ApiResponse(
                     status_code=404, message_id="user_not_found", error=True
                 ).to_response()
 
+            user.deleted_by = self.user_id
             user.is_deleted = True
             user.deleted_at = get_utc_now()
             self.db.commit()

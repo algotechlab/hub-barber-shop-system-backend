@@ -1,13 +1,15 @@
 from sqlalchemy import func, insert, select, update
 from sqlalchemy.exc import IntegrityError
 
+from src.core.exceptions.custom import PostgresErrorCode
 from src.db.database import db
 from src.model.employee import Employee
 from src.utils.metadata import ApiResponse, ModelSerializer
 from src.utils.pagination import Pagination
 from src.utils.utc import get_utc_now
 
-EMPLOYEE_FIELDS = ["first_name", "last_name", "phone_number", "owner_id"]
+
+EMPLOYEE_FIELDS = ["first_name", "last_name", "phone_number", "company_id"]
 
 
 class EmployeeService:
@@ -22,16 +24,51 @@ class EmployeeService:
             stmt = insert(self.model).values(**employee_data)
             self.db_session.execute(stmt)
             self.db_session.commit()
+
             return ApiResponse(
                 success=True, message="Employee added successfully.", status_code=201
             ).to_response()
-        except IntegrityError:
+
+        except IntegrityError as e:
             self.db_session.rollback()
+            code = e.orig.pgcode
+
+            if code == PostgresErrorCode.UNIQUE_VIOLATION:
+                detail = str(e.orig.diag.message_detail or "").lower()
+
+                if "email" in detail:
+                    message = "Employee with this email already exists."
+                elif "phone" in detail or "number" in detail:
+                    message = "Employee with this phone number already exists."
+                else:
+                    message = "Duplicate entry detected."
+
+                return ApiResponse(
+                    success=False,
+                    message=message,
+                    status_code=409,
+                ).to_response()
+
+            elif code == PostgresErrorCode.FOREIGN_KEY_VIOLATION:
+                return ApiResponse(
+                    success=False,
+                    message="Invalid foreign key reference.",
+                    status_code=400,
+                ).to_response()
+
+            elif code == PostgresErrorCode.NOT_NULL_VIOLATION:
+                return ApiResponse(
+                    success=False,
+                    message="A required field is missing.",
+                    status_code=400,
+                ).to_response()
+
             return ApiResponse(
                 success=False,
-                message="Employee with this phone number already exists.",
+                message="Integrity error occurred while adding employee.",
                 status_code=409,
             ).to_response()
+
         except Exception:
             self.db_session.rollback()
             return ApiResponse(
@@ -46,13 +83,16 @@ class EmployeeService:
                 return ApiResponse(
                     status_code=400, message_id="invalid_pagination_params", error=True
                 ).to_response()
+
             stmt = select(
                 self.model.id,
                 self.model.first_name,
                 self.model.last_name,
                 self.model.phone_number,
                 self.model.is_active,
-            ).where(~self.model.is_deleted)
+            ).where(
+                self.model.company_id.__eq__(self.company_id), self.model.is_deleted.__eq__(False)
+            )
 
             self.db_session.execute(stmt).all()
             if pagination_params.filter_by:
@@ -96,30 +136,70 @@ class EmployeeService:
             ).to_response()
 
     def get_employee(self, employee_id: int) -> Employee | None:
-        stmt = select(self.model).where(self.model.id == employee_id, ~self.model.is_deleted)
-        result = self.db_session.execute(stmt).scalar_one_or_none()
-        return result
+        stmt = select(
+            self.model.id,
+            self.model.first_name,
+            self.model.last_name,
+            self.model.phone_number,
+            self.model.is_active,
+        ).where(
+            self.model.id.__eq__(employee_id),
+            self.model.company_id.__eq__(self.company_id),
+            self.model.is_deleted.__eq__(False),
+        )
+        result = self.db_session.execute(stmt).first()
+        if not result:
+            return ApiResponse(
+                status_code=404, message="Employee not found", error=True
+            ).to_response()
+
+        return ApiResponse(
+            status_code=200,
+            data=result,
+            message="Get employee success",
+            error=False,
+        ).to_response()
 
     def update_employee(self, employee_id: int, update_data: dict) -> ApiResponse:
         try:
+            employee = (
+                self.db_session.query(self.model)
+                .filter_by(
+                    id=employee_id,
+                    company_id=self.company_id,
+                    is_deleted=False,
+                )
+                .first()
+            )
+            if not employee:
+                return ApiResponse(
+                    status_code=404, message="employee not found", error=True
+                ).to_response()
+
+            filtered_update = {}
+            for key, value in update_data.items():
+                if value is not None and key in EMPLOYEE_FIELDS and hasattr(self.model, key):
+                    setattr(employee, key, value)
+                    filtered_update[key] = value
+
+            if not filtered_update:
+                return ApiResponse(
+                    status_code=400, message="No valid fields to update", error=True
+                ).to_response()
+
             stmt = (
                 update(self.model)
-                .where(self.model.id == employee_id, ~self.model.is_deleted)
-                .values(**update_data, updated_at=get_utc_now())
+                .where(
+                    self.model.id.__eq__(employee_id),
+                    self.model.company_id.__eq__(self.company_id),
+                    self.model.is_deleted.__eq__(False),
+                )
+                .values(updated_at=get_utc_now(), updated_by=self.user, **filtered_update)
             )
-            result = self.db_session.execute(stmt)
-            if result.rowcount == 0:
-                return ApiResponse(
-                    success=False, message="Employee not found.", status_code=404
-                ).to_response()
+            self.db_session.execute(stmt)
             self.db_session.commit()
             return ApiResponse(
                 success=True, message="Employee updated successfully.", status_code=200
-            ).to_response()
-        except IntegrityError:
-            self.db_session.rollback()
-            return ApiResponse(
-                success=False, message="Employee with this email already exists.", status_code=409
             ).to_response()
         except Exception:
             self.db_session.rollback()
@@ -129,19 +209,34 @@ class EmployeeService:
 
     def delete_employee(self, employee_id: int) -> ApiResponse:
         try:
+            employee = (
+                self.db_session.query(self.model)
+                .filter_by(
+                    id=employee_id,
+                    company_id=self.company_id,
+                    is_deleted=False,
+                )
+                .first()
+            )
+            if not employee:
+                return ApiResponse(
+                    status_code=404, message="employee not found", error=True
+                ).to_response()
+
             stmt = (
                 update(self.model)
-                .where(self.model.id == employee_id, ~self.model.is_deleted)
-                .values(is_deleted=True, updated_at=get_utc_now())
+                .where(
+                    self.model.company_id.__eq__(self.company_id),
+                    self.model.id.__eq__(employee_id),
+                )
+                .values(deleted_at=get_utc_now(), deleted_by=self.user, is_deleted=True)
             )
-            result = self.db_session.execute(stmt)
-            if result.rowcount == 0:
-                return ApiResponse(
-                    success=False, message="Employee not found.", status_code=404
-                ).to_response()
+
+            self.db_session.execute(stmt)
             self.db_session.commit()
+
             return ApiResponse(
-                success=True, message="Employee deleted successfully.", status_code=200
+                status_code=200, message="Delete successfully", error=False
             ).to_response()
         except Exception:
             self.db_session.rollback()

@@ -1,5 +1,3 @@
-# src/log/log.py
-
 import logging
 import os
 import sys

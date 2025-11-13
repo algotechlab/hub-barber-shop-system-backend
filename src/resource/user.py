@@ -7,6 +7,7 @@ from flask_restx import Namespace, Resource, fields, reqparse
 from src.resource.commons.pagination import PaginationArguments
 from src.service.user import UserService
 
+
 pagination_arguments = reqparse.RequestParser()
 PaginationArguments.add_to_parser(pagination_arguments)
 
@@ -19,6 +20,7 @@ payload_add_users = user_us.model(
         "phone": fields.String(required=True, example="User phone", max_length=40),
         "email": fields.String(required=False, example="User email", max_length=120),
         "password": fields.String(required=True, example="User password", max_length=300),
+        "company_id": fields.Integer(required=True, example=4),
     },
 )
 
@@ -42,7 +44,8 @@ class UserResource(Resource):
         """List users"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return UserService(user_id=user_id).list_users(request.args.to_dict())
+            company_id = request.headers.get("company_id", request.environ.get("company_id"))
+            return UserService(user_id=user_id, company_id=company_id).list_users(request.args.to_dict())
         except Exception:
             return jsonify(
                 {
@@ -59,7 +62,8 @@ class UserResource(Resource):
         """Add users"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return UserService(user_id=user_id).add_user(request.get_json())
+            company_id = request.headers.get("company_id", request.environ.get("company_id"))
+            return UserService(user_id=user_id, company_id=company_id).add_user(request.get_json())
         except Exception:
             return jsonify(
                 {
@@ -78,7 +82,8 @@ class UserResourcerId(Resource):
         """Get id"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return UserService(user_id=user_id).get_user(id=id)
+            company_id = request.headers.get("company_id", request.environ.get("company_id"))
+            return UserService(user_id=user_id, company_id=company_id).get_user(id=id)
         except Exception:
             return jsonify(
                 {
@@ -95,7 +100,8 @@ class UserResourcerId(Resource):
         """Update users"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return UserService(user_id=user_id).update_user(id=id, data=request.get_json())
+            company_id = request.headers.get("company_id", request.environ.get("company_id"))
+            return UserService(user_id=user_id, company_id=company_id).update_user(id=id, data=request.get_json())
         except Exception:
             return jsonify(
                 {
@@ -111,7 +117,8 @@ class UserResourcerId(Resource):
         """Delete users"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return UserService(user_id=user_id).delete(id=id)
+            company_id = request.headers.get("company_id", request.environ.get("company_id"))
+            return UserService(user_id=user_id, company_id=company_id).delete(id=id)
         except Exception:
             return jsonify(
                 {

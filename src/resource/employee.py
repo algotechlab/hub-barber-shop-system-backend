@@ -7,6 +7,7 @@ from flask_restx import Namespace, Resource, fields, reqparse
 from src.resource.commons.pagination import PaginationArguments
 from src.service.employee import EmployeeService
 
+
 pagination_arguments = reqparse.RequestParser()
 PaginationArguments.add_to_parser(pagination_arguments)
 
@@ -39,6 +40,7 @@ payload_update_employees = employee_ns.model(
 
 @employee_ns.route("")
 class EmployeeResource(Resource):
+
     @employee_ns.doc(description="List Employees")
     @employee_ns.expect(pagination_arguments, validate=True)
     @cross_origin()
@@ -46,7 +48,10 @@ class EmployeeResource(Resource):
         """List Employees"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return EmployeeService(user_id=user_id).list_employees(request.args.to_dict())
+            company_id = request.headers.get("company_id", request.environ.get("company_id"))
+            return EmployeeService(user_id=user_id, company_id=company_id).list_employees(
+                request.args.to_dict()
+            )
         except Exception:
             return (
                 jsonify(
@@ -66,8 +71,10 @@ class EmployeeResource(Resource):
         """Add Employee"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            request.headers.get("company_id", request.environ.get("company_id"))
-            return EmployeeService(user_id=user_id).add_employee(request.get_json())
+            company_id = request.headers.get("company_id", request.environ.get("company_id"))
+            return EmployeeService(user_id=user_id, company_id=company_id).add_employee(
+                request.get_json()
+            )
         except Exception:
             return (
                 jsonify(
@@ -90,7 +97,8 @@ class EmployeeManageResourceId(Resource):
         """Get employee by ID"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return EmployeeService(user_id=user_id).get_employee(employee_id)
+            company_id = request.headers.get("company_id", request.environ.get("company_id"))
+            return EmployeeService(user_id=user_id, company_id=company_id).get_employee(employee_id)
         except Exception:
             return (
                 jsonify(
@@ -106,11 +114,14 @@ class EmployeeManageResourceId(Resource):
     @employee_ns.doc(description="Update owner by ID")
     @employee_ns.expect(payload_update_employees, validate=True)
     @cross_origin()
-    def put(self, owner_id: int):
+    def put(self, employee_id: int):
         """Update owner by ID"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return EmployeeService(user_id=user_id).update_employee(owner_id, request.get_json())
+            company_id = request.headers.get("company_id", request.environ.get("company_id"))
+            return EmployeeService(user_id=user_id, company_id=company_id).update_employee(
+                employee_id, request.get_json()
+            )
         except Exception:
             return (
                 jsonify(
@@ -125,11 +136,14 @@ class EmployeeManageResourceId(Resource):
 
     @employee_ns.doc(description="Delete owner by ID")
     @cross_origin()
-    def delete(self, owner_id: int):
+    def delete(self, employee_id: int):
         """Delete owner by ID"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return EmployeeService(user_id=user_id).delete_employee(owner_id)
+            company_id = request.headers.get("company_id", request.environ.get("company_id"))
+            return EmployeeService(user_id=user_id, company_id=company_id).delete_employee(
+                employee_id
+            )
         except Exception:
             return (
                 jsonify(

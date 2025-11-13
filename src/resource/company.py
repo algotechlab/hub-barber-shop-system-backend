@@ -7,6 +7,7 @@ from flask_restx import Namespace, Resource, fields, reqparse
 from src.resource.commons.pagination import PaginationArguments
 from src.service.company import CompanyService
 
+
 pagination_arguments = reqparse.RequestParser()
 PaginationArguments.add_to_parser(pagination_arguments)
 
