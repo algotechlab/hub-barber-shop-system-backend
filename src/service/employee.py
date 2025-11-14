@@ -26,7 +26,9 @@ class EmployeeService:
             self.db_session.commit()
 
             return ApiResponse(
-                success=True, message="Employee added successfully.", status_code=201
+                success=True,
+                message="Employee added successfully.",
+                status_code=201,
             ).to_response()
 
         except IntegrityError as e:
@@ -72,7 +74,9 @@ class EmployeeService:
         except Exception:
             self.db_session.rollback()
             return ApiResponse(
-                success=False, message="Error occurred while adding employee.", status_code=500
+                success=False,
+                message="Error occurred while adding employee.",
+                status_code=500,
             ).to_response()
 
     def list_employees(self, data: dict) -> ApiResponse:
@@ -81,7 +85,9 @@ class EmployeeService:
             pagination_params, error = pagination.validate_params()
             if error:
                 return ApiResponse(
-                    status_code=400, message_id="invalid_pagination_params", error=True
+                    status_code=400,
+                    message_id="invalid_pagination_params",
+                    error=True,
                 ).to_response()
 
             stmt = select(
@@ -91,7 +97,8 @@ class EmployeeService:
                 self.model.phone_number,
                 self.model.is_active,
             ).where(
-                self.model.company_id.__eq__(self.company_id), self.model.is_deleted.__eq__(False)
+                self.model.company_id.__eq__(self.company_id),
+                self.model.is_deleted.__eq__(False),
             )
 
             self.db_session.execute(stmt).all()
@@ -99,15 +106,21 @@ class EmployeeService:
                 filter_value = f"%{pagination_params.filter_by}%"
                 try:
                     stmt = stmt.filter(
-                        func.unaccent(self.model.first_name).ilike(func.unaccent(filter_value))
+                        func.unaccent(self.model.first_name).ilike(
+                            func.unaccent(filter_value)
+                        )
                     )
                 except Exception:
-                    stmt = stmt.filter(self.model.first_name.ilike(filter_value))
+                    stmt = stmt.filter(
+                        self.model.first_name.ilike(filter_value)
+                    )
 
             sort_column = getattr(self.model, pagination_params.order_by, None)
             if sort_column:
                 stmt = stmt.order_by(
-                    sort_column.asc() if pagination_params.sort_by == "asc" else sort_column.desc()
+                    sort_column.asc()
+                    if pagination_params.sort_by == "asc"
+                    else sort_column.desc()
                 )
 
             total_count = db.session.execute(
@@ -115,11 +128,14 @@ class EmployeeService:
             ).scalar()
 
             paginated_stmt = stmt.offset(
-                (pagination_params.current_page - 1) * pagination_params.rows_per_page
+                (pagination_params.current_page - 1)
+                * pagination_params.rows_per_page
             ).limit(pagination_params.rows_per_page)
 
             result = db.session.execute(paginated_stmt).fetchall()
-            metadata = pagination.build_metadata(total_count, pagination_params)
+            metadata = pagination.build_metadata(
+                total_count, pagination_params
+            )
             serializer = ModelSerializer(result)
 
             return ApiResponse(
@@ -132,7 +148,9 @@ class EmployeeService:
         except Exception:
             self.db_session.rollback()
             return ApiResponse(
-                success=False, message="Error occurred while listing employees.", status_code=500
+                success=False,
+                message="Error occurred while listing employees.",
+                status_code=500,
             ).to_response()
 
     def get_employee(self, employee_id: int) -> Employee | None:
@@ -160,7 +178,9 @@ class EmployeeService:
             error=False,
         ).to_response()
 
-    def update_employee(self, employee_id: int, update_data: dict) -> ApiResponse:
+    def update_employee(
+        self, employee_id: int, update_data: dict
+    ) -> ApiResponse:
         try:
             employee = (
                 self.db_session.query(self.model)
@@ -178,13 +198,19 @@ class EmployeeService:
 
             filtered_update = {}
             for key, value in update_data.items():
-                if value is not None and key in EMPLOYEE_FIELDS and hasattr(self.model, key):
+                if (
+                    value is not None
+                    and key in EMPLOYEE_FIELDS
+                    and hasattr(self.model, key)
+                ):
                     setattr(employee, key, value)
                     filtered_update[key] = value
 
             if not filtered_update:
                 return ApiResponse(
-                    status_code=400, message="No valid fields to update", error=True
+                    status_code=400,
+                    message="No valid fields to update",
+                    error=True,
                 ).to_response()
 
             stmt = (
@@ -194,17 +220,25 @@ class EmployeeService:
                     self.model.company_id.__eq__(self.company_id),
                     self.model.is_deleted.__eq__(False),
                 )
-                .values(updated_at=get_utc_now(), updated_by=self.user, **filtered_update)
+                .values(
+                    updated_at=get_utc_now(),
+                    updated_by=self.user,
+                    **filtered_update,
+                )
             )
             self.db_session.execute(stmt)
             self.db_session.commit()
             return ApiResponse(
-                success=True, message="Employee updated successfully.", status_code=200
+                success=True,
+                message="Employee updated successfully.",
+                status_code=200,
             ).to_response()
         except Exception:
             self.db_session.rollback()
             return ApiResponse(
-                success=False, message="Error occurred while updating employee.", status_code=500
+                success=False,
+                message="Error occurred while updating employee.",
+                status_code=500,
             ).to_response()
 
     def delete_employee(self, employee_id: int) -> ApiResponse:
@@ -229,7 +263,11 @@ class EmployeeService:
                     self.model.company_id.__eq__(self.company_id),
                     self.model.id.__eq__(employee_id),
                 )
-                .values(deleted_at=get_utc_now(), deleted_by=self.user, is_deleted=True)
+                .values(
+                    deleted_at=get_utc_now(),
+                    deleted_by=self.user,
+                    is_deleted=True,
+                )
             )
 
             self.db_session.execute(stmt)
@@ -241,5 +279,7 @@ class EmployeeService:
         except Exception:
             self.db_session.rollback()
             return ApiResponse(
-                success=False, message="Error occurred while deleting employee.", status_code=500
+                success=False,
+                message="Error occurred while deleting employee.",
+                status_code=500,
             ).to_response()
