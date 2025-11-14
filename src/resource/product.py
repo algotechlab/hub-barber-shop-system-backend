@@ -128,7 +128,7 @@ class ProductResource(Resource):
 
 
 @product_ns.route("/<int:product_id>")
-class ProductResourceId(Resource):
+class ProductManageIdResource(Resource):
 
     @product_ns.doc(description="Get product by ID")
     @cross_origin()
@@ -234,7 +234,7 @@ class ProductEmployeResource(Resource):
 
 
 @product_ns.route("/<int:product_id>/<int:employee_id>")
-class ProductEmployeResourceID(Resource):
+class ProductEmployeManageIdResource(Resource):
 
     @product_ns.doc(description="Delete product relation of employee by ID")
     @cross_origin()

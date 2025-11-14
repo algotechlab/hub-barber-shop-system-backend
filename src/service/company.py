@@ -63,7 +63,9 @@ class CompanyService:
                 self.model.color,
                 self.model.slug,
                 self.model.owner_id,
-            ).where(~self.model.is_deleted)
+            ).where(
+                self.model.is_deleted.__eq__(False),
+            )
 
             self.db_session.execute(stmt).all()
             if pagination_params.filter_by:
@@ -148,7 +150,7 @@ class CompanyService:
 
             stmt = (
                 update(self.model)
-                .where(self.model.id == company_id)
+                .where(self.model.id.__eq__(company_id))
                 .values(**filtered_update)
             )
 
@@ -182,7 +184,7 @@ class CompanyService:
                 ).to_response()
             stmt = (
                 update(self.model)
-                .where(self.model.id == company_id)
+                .where(self.model.id.__eq__(company_id))
                 .values(deleted_at=get_utc_now(), is_deleted=True)
             )
 

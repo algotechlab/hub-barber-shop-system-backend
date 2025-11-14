@@ -124,7 +124,10 @@ class OwnerService:
                 self.model.last_name,
                 self.model.email,
                 self.model.phone_number,
-            ).where(self.model.id == owner_id, ~self.model.is_deleted)
+            ).where(
+                self.model.id.__eq__(owner_id),
+                self.model.is_deleted.__eq__(False),
+            )
 
             result = self.db_session.execute(stmt).first()
             if not result:
@@ -213,7 +216,7 @@ class OwnerService:
                 ).to_response()
             stmt = (
                 update(self.model)
-                .where(self.model.id == owner_id)
+                .where(self.model.id.__eq__(owner_id))
                 .values(deleted_at=get_utc_now(), is_deleted=True)
             )
 
