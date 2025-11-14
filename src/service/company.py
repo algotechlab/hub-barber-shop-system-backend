@@ -28,12 +28,16 @@ class CompanyService:
             self.db_session.execute(stmt)
             self.db_session.commit()
             return ApiResponse(
-                success=True, message="Company added successfully.", status_code=201
+                success=True,
+                message="Company added successfully.",
+                status_code=201,
             ).to_response()
         except IntegrityError:
             self.db_session.rollback()
             return ApiResponse(
-                status_code=400, message_id="company_already_exists", error=True
+                status_code=400,
+                message_id="company_already_exists",
+                error=True,
             ).to_response()
         except Exception:
             self.db_session.rollback()
@@ -47,7 +51,9 @@ class CompanyService:
             pagination_params, error = pagination.validate_params()
             if error:
                 return ApiResponse(
-                    status_code=400, message_id="invalid_pagination_params", error=True
+                    status_code=400,
+                    message_id="invalid_pagination_params",
+                    error=True,
                 ).to_response()
             stmt = select(
                 self.model.id,
@@ -64,7 +70,9 @@ class CompanyService:
                 filter_value = f"%{pagination_params.filter_by}%"
                 try:
                     stmt = stmt.filter(
-                        func.unaccent(self.model.name).ilike(func.unaccent(filter_value))
+                        func.unaccent(self.model.name).ilike(
+                            func.unaccent(filter_value)
+                        )
                     )
                 except Exception:
                     stmt = stmt.filter(self.model.name.ilike(filter_value))
@@ -72,7 +80,9 @@ class CompanyService:
             sort_column = getattr(self.model, pagination_params.order_by, None)
             if sort_column:
                 stmt = stmt.order_by(
-                    sort_column.asc() if pagination_params.sort_by == "asc" else sort_column.desc()
+                    sort_column.asc()
+                    if pagination_params.sort_by == "asc"
+                    else sort_column.desc()
                 )
 
             total_count = db.session.execute(
@@ -80,11 +90,14 @@ class CompanyService:
             ).scalar()
 
             paginated_stmt = stmt.offset(
-                (pagination_params.current_page - 1) * pagination_params.rows_per_page
+                (pagination_params.current_page - 1)
+                * pagination_params.rows_per_page
             ).limit(pagination_params.rows_per_page)
 
             result = db.session.execute(paginated_stmt).fetchall()
-            metadata = pagination.build_metadata(total_count, pagination_params)
+            metadata = pagination.build_metadata(
+                total_count, pagination_params
+            )
             serializer = ModelSerializer(result)
 
             return ApiResponse(
@@ -96,7 +109,9 @@ class CompanyService:
             ).to_response()
         except Exception:
             return ApiResponse(
-                status_code=500, message="Error processing list companies", error=True
+                status_code=500,
+                message="Error processing list companies",
+                error=True,
             ).to_response()
 
     def update_company(self, company_id: int, update_data: dict) -> tuple:
@@ -116,16 +131,26 @@ class CompanyService:
 
             filtered_update = {}
             for key, value in update_data.items():
-                if value is not None and key in COMPANY_FIELDS and hasattr(self.model, key):
+                if (
+                    value is not None
+                    and key in COMPANY_FIELDS
+                    and hasattr(self.model, key)
+                ):
                     setattr(company, key, value)
                     filtered_update[key] = value
 
             if not filtered_update:
                 return ApiResponse(
-                    status_code=400, message="No valid fields to update", error=True
+                    status_code=400,
+                    message="No valid fields to update",
+                    error=True,
                 ).to_response()
 
-            stmt = update(self.model).where(self.model.id == company_id).values(**filtered_update)
+            stmt = (
+                update(self.model)
+                .where(self.model.id == company_id)
+                .values(**filtered_update)
+            )
 
             self.db_session.execute(stmt)
             self.db_session.commit()
@@ -136,7 +161,9 @@ class CompanyService:
         except Exception:
             self.db_session.rollback()
             return ApiResponse(
-                status_code=500, message="Error processing update owner", error=True
+                status_code=500,
+                message="Error processing update owner",
+                error=True,
             ).to_response()
 
     def delete_company(self, company_id: int) -> ApiResponse:
@@ -169,5 +196,7 @@ class CompanyService:
             print("Coletnado o error:", e)
             self.db_session.rollback()
             return ApiResponse(
-                status_code=500, message="Error processing delete company", error=True
+                status_code=500,
+                message="Error processing delete company",
+                error=True,
             ).to_response()

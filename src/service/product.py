@@ -1,52 +1,50 @@
 from sqlalchemy import func, insert, select, update
-from sqlalchemy.exc import IntegrityError
 
 from src.db.database import db
-from src.model.owner import Owner
+from src.model.product import Product
 from src.utils.metadata import ApiResponse, ModelSerializer
 from src.utils.pagination import Pagination
 from src.utils.utc import get_utc_now
 
 
-OWNER_FIELDS = [
-    "first_name",
-    "last_name",
-    "email",
-    "phone_number",
+PRODUCT_FIELDS = [
+    "category",
+    "commission",
+    "description",
 ]
 
 
-class OwnerService:
-    def __init__(self, *args, **kwargs):
-        self.db_session = db.session
-        self.model = Owner
+class ProductService:
 
-    def add_owner(self, owner_data: dict) -> tuple:
+    def __init__(self, user_id: int, company_id: int, *args, **kwargs):
+        self.db_session = db.session
+        self.model = Product
+        self.user = user_id
+        self.company_id = company_id
+
+    def add_product(self, product_data: dict) -> ApiResponse:
         try:
-            stmt = insert(self.model).values(**owner_data)
+            stmt = insert(self.model).values(
+                company_id=self.company_id, **product_data
+            )
             self.db_session.execute(stmt)
             self.db_session.commit()
+
             return ApiResponse(
                 success=True,
-                message="Owner added successfully.",
+                message="Product added successfully.",
                 status_code=201,
             ).to_response()
-        except IntegrityError:
-            self.db_session.rollback()
-            return ApiResponse(
-                success=False,
-                message="Owner with this email already exists.",
-                status_code=409,
-            ).to_response()
+
         except Exception:
             self.db_session.rollback()
             return ApiResponse(
                 success=False,
-                message="Error occurred while adding owner.",
+                message="Error occurred while adding employee.",
                 status_code=500,
             ).to_response()
 
-    def list_owners(self, data: dict) -> ApiResponse:
+    def list_products(self, data: dict) -> ApiResponse:
         try:
             pagination = Pagination(data)
             pagination_params, error = pagination.validate_params()
@@ -56,27 +54,29 @@ class OwnerService:
                     message_id="invalid_pagination_params",
                     error=True,
                 ).to_response()
+
             stmt = select(
                 self.model.id,
-                self.model.first_name,
-                self.model.last_name,
-                self.model.email,
-                self.model.phone_number,
-                self.model.is_active,
-            ).where(~self.model.is_deleted)
+                self.model.category,
+                self.model.commission,
+                self.model.description,
+            ).where(
+                self.model.company_id.__eq__(self.company_id),
+                self.model.is_deleted.__eq__(False),
+            )
 
             self.db_session.execute(stmt).all()
             if pagination_params.filter_by:
                 filter_value = f"%{pagination_params.filter_by}%"
                 try:
                     stmt = stmt.filter(
-                        func.unaccent(self.model.first_name).ilike(
+                        func.unaccent(self.model.description).ilike(
                             func.unaccent(filter_value)
                         )
                     )
                 except Exception:
                     stmt = stmt.filter(
-                        self.model.first_name.ilike(filter_value)
+                        self.model.description.ilike(filter_value)
                     )
 
             sort_column = getattr(self.model, pagination_params.order_by, None)
@@ -106,68 +106,67 @@ class OwnerService:
                 status_code=200,
                 data=serializer.to_list(),
                 metadata=metadata if metadata else {},
-                message_id="list_owners_success",
+                message_id="list_product_success",
                 error=False,
             ).to_response()
         except Exception:
+            self.db_session.rollback()
             return ApiResponse(
+                success=False,
+                message="Error occurred while listing employees.",
                 status_code=500,
-                message="Error processing list owners",
-                error=True,
             ).to_response()
 
-    def get_owner(self, owner_id: int) -> ApiResponse:
-        try:
-            stmt = select(
-                self.model.id,
-                self.model.first_name,
-                self.model.last_name,
-                self.model.email,
-                self.model.phone_number,
-            ).where(self.model.id == owner_id, ~self.model.is_deleted)
-
-            result = self.db_session.execute(stmt).first()
-            if not result:
-                return ApiResponse(
-                    status_code=404, message="Owner not found", error=True
-                ).to_response()
-
+    def get_product(self, product_id: int):
+        stmt = select(
+            self.model.id,
+            self.model.category,
+            self.model.commission,
+            self.model.description,
+        ).where(
+            self.model.id.__eq__(product_id),
+            self.model.company_id.__eq__(self.company_id),
+            self.model.is_deleted.__eq__(False),
+        )
+        result = self.db_session.execute(stmt).first()
+        if not result:
             return ApiResponse(
-                status_code=200,
-                data=result,
-                message="Get owner success",
-                error=False,
-            ).to_response()
-        except Exception:
-            return ApiResponse(
-                status_code=500,
-                message="Error processing get owner",
-                error=True,
+                status_code=404, message="Product not found", error=True
             ).to_response()
 
-    def update_owner(self, owner_id: int, update_data: dict) -> tuple:
+        return ApiResponse(
+            status_code=200,
+            data=result,
+            message="Get Product success",
+            error=False,
+        ).to_response()
+
+    def update_product(
+        self, product_id: int, update_data: dict
+    ) -> ApiResponse:
         try:
-            owner = (
+            product = (
                 self.db_session.query(self.model)
                 .filter_by(
-                    id=owner_id,
+                    id=product_id,
+                    company_id=self.company_id,
                     is_deleted=False,
                 )
                 .first()
             )
-            if not owner:
+            if not product:
                 return ApiResponse(
-                    status_code=404, message="Owner not found", error=True
+                    status_code=404, message="product not found", error=True
                 ).to_response()
 
             filtered_update = {}
             for key, value in update_data.items():
                 if (
                     value is not None
-                    and key in OWNER_FIELDS
+                    and key in PRODUCT_FIELDS
                     and hasattr(self.model, key)
                 ):
-                    setattr(owner, key, value)
+                    setattr(product, key, value)
                     filtered_update[key] = value
 
             if not filtered_update:
@@ -179,42 +178,59 @@ class OwnerService:
 
             stmt = (
                 update(self.model)
-                .where(self.model.id == owner_id)
-                .values(**filtered_update)
+                .where(
+                    self.model.id.__eq__(product_id),
+                    self.model.company_id.__eq__(self.company_id),
+                    self.model.is_deleted.__eq__(False),
+                )
+                .values(
+                    updated_at=get_utc_now(),
+                    updated_by=self.user,
+                    **filtered_update,
+                )
             )
-
             self.db_session.execute(stmt)
             self.db_session.commit()
-            self.db_session.refresh(owner)
             return ApiResponse(
-                status_code=200, message="Update successfully", error=False
+                success=True,
+                message="Product updated successfully.",
+                status_code=200,
             ).to_response()
         except Exception:
             self.db_session.rollback()
             return ApiResponse(
+                success=False,
+                message="Error occurred while updating product.",
                 status_code=500,
-                message="Error processing update owner",
-                error=True,
             ).to_response()
 
-    def delete_owner(self, owner_id: int) -> ApiResponse:
+    def delete_product(self, product_id: int):
         try:
-            owner = (
+            product = (
                 self.db_session.query(self.model)
                 .filter_by(
-                    id=owner_id,
+                    id=product_id,
+                    company_id=self.company_id,
                     is_deleted=False,
                 )
                 .first()
             )
-            if not owner:
+            if not product:
                 return ApiResponse(
-                    status_code=404, message="Owner not found", error=True
+                    status_code=404, message="product not found", error=True
                 ).to_response()
+
             stmt = (
                 update(self.model)
-                .where(self.model.id == owner_id)
-                .values(deleted_at=get_utc_now(), is_deleted=True)
+                .where(
+                    self.model.company_id.__eq__(self.company_id),
+                    self.model.id.__eq__(product_id),
+                )
+                .values(
+                    deleted_at=get_utc_now(),
+                    deleted_by=self.user,
+                    is_deleted=True,
+                )
             )
 
             self.db_session.execute(stmt)
@@ -226,7 +242,7 @@ class OwnerService:
         except Exception:
             self.db_session.rollback()
             return ApiResponse(
+                success=False,
+                message="Error occurred while deleting employee.",
                 status_code=500,
-                message="Error processing delete owner",
-                error=True,
             ).to_response()

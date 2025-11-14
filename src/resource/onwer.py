@@ -17,20 +17,36 @@ owner_ns = Namespace("owners", description="Manager owners")
 payload_add_owners = owner_ns.model(
     "PayloadAddOwner",
     {
-        "first_name": fields.String(required=True, example="Owner name", max_length=120),
-        "last_name": fields.String(required=True, example="Owner last name", max_length=120),
-        "email": fields.String(required=True, example="Owner email", max_length=120),
-        "phone_number": fields.String(required=True, example="Owner phone number", max_length=40),
+        "first_name": fields.String(
+            required=True, example="Owner name", max_length=120
+        ),
+        "last_name": fields.String(
+            required=True, example="Owner last name", max_length=120
+        ),
+        "email": fields.String(
+            required=True, example="Owner email", max_length=120
+        ),
+        "phone_number": fields.String(
+            required=True, example="Owner phone number", max_length=40
+        ),
     },
 )
 
 payload_update_owners = owner_ns.model(
     "PayloadUpdateOwner",
     {
-        "first_name": fields.String(required=False, example="Owner name", max_length=120),
-        "last_name": fields.String(required=False, example="Owner last name", max_length=120),
-        "email": fields.String(required=False, example="Owner email", max_length=120),
-        "phone_number": fields.String(required=False, example="Owner phone number", max_length=40),
+        "first_name": fields.String(
+            required=False, example="Owner name", max_length=120
+        ),
+        "last_name": fields.String(
+            required=False, example="Owner last name", max_length=120
+        ),
+        "email": fields.String(
+            required=False, example="Owner email", max_length=120
+        ),
+        "phone_number": fields.String(
+            required=False, example="Owner phone number", max_length=40
+        ),
     },
 )
 
@@ -44,7 +60,9 @@ class OwnerResource(Resource):
         """List owners"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return OwnerService(user_id=user_id).list_owners(request.args.to_dict())
+            return OwnerService(user_id=user_id).list_owners(
+                request.args.to_dict()
+            )
         except Exception:
             return (
                 jsonify(
@@ -106,7 +124,9 @@ class OwnerResourceManagerId(Resource):
         """Update owner by ID"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            return OwnerService(user_id=user_id).update_owner(owner_id, request.get_json())
+            return OwnerService(user_id=user_id).update_owner(
+                owner_id, request.get_json()
+            )
         except Exception:
             return (
                 jsonify(

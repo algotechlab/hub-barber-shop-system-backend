@@ -12,4 +12,6 @@ class Company(BaseModels):
     phone_number: Mapped[str] = mapped_column(nullable=True, unique=True)
     color: Mapped[str] = mapped_column(nullable=True)
     slug: Mapped[str] = mapped_column(nullable=False, unique=True)
-    owner_id: Mapped[int] = mapped_column(ForeignKey("owners.id"), nullable=False)
+    owner_id: Mapped[int] = mapped_column(
+        ForeignKey("owners.id"), nullable=False
+    )

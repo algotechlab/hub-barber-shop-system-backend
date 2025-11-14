@@ -52,7 +52,9 @@ class UserService:
             ).to_response()
         except Exception:
             return ApiResponse(
-                status_code=500, message_id="error_processing_get_user", error=True
+                status_code=500,
+                message_id="error_processing_get_user",
+                error=True,
             ).to_response()
 
     def add_user(self, data: dict):
@@ -68,7 +70,9 @@ class UserService:
                     username=data.get("username"),
                     phone=data.get("phone"),
                     email=data.get("email"),
-                    hashed_password=generate_password_hash(data.get("password"), method="scrypt"),
+                    hashed_password=generate_password_hash(
+                        data.get("password"), method="scrypt"
+                    ),
                     company_id=self.company_id,
                 )
                 .returning(self.user.id, self.user.username)
@@ -95,7 +99,9 @@ class UserService:
         except Exception:
             self.db.rollback()
             return ApiResponse(
-                status_code=500, message_id="error_processing_add_user", error=True
+                status_code=500,
+                message_id="error_processing_add_user",
+                error=True,
             ).to_response()
 
     def list_users(self, data: dict):
@@ -104,7 +110,9 @@ class UserService:
             pagination_params, error = pagination.validate_params()
             if error:
                 return ApiResponse(
-                    status_code=400, message_id="invalid_pagination_params", error=True
+                    status_code=400,
+                    message_id="invalid_pagination_params",
+                    error=True,
                 ).to_response()
 
             stmt = select(
@@ -120,7 +128,9 @@ class UserService:
                 filter_value = f"%{pagination_params.filter_by}%"
                 try:
                     stmt = stmt.filter(
-                        func.unaccent(self.user.username).ilike(func.unaccent(filter_value))
+                        func.unaccent(self.user.username).ilike(
+                            func.unaccent(filter_value)
+                        )
                     )
                 except Exception:
                     stmt = stmt.filter(self.user.username.ilike(filter_value))
@@ -128,7 +138,9 @@ class UserService:
             sort_column = getattr(self.user, pagination_params.order_by, None)
             if sort_column:
                 stmt = stmt.order_by(
-                    sort_column.asc() if pagination_params.sort_by == "asc" else sort_column.desc()
+                    sort_column.asc()
+                    if pagination_params.sort_by == "asc"
+                    else sort_column.desc()
                 )
 
             total_count = db.session.execute(
@@ -136,11 +148,14 @@ class UserService:
             ).scalar()
 
             paginated_stmt = stmt.offset(
-                (pagination_params.current_page - 1) * pagination_params.rows_per_page
+                (pagination_params.current_page - 1)
+                * pagination_params.rows_per_page
             ).limit(pagination_params.rows_per_page)
 
             result = db.session.execute(paginated_stmt).fetchall()
-            metadata = pagination.build_metadata(total_count, pagination_params)
+            metadata = pagination.build_metadata(
+                total_count, pagination_params
+            )
 
             serializer = ModelSerializer(result)
             serialized_data = serializer.to_list()
@@ -155,7 +170,9 @@ class UserService:
 
         except Exception:
             return ApiResponse(
-                status_code=500, message_id="error_processing_list_users", error=True
+                status_code=500,
+                message_id="error_processing_list_users",
+                error=True,
             ).to_response()
 
     def update_user(self, id: int, data: dict) -> ApiResponse:
@@ -183,8 +200,15 @@ class UserService:
 
             stmt = (
                 update(self.user)
-                .where(self.user.id.__eq__(id), self.user.company_id.__eq__(self.company_id))
-                .values(updated_by=self.user_id, updated_at=get_utc_now(), **update_data)
+                .where(
+                    self.user.id.__eq__(id),
+                    self.user.company_id.__eq__(self.company_id),
+                )
+                .values(
+                    updated_by=self.user_id,
+                    updated_at=get_utc_now(),
+                    **update_data,
+                )
             )
 
             self.db.execute(stmt)
@@ -197,12 +221,16 @@ class UserService:
         except Exception:
             self.db.rollback()
             return ApiResponse(
-                status_code=500, message_id="error_processing_update_user", error=True
+                status_code=500,
+                message_id="error_processing_update_user",
+                error=True,
             ).to_response()
 
     def delete(self, id: int) -> ApiResponse:
         try:
-            user = self.user.query.filter_by(id=id, company_id=self.company_id).first()
+            user = self.user.query.filter_by(
+                id=id, company_id=self.company_id
+            ).first()
             if not user:
                 return ApiResponse(
                     status_code=404, message_id="user_not_found", error=True
@@ -219,5 +247,7 @@ class UserService:
         except Exception:
             self.db.rollback()
             return ApiResponse(
-                status_code=500, message_id="error_processing_delete_user", error=True
+                status_code=500,
+                message_id="error_processing_delete_user",
+                error=True,
             ).to_response()

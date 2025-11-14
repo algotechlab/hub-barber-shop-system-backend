@@ -16,10 +16,18 @@ user_us = Namespace("users", description="Manager users")
 payload_add_users = user_us.model(
     "PayloadAddUser",
     {
-        "username": fields.String(required=True, example="User name", max_length=120),
-        "phone": fields.String(required=True, example="User phone", max_length=40),
-        "email": fields.String(required=False, example="User email", max_length=120),
-        "password": fields.String(required=True, example="User password", max_length=300),
+        "username": fields.String(
+            required=True, example="User name", max_length=120
+        ),
+        "phone": fields.String(
+            required=True, example="User phone", max_length=40
+        ),
+        "email": fields.String(
+            required=False, example="User email", max_length=120
+        ),
+        "password": fields.String(
+            required=True, example="User password", max_length=300
+        ),
         "company_id": fields.Integer(required=True, example=4),
     },
 )
@@ -27,10 +35,18 @@ payload_add_users = user_us.model(
 payload_update_users = user_us.model(
     "PayloadUpdateUser",
     {
-        "username": fields.String(required=False, example="User name", max_length=120),
-        "phone": fields.String(required=True, example="User phone", max_length=40),
-        "email": fields.String(required=False, example="User email", max_length=120),
-        "password": fields.String(required=False, example="User password", max_length=300),
+        "username": fields.String(
+            required=False, example="User name", max_length=120
+        ),
+        "phone": fields.String(
+            required=True, example="User phone", max_length=40
+        ),
+        "email": fields.String(
+            required=False, example="User email", max_length=120
+        ),
+        "password": fields.String(
+            required=False, example="User password", max_length=300
+        ),
     },
 )
 
@@ -44,10 +60,12 @@ class UserResource(Resource):
         """List users"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            company_id = request.headers.get("company_id", request.environ.get("company_id"))
-            return UserService(user_id=user_id, company_id=company_id).list_users(
-                request.args.to_dict()
+            company_id = request.headers.get(
+                "company_id", request.environ.get("company_id")
             )
+            return UserService(
+                user_id=user_id, company_id=company_id
+            ).list_users(request.args.to_dict())
         except Exception:
             return jsonify(
                 {
@@ -64,8 +82,12 @@ class UserResource(Resource):
         """Add users"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            company_id = request.headers.get("company_id", request.environ.get("company_id"))
-            return UserService(user_id=user_id, company_id=company_id).add_user(request.get_json())
+            company_id = request.headers.get(
+                "company_id", request.environ.get("company_id")
+            )
+            return UserService(
+                user_id=user_id, company_id=company_id
+            ).add_user(request.get_json())
         except Exception:
             return jsonify(
                 {
@@ -84,8 +106,12 @@ class UserResourcerId(Resource):
         """Get id"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            company_id = request.headers.get("company_id", request.environ.get("company_id"))
-            return UserService(user_id=user_id, company_id=company_id).get_user(id=id)
+            company_id = request.headers.get(
+                "company_id", request.environ.get("company_id")
+            )
+            return UserService(
+                user_id=user_id, company_id=company_id
+            ).get_user(id=id)
         except Exception:
             return jsonify(
                 {
@@ -102,10 +128,12 @@ class UserResourcerId(Resource):
         """Update users"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            company_id = request.headers.get("company_id", request.environ.get("company_id"))
-            return UserService(user_id=user_id, company_id=company_id).update_user(
-                id=id, data=request.get_json()
+            company_id = request.headers.get(
+                "company_id", request.environ.get("company_id")
             )
+            return UserService(
+                user_id=user_id, company_id=company_id
+            ).update_user(id=id, data=request.get_json())
         except Exception:
             return jsonify(
                 {
@@ -121,8 +149,12 @@ class UserResourcerId(Resource):
         """Delete users"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            company_id = request.headers.get("company_id", request.environ.get("company_id"))
-            return UserService(user_id=user_id, company_id=company_id).delete(id=id)
+            company_id = request.headers.get(
+                "company_id", request.environ.get("company_id")
+            )
+            return UserService(user_id=user_id, company_id=company_id).delete(
+                id=id
+            )
         except Exception:
             return jsonify(
                 {

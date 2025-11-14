@@ -17,20 +17,30 @@ employee_ns = Namespace("employees", description="Manager employees")
 payload_add_employees = employee_ns.model(
     "PayloadAddEmployee",
     {
-        "first_name": fields.String(required=True, example="Employee name", max_length=120),
-        "last_name": fields.String(required=True, example="Employee last name", max_length=120),
+        "first_name": fields.String(
+            required=True, example="Employee name", max_length=120
+        ),
+        "last_name": fields.String(
+            required=True, example="Employee last name", max_length=120
+        ),
         "phone_number": fields.String(
             required=True, example="Employee phone number", max_length=40
         ),
-        "company_id": fields.Integer(required=True, example="Company of employee"),
+        "company_id": fields.Integer(
+            required=True, example="Company of employee"
+        ),
     },
 )
 
 payload_update_employees = employee_ns.model(
     "PayloadUpdateEmployee",
     {
-        "first_name": fields.String(required=False, example="Employee name", max_length=120),
-        "last_name": fields.String(required=False, example="Employee last name", max_length=120),
+        "first_name": fields.String(
+            required=False, example="Employee name", max_length=120
+        ),
+        "last_name": fields.String(
+            required=False, example="Employee last name", max_length=120
+        ),
         "phone_number": fields.String(
             required=False, example="Employee phone number", max_length=40
         ),
@@ -48,10 +58,12 @@ class EmployeeResource(Resource):
         """List Employees"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            company_id = request.headers.get("company_id", request.environ.get("company_id"))
-            return EmployeeService(user_id=user_id, company_id=company_id).list_employees(
-                request.args.to_dict()
+            company_id = request.headers.get(
+                "company_id", request.environ.get("company_id")
             )
+            return EmployeeService(
+                user_id=user_id, company_id=company_id
+            ).list_employees(request.args.to_dict())
         except Exception:
             return (
                 jsonify(
@@ -71,10 +83,12 @@ class EmployeeResource(Resource):
         """Add Employee"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            company_id = request.headers.get("company_id", request.environ.get("company_id"))
-            return EmployeeService(user_id=user_id, company_id=company_id).add_employee(
-                request.get_json()
+            company_id = request.headers.get(
+                "company_id", request.environ.get("company_id")
             )
+            return EmployeeService(
+                user_id=user_id, company_id=company_id
+            ).add_employee(request.get_json())
         except Exception:
             return (
                 jsonify(
@@ -97,8 +111,12 @@ class EmployeeManageResourceId(Resource):
         """Get employee by ID"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            company_id = request.headers.get("company_id", request.environ.get("company_id"))
-            return EmployeeService(user_id=user_id, company_id=company_id).get_employee(employee_id)
+            company_id = request.headers.get(
+                "company_id", request.environ.get("company_id")
+            )
+            return EmployeeService(
+                user_id=user_id, company_id=company_id
+            ).get_employee(employee_id)
         except Exception:
             return (
                 jsonify(
@@ -111,17 +129,19 @@ class EmployeeManageResourceId(Resource):
                 500,
             )
 
-    @employee_ns.doc(description="Update owner by ID")
+    @employee_ns.doc(description="Update employee by ID")
     @employee_ns.expect(payload_update_employees, validate=True)
     @cross_origin()
     def put(self, employee_id: int):
-        """Update owner by ID"""
+        """Update employee by ID"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            company_id = request.headers.get("company_id", request.environ.get("company_id"))
-            return EmployeeService(user_id=user_id, company_id=company_id).update_employee(
-                employee_id, request.get_json()
+            company_id = request.headers.get(
+                "company_id", request.environ.get("company_id")
             )
+            return EmployeeService(
+                user_id=user_id, company_id=company_id
+            ).update_employee(employee_id, request.get_json())
         except Exception:
             return (
                 jsonify(
@@ -134,16 +154,18 @@ class EmployeeManageResourceId(Resource):
                 500,
             )
 
-    @employee_ns.doc(description="Delete owner by ID")
+    @employee_ns.doc(description="Delete employee by ID")
     @cross_origin()
     def delete(self, employee_id: int):
-        """Delete owner by ID"""
+        """Delete employee by ID"""
         try:
             user_id = request.headers.get("Id", request.environ.get("Id"))
-            company_id = request.headers.get("company_id", request.environ.get("company_id"))
-            return EmployeeService(user_id=user_id, company_id=company_id).delete_employee(
-                employee_id
+            company_id = request.headers.get(
+                "company_id", request.environ.get("company_id")
             )
+            return EmployeeService(
+                user_id=user_id, company_id=company_id
+            ).delete_employee(employee_id)
         except Exception:
             return (
                 jsonify(
