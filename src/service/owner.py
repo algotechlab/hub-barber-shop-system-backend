@@ -1,5 +1,6 @@
 from sqlalchemy import func, insert, select, update
 from sqlalchemy.exc import IntegrityError
+from werkzeug.security import generate_password_hash
 
 from src.db.database import db
 from src.model.owner import Owner
@@ -21,9 +22,17 @@ class OwnerService:
         self.db_session = db.session
         self.model = Owner
 
-    def add_owner(self, owner_data: dict) -> tuple:
+    def add_owner(self, owner_data: dict) -> ApiResponse:
         try:
-            stmt = insert(self.model).values(**owner_data)
+            stmt = insert(self.model).values(
+                first_name=owner_data.get("first_name"),
+                last_name=owner_data.get("last_name"),
+                email=owner_data.get("email"),
+                phone_number=owner_data.get("phone_number"),
+                hashed_password=generate_password_hash(
+                    owner_data.get("hashed_password"), method="scrypt"
+                ),
+            )
             self.db_session.execute(stmt)
             self.db_session.commit()
             return ApiResponse(
@@ -38,7 +47,8 @@ class OwnerService:
                 message="Owner with this email already exists.",
                 status_code=409,
             ).to_response()
-        except Exception:
+        except Exception as e:
+            print("Coletando o error:", e)
             self.db_session.rollback()
             return ApiResponse(
                 success=False,

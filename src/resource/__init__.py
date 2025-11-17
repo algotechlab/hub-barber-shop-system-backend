@@ -1,5 +1,6 @@
 from src.resource.company import companies_ns
 from src.resource.employee import employee_ns
+from src.resource.login import login_us
 from src.resource.onwer import owner_ns
 from src.resource.product import product_ns
 from src.resource.schedule import schedule_ns
@@ -14,4 +15,5 @@ def all_namespaces():
         employee_ns,
         product_ns,
         schedule_ns,
+        login_us,
     ]

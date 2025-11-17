@@ -1,5 +1,6 @@
 from sqlalchemy import func, insert, select, update
 from sqlalchemy.exc import IntegrityError
+from werkzeug.security import generate_password_hash
 
 from src.core.exceptions.custom import PostgresErrorCode
 from src.db.database import db
@@ -21,7 +22,15 @@ class EmployeeService:
 
     def add_employee(self, employee_data: dict) -> tuple:
         try:
-            stmt = insert(self.model).values(**employee_data)
+            stmt = insert(self.model).values(
+                company_id=self.company_id,
+                first_name=employee_data.get("first_name"),
+                last_name=employee_data.get("last_name"),
+                phone_number=employee_data.get("phone_number"),
+                hashed_password=generate_password_hash(
+                    employee_data.get("hashed_password"), method="scrypt"
+                ),
+            )
             self.db_session.execute(stmt)
             self.db_session.commit()
 

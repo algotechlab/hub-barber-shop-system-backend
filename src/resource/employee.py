@@ -26,8 +26,8 @@ payload_add_employees = employee_ns.model(
         "phone_number": fields.String(
             required=True, example="Employee phone number", max_length=40
         ),
-        "company_id": fields.Integer(
-            required=True, example="Company of employee"
+        "hashed_password": fields.String(
+            required=True, example="Employee password", max_length=300
         ),
     },
 )
