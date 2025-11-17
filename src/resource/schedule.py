@@ -7,6 +7,7 @@ from flask_restx import Namespace, Resource, fields, reqparse
 from src.resource.commons.pagination import PaginationArguments
 from src.service.schedule import ScheduleService
 from src.service.schedule_block import BlockService
+from src.service.slots import SlotsService
 
 
 pagination_arguments = reqparse.RequestParser()
@@ -114,6 +115,28 @@ payload_add_schedule_block = schedule_ns.model(
             default=True,
             example=True,
             description="Indica se o horário está bloqueado",
+        ),
+    },
+)
+
+
+payload_slots_schedules = schedule_ns.model(
+    "PayloadSlotsSchedules",
+    {
+        "work_start": fields.String(
+            required=True,
+            example="2025-11-14T09:00:00",
+            description="Data e hora de início do bloqueio (ISO 8601)",
+        ),
+        "work_end": fields.String(
+            required=True,
+            example="2025-11-14T12:00:00",
+            description="Data e hora de fim do bloqueio (ISO 8601)",
+        ),
+        "employee_id": fields.Integer(
+            required=True,
+            example=5,
+            description="ID do colaborador que terá o horário bloqueado",
         ),
     },
 )
@@ -321,4 +344,30 @@ class ScheduleBlockByResource(Resource):
                     }
                 ),
                 500,
+            )
+
+
+@schedule_ns.route("/slots")
+class SlotsScheduleResource(Resource):
+
+    @schedule_ns.doc(description="List Slots Schedule")
+    @schedule_ns.expect(payload_slots_schedules, validate=True)
+    @cross_origin()
+    def post(self):
+        """List Slots Schedule"""
+        try:
+            user_id = request.headers.get("Id", request.environ.get("Id"))
+            company_id = request.headers.get(
+                "company_id", request.environ.get("company_id")
+            )
+            return SlotsService(
+                user_id=user_id, company_id=company_id
+            ).list_slot(request.get_json())
+        except Exception:
+            return jsonify(
+                {
+                    "status_code": 500,
+                    "message_id": "something_went_wrong",
+                    "traceback": traceback.format_exc(),
+                }
             )
