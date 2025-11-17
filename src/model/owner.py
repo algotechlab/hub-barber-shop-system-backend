@@ -11,3 +11,4 @@ class Owner(BaseModels):
     email: Mapped[str] = mapped_column(nullable=False, unique=True)
     phone_number: Mapped[str] = mapped_column(nullable=True, unique=True)
     is_active: Mapped[bool] = mapped_column(default=True)
+    hashed_password: Mapped[str] = mapped_column(nullable=False)

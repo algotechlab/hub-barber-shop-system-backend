@@ -29,6 +29,9 @@ payload_add_owners = owner_ns.model(
         "phone_number": fields.String(
             required=True, example="Owner phone number", max_length=40
         ),
+        "hashed_password": fields.String(
+            required=True, example="Owner password", max_length=300
+        ),
     },
 )
 
