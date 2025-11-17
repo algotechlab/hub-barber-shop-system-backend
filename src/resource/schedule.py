@@ -2,6 +2,7 @@ import traceback
 
 from flask import jsonify, request
 from flask_cors import cross_origin
+from flask_jwt_extended import jwt_required
 from flask_restx import Namespace, Resource, fields, reqparse
 
 from src.resource.commons.pagination import PaginationArguments
@@ -147,6 +148,7 @@ class ScheduleResource(Resource):
 
     @schedule_ns.doc(description="List Schedule")
     @schedule_ns.expect(pagination_arguments, validate=True)
+    @jwt_required()
     @cross_origin()
     def get(self):
         """List Schedule"""
@@ -169,6 +171,7 @@ class ScheduleResource(Resource):
 
     @schedule_ns.doc(description="Add Schedule")
     @schedule_ns.expect(payload_add_schedule, validate=True)
+    @jwt_required()
     @cross_origin()
     def post(self):
         """Add Schedule"""
@@ -194,6 +197,7 @@ class ScheduleResource(Resource):
 class ScheduleFilterByUserResource(Resource):
 
     @schedule_ns.doc(description="Get schedule by filter user with ID")
+    @jwt_required()
     @cross_origin()
     def get(self, id: int):
         """Get schedule by filter user with ID"""
@@ -223,6 +227,7 @@ class ScheduleByIdResource(Resource):
 
     @schedule_ns.doc(description="Update schedule by ID")
     @schedule_ns.expect(payload_update_schedule, validate=True)
+    @jwt_required()
     @cross_origin()
     def put(self, schedule_id: int):
         """Update schedule by ID"""
@@ -247,6 +252,7 @@ class ScheduleByIdResource(Resource):
             )
 
     @schedule_ns.doc(description="Delete schedule by ID")
+    @jwt_required()
     @cross_origin()
     def delete(self, schedule_id: int):
         """Delete schedule by ID"""
@@ -276,6 +282,7 @@ class ScheduleBlockResource(Resource):
 
     @schedule_ns.doc(description="Add Schedule Block")
     @schedule_ns.expect(payload_add_schedule_block, validate=True)
+    @jwt_required()
     @cross_origin()
     def post(self):
         """Add Schedule Block"""
@@ -298,6 +305,7 @@ class ScheduleBlockResource(Resource):
 
     @schedule_ns.doc(description="List Schedule block")
     @schedule_ns.expect(pagination_arguments, validate=True)
+    @jwt_required()
     @cross_origin()
     def get(self):
         """List Schedule block"""
@@ -323,6 +331,7 @@ class ScheduleBlockResource(Resource):
 class ScheduleBlockByResource(Resource):
 
     @schedule_ns.doc(description="Delete block by ID")
+    @jwt_required()
     @cross_origin()
     def delete(self, block_id: int):
         """Delete block by ID"""
@@ -352,6 +361,7 @@ class SlotsScheduleResource(Resource):
 
     @schedule_ns.doc(description="List Slots Schedule")
     @schedule_ns.expect(payload_slots_schedules, validate=True)
+    @jwt_required()
     @cross_origin()
     def post(self):
         """List Slots Schedule"""
