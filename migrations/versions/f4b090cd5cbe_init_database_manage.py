@@ -1,8 +1,8 @@
 """init database manage
 
-Revision ID: 5f75b8b1b0d3
+Revision ID: f4b090cd5cbe
 Revises: 
-Create Date: 2025-11-17 20:50:42.619324
+Create Date: 2025-11-17 21:24:40.717626
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '5f75b8b1b0d3'
+revision: str = 'f4b090cd5cbe'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -138,6 +138,26 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['employee_id'], ['employees.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('cash_registers',
+    sa.Column('opening_balance', sa.Numeric(precision=10, scale=2), nullable=True),
+    sa.Column('closing_balance', sa.Numeric(precision=10, scale=2), nullable=True),
+    sa.Column('date', sa.Date(), nullable=True),
+    sa.Column('status', sa.String(length=20), nullable=True),
+    sa.Column('company_id', sa.Integer(), nullable=True),
+    sa.Column('opened_by', sa.Integer(), nullable=True),
+    sa.Column('closed_by', sa.Integer(), nullable=True),
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=True),
+    sa.Column('updated_by', sa.Integer(), nullable=True),
+    sa.Column('deleted_by', sa.Integer(), nullable=True),
+    sa.Column('deleted_at', sa.DateTime(), nullable=True),
+    sa.Column('is_deleted', sa.Boolean(), nullable=False),
+    sa.ForeignKeyConstraint(['closed_by'], ['users.id'], ),
+    sa.ForeignKeyConstraint(['company_id'], ['companies.id'], ),
+    sa.ForeignKeyConstraint(['opened_by'], ['users.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_table('products_employees',
     sa.Column('product_id', sa.Integer(), nullable=False),
     sa.Column('employee_id', sa.Integer(), nullable=False),
@@ -175,53 +195,37 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.execute("""
-        INSERT INTO owners (first_name, last_name, email, phone_number, role, is_active, hashed_password, is_deleted)
-        VALUES ('João', 'Silva', 'joao@empresa.com', '11999999999', 'owner', true, '$2b$12$dummyhashforjoao', false);
-    """)
-
-    op.execute("""
-        INSERT INTO companies (name, email, phone_number, color, slug, owner_id, is_deleted)
-        VALUES ('Minha Empresa Ltda', 'contato@empresa.com', '11988888888', '#FF5733', 'minha-empresa', 1, false);
-    """)
-
-    op.execute("""
-        INSERT INTO employees (first_name, last_name, phone_number, hashed_password, role, is_active, company_id, is_deleted)
-        VALUES ('Maria', 'Santos', '11888888888', '$2b$12$dummyhashformaria', 'employee', true, 1, false);
-    """)
-
-    op.execute("""
-        INSERT INTO users (username, email, hashed_password, is_active, phone, role, company_id, is_deleted)
-        VALUES ('maria_santos', 'maria@empresa.com', '$2b$12$dummyhashformaria_user', true, '11888888888', 'user', 1, false);
-    """)
-
-    op.execute("""
-        INSERT INTO product (description, value_operation, time_to_spend, commission, category, company_id, is_deleted)
-        VALUES ('Corte de Cabelo Básico', 50.00, '00:30:00', 0.10, 'Serviço', 1, false);
-    """)
-
-    op.execute("""
-        INSERT INTO products_employees (product_id, employee_id, is_check, company_id, is_deleted)
-        VALUES (1, 1, true, 1, false);
-    """)
-
-    op.execute("""
-        INSERT INTO block (start_time, end_time, employee_id, is_block, company_id, is_deleted)
-        VALUES ('2025-11-18 09:00:00', '2025-11-18 10:00:00', 1, true, 1, false);
-    """)
-
-    op.execute("""
-        INSERT INTO schedule (time_register, employee_id, product_id, company_id, user_id, is_check, is_deleted)
-        VALUES ('2025-11-18 09:30:00', 1, 1, 1, 1, true, false);
-    """)
+    op.create_table('transactions',
+    sa.Column('type', sa.String(length=10), nullable=True),
+    sa.Column('amount', sa.Numeric(precision=10, scale=2), nullable=True),
+    sa.Column('description', sa.String(length=100), nullable=True),
+    sa.Column('schedule_id', sa.Integer(), nullable=True),
+    sa.Column('cash_register_id', sa.Integer(), nullable=True),
+    sa.Column('company_id', sa.Integer(), nullable=True),
+    sa.Column('created_by', sa.Integer(), nullable=True),
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=True),
+    sa.Column('updated_by', sa.Integer(), nullable=True),
+    sa.Column('deleted_by', sa.Integer(), nullable=True),
+    sa.Column('deleted_at', sa.DateTime(), nullable=True),
+    sa.Column('is_deleted', sa.Boolean(), nullable=False),
+    sa.ForeignKeyConstraint(['cash_register_id'], ['cash_registers.id'], ),
+    sa.ForeignKeyConstraint(['company_id'], ['companies.id'], ),
+    sa.ForeignKeyConstraint(['created_by'], ['users.id'], ),
+    sa.ForeignKeyConstraint(['schedule_id'], ['schedule.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
     # ### end Alembic commands ###
 
 
 def downgrade() -> None:
     """Downgrade schema."""
     # ### commands auto generated by Alembic - please adjust! ###
+    op.drop_table('transactions')
     op.drop_table('schedule')
     op.drop_table('products_employees')
+    op.drop_table('cash_registers')
     op.drop_table('block')
     op.drop_table('users')
     op.drop_table('product')
