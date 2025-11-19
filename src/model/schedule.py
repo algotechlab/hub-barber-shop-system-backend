@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.model.base import BaseModels
 
@@ -23,3 +23,8 @@ class Schedule(BaseModels):
         ForeignKey("users.id"), nullable=False
     )
     is_check: Mapped[bool] = mapped_column(Boolean, default=False)
+    signature_id: Mapped[int] = mapped_column(
+        ForeignKey("signatures.id"), nullable=True
+    )
+    extras = relationship("ScheduleExtra", back_populates="schedule")
+    signature = relationship("Signature")

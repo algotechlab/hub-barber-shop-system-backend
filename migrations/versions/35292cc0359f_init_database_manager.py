@@ -1,8 +1,8 @@
-"""init database manage
+"""init database manager
 
-Revision ID: f4b090cd5cbe
+Revision ID: 35292cc0359f
 Revises: 
-Create Date: 2025-11-17 21:24:40.717626
+Create Date: 2025-11-19 17:18:02.327415
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'f4b090cd5cbe'
+revision: str = '35292cc0359f'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -100,6 +100,24 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['company_id'], ['companies.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('signatures',
+    sa.Column('name', sa.String(), nullable=False),
+    sa.Column('valu', sa.Float(), nullable=False),
+    sa.Column('days_date', sa.Integer(), nullable=False),
+    sa.Column('expiry_date', sa.String(), nullable=False),
+    sa.Column('count_use', sa.Integer(), nullable=False),
+    sa.Column('company_id', sa.Integer(), nullable=False),
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=True),
+    sa.Column('updated_by', sa.Integer(), nullable=True),
+    sa.Column('deleted_by', sa.Integer(), nullable=True),
+    sa.Column('deleted_at', sa.DateTime(), nullable=True),
+    sa.Column('is_deleted', sa.Boolean(), nullable=False),
+    sa.ForeignKeyConstraint(['company_id'], ['companies.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_signatures_name'), 'signatures', ['name'], unique=True)
     op.create_table('users',
     sa.Column('username', sa.String(), nullable=False),
     sa.Column('email', sa.String(), nullable=False),
@@ -121,30 +139,13 @@ def upgrade() -> None:
     sa.UniqueConstraint('phone'),
     sa.UniqueConstraint('username')
     )
-    op.create_table('block',
-    sa.Column('start_time', sa.DateTime(), nullable=False),
-    sa.Column('end_time', sa.DateTime(), nullable=False),
-    sa.Column('employee_id', sa.Integer(), nullable=False),
-    sa.Column('is_block', sa.Boolean(), nullable=False),
-    sa.Column('company_id', sa.Integer(), nullable=False),
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), nullable=True),
-    sa.Column('updated_by', sa.Integer(), nullable=True),
-    sa.Column('deleted_by', sa.Integer(), nullable=True),
-    sa.Column('deleted_at', sa.DateTime(), nullable=True),
-    sa.Column('is_deleted', sa.Boolean(), nullable=False),
-    sa.ForeignKeyConstraint(['company_id'], ['companies.id'], ),
-    sa.ForeignKeyConstraint(['employee_id'], ['employees.id'], ),
-    sa.PrimaryKeyConstraint('id')
-    )
     op.create_table('cash_registers',
-    sa.Column('opening_balance', sa.Numeric(precision=10, scale=2), nullable=True),
-    sa.Column('closing_balance', sa.Numeric(precision=10, scale=2), nullable=True),
-    sa.Column('date', sa.Date(), nullable=True),
-    sa.Column('status', sa.String(length=20), nullable=True),
-    sa.Column('company_id', sa.Integer(), nullable=True),
-    sa.Column('opened_by', sa.Integer(), nullable=True),
+    sa.Column('opening_balance', sa.Float(), nullable=False),
+    sa.Column('closing_balance', sa.Float(), nullable=True),
+    sa.Column('date', sa.String(), nullable=False),
+    sa.Column('status', sa.String(), nullable=False),
+    sa.Column('company_id', sa.Integer(), nullable=False),
+    sa.Column('opened_by', sa.Integer(), nullable=False),
     sa.Column('closed_by', sa.Integer(), nullable=True),
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
@@ -153,9 +154,9 @@ def upgrade() -> None:
     sa.Column('deleted_by', sa.Integer(), nullable=True),
     sa.Column('deleted_at', sa.DateTime(), nullable=True),
     sa.Column('is_deleted', sa.Boolean(), nullable=False),
-    sa.ForeignKeyConstraint(['closed_by'], ['users.id'], ),
+    sa.ForeignKeyConstraint(['closed_by'], ['employees.id'], ),
     sa.ForeignKeyConstraint(['company_id'], ['companies.id'], ),
-    sa.ForeignKeyConstraint(['opened_by'], ['users.id'], ),
+    sa.ForeignKeyConstraint(['opened_by'], ['employees.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('products_employees',
@@ -182,6 +183,7 @@ def upgrade() -> None:
     sa.Column('company_id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('is_check', sa.Boolean(), nullable=False),
+    sa.Column('signature_id', sa.Integer(), nullable=True),
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=True),
@@ -192,17 +194,50 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['company_id'], ['companies.id'], ),
     sa.ForeignKeyConstraint(['employee_id'], ['employees.id'], ),
     sa.ForeignKeyConstraint(['product_id'], ['product.id'], ),
+    sa.ForeignKeyConstraint(['signature_id'], ['signatures.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('schedule_block',
+    sa.Column('start_time', sa.DateTime(), nullable=False),
+    sa.Column('end_time', sa.DateTime(), nullable=False),
+    sa.Column('employee_id', sa.Integer(), nullable=False),
+    sa.Column('is_block', sa.Boolean(), nullable=False),
+    sa.Column('company_id', sa.Integer(), nullable=False),
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=True),
+    sa.Column('updated_by', sa.Integer(), nullable=True),
+    sa.Column('deleted_by', sa.Integer(), nullable=True),
+    sa.Column('deleted_at', sa.DateTime(), nullable=True),
+    sa.Column('is_deleted', sa.Boolean(), nullable=False),
+    sa.ForeignKeyConstraint(['company_id'], ['companies.id'], ),
+    sa.ForeignKeyConstraint(['employee_id'], ['employees.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('schedule_extras',
+    sa.Column('schedule_id', sa.Integer(), nullable=False),
+    sa.Column('product_id', sa.Integer(), nullable=False),
+    sa.Column('quantity', sa.Integer(), nullable=False),
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=True),
+    sa.Column('updated_by', sa.Integer(), nullable=True),
+    sa.Column('deleted_by', sa.Integer(), nullable=True),
+    sa.Column('deleted_at', sa.DateTime(), nullable=True),
+    sa.Column('is_deleted', sa.Boolean(), nullable=False),
+    sa.ForeignKeyConstraint(['product_id'], ['product.id'], ),
+    sa.ForeignKeyConstraint(['schedule_id'], ['schedule.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_table('transactions',
-    sa.Column('type', sa.String(length=10), nullable=True),
-    sa.Column('amount', sa.Numeric(precision=10, scale=2), nullable=True),
-    sa.Column('description', sa.String(length=100), nullable=True),
+    sa.Column('type', sa.String(), nullable=False),
+    sa.Column('amount', sa.Float(), nullable=False),
+    sa.Column('description', sa.String(), nullable=True),
     sa.Column('schedule_id', sa.Integer(), nullable=True),
-    sa.Column('cash_register_id', sa.Integer(), nullable=True),
-    sa.Column('company_id', sa.Integer(), nullable=True),
-    sa.Column('created_by', sa.Integer(), nullable=True),
+    sa.Column('cash_register_id', sa.Integer(), nullable=False),
+    sa.Column('company_id', sa.Integer(), nullable=False),
+    sa.Column('created_by', sa.Integer(), nullable=False),
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=True),
@@ -212,7 +247,7 @@ def upgrade() -> None:
     sa.Column('is_deleted', sa.Boolean(), nullable=False),
     sa.ForeignKeyConstraint(['cash_register_id'], ['cash_registers.id'], ),
     sa.ForeignKeyConstraint(['company_id'], ['companies.id'], ),
-    sa.ForeignKeyConstraint(['created_by'], ['users.id'], ),
+    sa.ForeignKeyConstraint(['created_by'], ['employees.id'], ),
     sa.ForeignKeyConstraint(['schedule_id'], ['schedule.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
@@ -223,11 +258,14 @@ def downgrade() -> None:
     """Downgrade schema."""
     # ### commands auto generated by Alembic - please adjust! ###
     op.drop_table('transactions')
+    op.drop_table('schedule_extras')
+    op.drop_table('schedule_block')
     op.drop_table('schedule')
     op.drop_table('products_employees')
     op.drop_table('cash_registers')
-    op.drop_table('block')
     op.drop_table('users')
+    op.drop_index(op.f('ix_signatures_name'), table_name='signatures')
+    op.drop_table('signatures')
     op.drop_table('product')
     op.drop_table('employees')
     op.drop_table('companies')

@@ -1,5 +1,5 @@
-from sqlalchemy import Column, ForeignKey, Integer, Numeric, String
-from sqlalchemy.orm import relationship
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.model.base import BaseModels
 
@@ -8,14 +8,21 @@ class Transaction(BaseModels):
 
     __tablename__ = "transactions"
 
-    type = Column(String(10))  # 'entry' or 'exit'
-    amount = Column(Numeric(10, 2))
-    description = Column(String(100))
-    schedule_id = Column(Integer, ForeignKey("schedule.id"))
-    cash_register_id = Column(Integer, ForeignKey("cash_registers.id"))
-    company_id = Column(Integer, ForeignKey("companies.id"))
-    created_by = Column(Integer, ForeignKey("users.id"))
-
+    type: Mapped[str] = mapped_column(nullable=False)  # extra or payment
+    amount: Mapped[float] = mapped_column(nullable=False, default=0.00)
+    description: Mapped[str] = mapped_column(nullable=True)
+    schedule_id: Mapped[int] = mapped_column(
+        ForeignKey("schedule.id"), nullable=True
+    )
+    cash_register_id: Mapped[int] = mapped_column(
+        ForeignKey("cash_registers.id"), nullable=False
+    )
+    company_id: Mapped[int] = mapped_column(
+        ForeignKey("companies.id"), nullable=False
+    )
+    created_by: Mapped[int] = mapped_column(
+        ForeignKey("employees.id"), nullable=False
+    )
     cash_register = relationship("CashRegister", back_populates="transactions")
     schedule = relationship("Schedule")
     company = relationship("Company")
