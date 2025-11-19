@@ -7,7 +7,7 @@ from src.model.base import BaseModels
 
 
 class ScheduleBlock(BaseModels):
-    __tablename__ = "block"
+    __tablename__ = "schedule_block"
 
     start_time: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     end_time: Mapped[datetime] = mapped_column(DateTime, nullable=False)
