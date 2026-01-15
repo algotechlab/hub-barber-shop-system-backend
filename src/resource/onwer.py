@@ -59,7 +59,7 @@ payload_update_owners = owner_ns.model(
 class OwnerResource(Resource):
     @owner_ns.doc(description="List Owners")
     @owner_ns.expect(pagination_arguments, validate=True)
-    @jwt_required()
+    # @jwt_required()
     @cross_origin()
     def get(self):
         """List owners"""
@@ -82,7 +82,7 @@ class OwnerResource(Resource):
 
     @owner_ns.doc(description="Add owners")
     @owner_ns.expect(payload_add_owners, validate=True)
-    @jwt_required()
+    # @jwt_required()
     @cross_origin()
     def post(self):
         """Add owners"""
@@ -105,7 +105,7 @@ class OwnerResource(Resource):
 @owner_ns.route("/<int:owner_id>")
 class OwnerResourceManagerId(Resource):
     @owner_ns.doc(description="Get owner by ID")
-    @jwt_required()
+    # @jwt_required()
     @cross_origin()
     def get(self, owner_id: int):
         """Get owner by ID"""
@@ -126,7 +126,7 @@ class OwnerResourceManagerId(Resource):
 
     @owner_ns.doc(description="Update owner by ID")
     @owner_ns.expect(payload_update_owners, validate=True)
-    @jwt_required()
+    # @jwt_required()
     @cross_origin()
     def put(self, owner_id: int):
         """Update owner by ID"""
@@ -148,7 +148,7 @@ class OwnerResourceManagerId(Resource):
             )
 
     @owner_ns.doc(description="Delete owner by ID")
-    @jwt_required()
+    # @jwt_required()
     @cross_origin()
     def delete(self, owner_id: int):
         """Delete owner by ID"""

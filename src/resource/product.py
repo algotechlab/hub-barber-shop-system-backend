@@ -79,7 +79,7 @@ class ProductResource(Resource):
 
     @product_ns.doc(description="List Products")
     @product_ns.expect(pagination_arguments, validate=True)
-    @jwt_required()
+    # @jwt_required()
     @cross_origin()
     def get(self):
         """List Products"""
@@ -105,7 +105,7 @@ class ProductResource(Resource):
 
     @product_ns.doc(description="Add Employee")
     @product_ns.expect(payload_add_product, validate=True)
-    @jwt_required()
+    # @jwt_required()
     @cross_origin()
     def post(self):
         """Add Employee"""
@@ -134,7 +134,7 @@ class ProductResource(Resource):
 class ProductManageIdResource(Resource):
 
     @product_ns.doc(description="Get product by ID")
-    @jwt_required()
+    # @jwt_required()
     @cross_origin()
     def get(self, product_id: int):
         """Get product by ID"""
@@ -160,7 +160,7 @@ class ProductManageIdResource(Resource):
 
     @product_ns.doc(description="Update product by ID")
     @product_ns.expect(payload_update_product, validate=True)
-    @jwt_required()
+    # @jwt_required()
     @cross_origin()
     def put(self, product_id: int):
         """Update product by ID"""
@@ -185,7 +185,7 @@ class ProductManageIdResource(Resource):
             )
 
     @product_ns.doc(description="Delete product by ID")
-    @jwt_required()
+    # @jwt_required()
     @cross_origin()
     def delete(self, product_id: int):
         """Delete product by ID"""
@@ -215,7 +215,7 @@ class ProductEmployeResource(Resource):
 
     @product_ns.doc(description="Add Relation Product of Employee")
     @product_ns.expect(payload_add_product_employee, validate=True)
-    @jwt_required()
+    # @jwt_required()
     @cross_origin()
     def post(self):
         """Add Relation Product of Employee"""
@@ -244,7 +244,7 @@ class ProductEmployeResource(Resource):
 class ProductEmployeManageIdResource(Resource):
 
     @product_ns.doc(description="Delete product relation of employee by ID")
-    @jwt_required()
+    # @jwt_required()
     @cross_origin()
     def delete(self, product_id: int, employee_id: int):
         """Delete product relation of employee by ID"""

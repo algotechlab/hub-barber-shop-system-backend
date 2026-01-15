@@ -64,7 +64,7 @@ payload_update_companies = companies_ns.model(
 class CompanyResource(Resource):
     @companies_ns.doc(description="List Companies")
     @companies_ns.expect(pagination_arguments, validate=True)
-    @jwt_required()
+    # @jwt_required()
     @cross_origin()
     def get(self):
         """List companies"""
@@ -87,7 +87,7 @@ class CompanyResource(Resource):
 
     @companies_ns.doc(description="Add companies")
     @companies_ns.expect(payload_add_companies, validate=True)
-    @jwt_required()
+    # @jwt_required()
     @cross_origin()
     def post(self):
         """Add companies"""
@@ -114,7 +114,7 @@ class CompanyResourceManagerId(Resource):
 
     @companies_ns.doc(description="Update company by ID")
     @companies_ns.expect(payload_update_companies, validate=True)
-    @jwt_required()
+    # @jwt_required()
     @cross_origin()
     def put(self, company_id: int):
         """Update owner by ID"""
@@ -136,7 +136,7 @@ class CompanyResourceManagerId(Resource):
             )
 
     @companies_ns.doc(description="Delete company by ID")
-    @jwt_required()
+    # @jwt_required()
     @cross_origin()
     def delete(self, company_id: int):
         """Delete owner by ID"""

@@ -56,7 +56,7 @@ payload_update_users = user_us.model(
 class UserResource(Resource):
     @user_us.doc(description="List Users")
     @user_us.expect(pagination_arguments, validate=True)
-    @jwt_required()
+    # @jwt_required()
     @cross_origin()
     def get(self):
         """List users"""
@@ -79,7 +79,7 @@ class UserResource(Resource):
 
     @user_us.doc(description="Add users")
     @user_us.expect(payload_add_users, validate=True)
-    @jwt_required()
+    # @jwt_required()
     @cross_origin()
     def post(self):
         """Add users"""
@@ -104,7 +104,7 @@ class UserResource(Resource):
 @user_us.route("/<int:id>")
 class UserResourcerId(Resource):
     @user_us.doc(description="Get User")
-    @jwt_required()
+    # @jwt_required()
     @cross_origin()
     def get(self, id: int):
         """Get id"""
@@ -127,7 +127,7 @@ class UserResourcerId(Resource):
 
     @user_us.doc(description="Update User")
     @user_us.expect(payload_update_users, validate=True)
-    @jwt_required()
+    # @jwt_required()
     @cross_origin()
     def put(self, id: int):
         """Update users"""
@@ -149,7 +149,7 @@ class UserResourcerId(Resource):
             )
 
     @user_us.doc(description="Delete User")
-    @jwt_required()
+    # @jwt_required()
     @cross_origin()
     def delete(self, id: int):
         """Delete users"""

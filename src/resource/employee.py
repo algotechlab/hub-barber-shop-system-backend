@@ -54,7 +54,7 @@ class EmployeeResource(Resource):
 
     @employee_ns.doc(description="List Employees")
     @employee_ns.expect(pagination_arguments, validate=True)
-    @jwt_required()
+    # @jwt_required()
     @cross_origin()
     def get(self):
         """List Employees"""
@@ -80,7 +80,7 @@ class EmployeeResource(Resource):
 
     @employee_ns.doc(description="Add Employee")
     @employee_ns.expect(payload_add_employees, validate=True)
-    @jwt_required()
+    # @jwt_required()
     @cross_origin()
     def post(self):
         """Add Employee"""
@@ -109,7 +109,7 @@ class EmployeeResource(Resource):
 class EmployeeManageResourceId(Resource):
 
     @employee_ns.doc(description="Get employee by ID")
-    @jwt_required()
+    # @jwt_required()
     @cross_origin()
     def get(self, employee_id: int):
         """Get employee by ID"""
@@ -135,7 +135,7 @@ class EmployeeManageResourceId(Resource):
 
     @employee_ns.doc(description="Update employee by ID")
     @employee_ns.expect(payload_update_employees, validate=True)
-    @jwt_required()
+    # @jwt_required()
     @cross_origin()
     def put(self, employee_id: int):
         """Update employee by ID"""
@@ -160,7 +160,7 @@ class EmployeeManageResourceId(Resource):
             )
 
     @employee_ns.doc(description="Delete employee by ID")
-    @jwt_required()
+    # @jwt_required()
     @cross_origin()
     def delete(self, employee_id: int):
         """Delete employee by ID"""
