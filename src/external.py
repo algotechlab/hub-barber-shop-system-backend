@@ -26,7 +26,7 @@ def create_app():
     api = Api(
         app,
         prefix=f"/{app.config['APPLICATION_ROOT']}",
-        doc=f"/{app.config['DOCS']}",
+        doc=f"/docs",
         authorizations=authorizations,
         security="Bearer Auth",
         version="1.0",
