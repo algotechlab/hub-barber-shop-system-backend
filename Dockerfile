@@ -27,7 +27,6 @@ RUN poetry install --no-root --no-interaction --no-ansi
 COPY src /src/src
 COPY alembic.ini .
 COPY migrations /src/migrations
-COPY .env .
 COPY entrypoints /src/entrypoints
 
 # Rodar migrações no container
