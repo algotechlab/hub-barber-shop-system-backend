@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - main
+      - develop
   pull_request:
     branches:
       - main
+      - develop
 
 jobs:
   build-and-test:
@@ -21,7 +23,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.13'
 
       # Instalar Poetry
       - name: Install Poetry
@@ -38,9 +40,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-poetry-
 
-      # Instalar dependências (incluindo dev e test)
+      # Instalar dependências (incluindo dev)
       - name: Install dependencies
-        run: poetry install --with dev,test
+        run: poetry install --with dev
 
       # Rodar formatação e lint (usando taskipy)
       - name: Format and Lint
@@ -51,7 +53,3 @@ jobs:
       # Rodar testes com coverage
       - name: Run Tests
         run: poetry run task test
-
-      # Build Docker image
-      - name: Build Docker Image
-        run: poetry run task docker_build
