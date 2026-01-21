@@ -3,6 +3,7 @@ from uuid import UUID
 
 from src.application.dtos.common.pagination import PaginationParamsDTO
 from src.application.dtos.users import UpdateUserDTO, UserBaseDTO, UserOutDTO
+from src.core.utils.get_argon import hash_password
 from src.domain.service.users import UsersService
 
 
@@ -17,6 +18,7 @@ class UsersUseCase:
         return await self.users_service.get_user(id)
 
     async def create_user(self, user: UserBaseDTO) -> UserOutDTO:
+        user.password = hash_password(user.password)
         return await self.users_service.create_user(user)
 
     async def update_user(self, id: UUID, user: UpdateUserDTO) -> Optional[UserOutDTO]:
