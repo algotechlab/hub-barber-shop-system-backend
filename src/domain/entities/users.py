@@ -1,0 +1,16 @@
+from datetime import datetime
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class UserEntity(BaseModel):
+    name: str
+    email: str
+    password: str
+
+
+class UserOutEntity(UserEntity):
+    id: UUID
+    created_at: datetime
+    updated_at: datetime
