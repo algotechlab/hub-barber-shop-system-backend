@@ -12,7 +12,7 @@ for filename in os.listdir(routes_dir):
         module_name = filename[:-3]
         try:
             module = __import__(
-                f'src.application.api.v1.routes.{module_name}',
+                f'src.interface.api.v1.routes.{module_name}',
                 fromlist=['router', 'tags_metadata'],
             )
             if hasattr(module, 'tags_metadata'):
