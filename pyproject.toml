@@ -3,7 +3,7 @@ name = "hub-barber-shop-system-backend"
 version = "0.1.0"
 description = ""
 authors = [
-    {name = "Hedris Pereira",email = "hedris.pereira@eemovel.com"}
+    {name = "Hedris Pereira",email = "hedrisgts@gmail.com"}
 ]
 readme = "README.md"
 
