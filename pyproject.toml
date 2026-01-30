@@ -36,7 +36,6 @@ pytest-cov = "^6.1.1"
 ruff = '^0.11.12'
 taskipy = "^1.14.1"
 testcontainers = "^4.10.0"
-mypy = "^1.16.0"
 pytest-dotenv = "^0.5.2"
 bandit = "^1.8.3"
 debugpy = "^1.8.14"
@@ -109,7 +108,6 @@ explicit_package_bases = true
 targets = ["src"]
 
 [tool.taskipy.tasks]
-type = 'mypy'
 lint = 'ruff check .; ruff check . --diff'
 check = 'ruff check . --fix'
 format = 'ruff format .'

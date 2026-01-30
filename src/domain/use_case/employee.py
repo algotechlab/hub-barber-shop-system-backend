@@ -1,13 +1,13 @@
 from typing import Optional
 from uuid import UUID
 
-from src.application.dtos.common.pagination import PaginationParamsDTO
-from src.application.dtos.employee import (
+from src.core.utils.get_argon import hash_password
+from src.domain.dtos.common.pagination import PaginationParamsDTO
+from src.domain.dtos.employee import (
     EmployeeBaseDTO,
     EmployeeOutDTO,
     UpdateEmployeeDTO,
 )
-from src.core.utils.get_argon import hash_password
 from src.domain.service.employee import EmployeeService
 
 

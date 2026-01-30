@@ -1,8 +1,8 @@
 from typing import Optional
 from uuid import UUID
 
-from src.application.dtos.common.pagination import PaginationParamsDTO
-from src.application.dtos.employee import (
+from src.domain.dtos.common.pagination import PaginationParamsDTO
+from src.domain.dtos.employee import (
     EmployeeBaseDTO,
     EmployeeOutDTO,
     UpdateEmployeeDTO,

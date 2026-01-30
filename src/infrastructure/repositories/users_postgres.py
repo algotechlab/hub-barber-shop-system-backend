@@ -4,9 +4,9 @@ from uuid import UUID
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.application.dtos.common.pagination import PaginationParamsDTO
-from src.application.dtos.users import UpdateUserDTO, UserBaseDTO, UserOutDTO
 from src.core.exceptions.custom import DatabaseException
+from src.domain.dtos.common.pagination import PaginationParamsDTO
+from src.domain.dtos.users import UpdateUserDTO, UserBaseDTO, UserOutDTO
 from src.domain.repositories.users import UsersRepository
 from src.infrastructure.database.models.users import User
 

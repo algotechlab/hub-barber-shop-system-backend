@@ -1,11 +1,8 @@
 from typing import Optional
 from uuid import UUID
 
-from src.application.dtos.employee import (
-    EmployeeBaseDTO,
-    UpdateEmployeeDTO,
-)
-from src.application.use_case.employee import EmployeeUseCase
+from src.domain.dtos.employee import EmployeeBaseDTO, UpdateEmployeeDTO
+from src.domain.use_case.employee import EmployeeUseCase
 from src.interface.api.v1.schema.common.pagination import PaginationParamsBaseSchema
 from src.interface.api.v1.schema.employee import (
     CreateEmployeeSchema,

@@ -4,13 +4,13 @@ from uuid import UUID
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.application.dtos.common.pagination import PaginationParamsDTO
-from src.application.dtos.employee import (
+from src.core.exceptions.custom import DatabaseException
+from src.domain.dtos.common.pagination import PaginationParamsDTO
+from src.domain.dtos.employee import (
     EmployeeBaseDTO,
     EmployeeOutDTO,
     UpdateEmployeeDTO,
 )
-from src.core.exceptions.custom import DatabaseException
 from src.domain.repositories.employee import EmployeeRepository
 from src.infrastructure.database.models.employees import Employee
 

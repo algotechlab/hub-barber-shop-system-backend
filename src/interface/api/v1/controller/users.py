@@ -1,8 +1,8 @@
 from typing import List, Optional
 from uuid import UUID
 
-from src.application.dtos.users import UpdateUserDTO, UserBaseDTO
-from src.application.use_case.users import UsersUseCase
+from src.domain.dtos.users import UpdateUserDTO, UserBaseDTO
+from src.domain.use_case.users import UsersUseCase
 from src.interface.api.v1.schema.common.pagination import PaginationParamsBaseSchema
 from src.interface.api.v1.schema.users import (
     CreateUserSchema,

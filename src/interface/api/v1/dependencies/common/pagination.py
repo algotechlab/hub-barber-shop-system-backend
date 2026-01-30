@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from src.application.dtos.common.pagination import PaginationParamsDTO
+from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.interface.api.v1.schema.common.pagination import PaginationParamsBaseSchema
 
 

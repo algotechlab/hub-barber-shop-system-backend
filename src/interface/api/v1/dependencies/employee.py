@@ -2,8 +2,8 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from src.application.use_case.employee import EmployeeUseCase
 from src.domain.service.employee import EmployeeService
+from src.domain.use_case.employee import EmployeeUseCase
 from src.infrastructure.repositories.employee_postgres import EmployeeRepositoryPostgres
 from src.interface.api.v1.controller.employee import EmployeeController
 from src.interface.api.v1.dependencies.common.session import VerifiedSessionDep
