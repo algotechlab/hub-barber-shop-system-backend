@@ -3,6 +3,8 @@ from pydantic import ValidationError
 from src.domain.dtos.common.pagination import PaginationParamsDTO
 
 
+pytestmark = pytest.mark.unit
+
 @pytest.mark.parametrize(
     ('filter_by', 'filter_value', 'should_pass'),
     [
