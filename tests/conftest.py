@@ -5,8 +5,11 @@ from uuid import UUID
 
 import pytest
 from fastapi.testclient import TestClient
+from src.domain.dtos.employee import EmployeeBaseDTO, EmployeeOutDTO
 from src.domain.dtos.users import UserBaseDTO, UserOutDTO
+from src.infrastructure.database.models.employees import Employee
 from src.infrastructure.database.models.users import User
+from src.interface.api.v1.schema.employee import EmployeeOutSchema, EmployeeSchema
 from src.interface.api.v1.schema.users import UserOutSchema
 from src.main import app
 
@@ -40,6 +43,79 @@ def generate_model_user(generate_uuid: UUID) -> User:
         password='password',
         is_active=True,
         company_id=uuid.uuid4(),
+    )
+
+
+@pytest.fixture
+def employee_schema() -> EmployeeSchema:
+    return EmployeeSchema(
+        id=uuid.uuid4(),
+        name='John',
+        last_name='Doe',
+        phone='11999999999',
+        password='hashed',
+        is_active=True,
+        role='admin',
+        company_id=uuid.uuid4(),
+    )
+
+
+@pytest.fixture
+def employee_out_schema() -> EmployeeOutSchema:
+    now = datetime.now(timezone.utc)
+    return EmployeeOutSchema(
+        id=uuid.uuid4(),
+        name='John',
+        last_name='Doe',
+        phone='11999999999',
+        password='hashed',
+        is_active=True,
+        role='admin',
+        company_id=uuid.uuid4(),
+        created_at=now,
+        updated_at=now,
+    )
+
+
+@pytest.fixture
+def employee_base_dto():
+    return EmployeeBaseDTO(
+        name='John',
+        last_name='Doe',
+        phone='11999999999',
+        password='plain',
+        is_active=True,
+        role='admin',
+        company_id=uuid.uuid4(),
+    )
+
+
+@pytest.fixture
+def generate_model_employee(generate_uuid: UUID) -> Employee:
+    return Employee(
+        id=generate_uuid,
+        name='John Doe',
+        last_name='Doe',
+        phone='1234567890',
+        password='password',
+        is_active=True,
+    )
+
+
+@pytest.fixture
+def employee_out_dto(employee_base_dto):
+    now = datetime.now(timezone.utc)
+    return EmployeeOutDTO(
+        id=uuid.uuid4(),
+        name=employee_base_dto.name,
+        last_name=employee_base_dto.last_name,
+        phone=employee_base_dto.phone,
+        password='hashed',
+        is_active=employee_base_dto.is_active,
+        role=employee_base_dto.role,
+        company_id=employee_base_dto.company_id,
+        created_at=now,
+        updated_at=now,
     )
 
 
