@@ -68,6 +68,18 @@ class TestOwnerService:
         mock_repository.get_owner_by_email.assert_awaited_once_with('john@example.com')
         assert result is None
 
+    async def test_get_owner_auth_by_email_delegates_to_repository(
+        self, service, mock_repository
+    ):
+        mock_repository.get_owner_auth_by_email.return_value = None
+
+        result = await service.get_owner_auth_by_email('john@example.com')
+
+        mock_repository.get_owner_auth_by_email.assert_awaited_once_with(
+            'john@example.com'
+        )
+        assert result is None
+
     async def test_update_owner_delegates_to_repository(self, service, mock_repository):
         owner_id = uuid4()
         update_dto = UpdateOwnerDTO(name='Updated')
