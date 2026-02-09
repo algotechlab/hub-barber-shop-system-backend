@@ -1,6 +1,8 @@
 import pytest
 from src.core.utils.get_from_sequence import get_from_sequence
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.mark.parametrize(
     ('sequence', 'index', 'default', 'expected'),

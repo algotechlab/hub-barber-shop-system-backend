@@ -63,5 +63,7 @@ jobs:
       # Rodar testes unitários com cobertura >= 98%
       - name: Run unit tests (coverage >= 98%)
         run: |
-          poetry run pytest -m unit --cov=src --cov-report=term-missing:skip-covered --cov-fail-under=98 -vv
+          # Importante: o pyproject.toml define addopts com --cov-fail-under=100.
+          # No CI, neutralizamos addopts e aplicamos o threshold de 98% para unit tests.
+          poetry run pytest -m unit -o addopts= --cov=src --cov-report=term-missing:skip-covered --cov-fail-under=98 -vv
 

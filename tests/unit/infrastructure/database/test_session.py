@@ -9,6 +9,8 @@ from sqlalchemy.ext.asyncio import (
 )
 from src.core.exceptions.custom import DatabaseException
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.fixture
 def mock_settings():

@@ -2,6 +2,8 @@ import pytest
 from pydantic import AnyHttpUrl
 from src.core.config.settings import Settings, get_settings
 
+pytestmark = pytest.mark.unit
+
 
 def test_settings_default_values():
     """

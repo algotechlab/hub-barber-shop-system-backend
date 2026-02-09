@@ -2,6 +2,8 @@ import pytest
 from pydantic import ValidationError
 from src.interface.api.v1.schema.common.pagination import PaginationParamsBaseSchema
 
+pytestmark = pytest.mark.unit
+
 # ---------------------------------------------------------------------------
 # Casos válidos
 # ---------------------------------------------------------------------------

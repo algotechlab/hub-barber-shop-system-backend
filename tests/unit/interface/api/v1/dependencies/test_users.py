@@ -2,6 +2,8 @@ import pytest
 from src.interface.api.v1.controller.users import UsersController
 from src.interface.api.v1.dependencies.users import get_users_controller
 
+pytestmark = pytest.mark.unit
+
 
 class DummySession:
     pass

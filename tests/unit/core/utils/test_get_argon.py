@@ -4,6 +4,8 @@ import pytest
 from argon2.exceptions import VerificationError
 from src.core.utils.get_argon import hash_password, verify_password
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.mark.parametrize(
     'password',
