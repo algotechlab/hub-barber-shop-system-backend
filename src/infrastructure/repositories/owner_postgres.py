@@ -5,6 +5,7 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.exceptions.custom import DatabaseException
+from src.domain.dtos.auth import OwnerAuthDTO
 from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.owner import CreateOwnerDTO, OwnerOutDTO, UpdateOwnerDTO
 from src.domain.repositories.owner import OwnerRepository
@@ -50,6 +51,20 @@ class OwnerRepositoryPostgres(OwnerRepository):
             if owner is None:
                 return None
             return OwnerOutDTO.model_validate(owner)
+        except Exception as error:
+            await self.session.rollback()
+            raise DatabaseException(str(error))
+
+    async def get_owner_auth_by_email(self, email: str) -> Optional[OwnerAuthDTO]:
+        try:
+            query = select(Owner).where(
+                Owner.email.__eq__(email), Owner.is_deleted.__eq__(False)
+            )
+            result = await self.session.execute(query)
+            owner = result.scalar_one_or_none()
+            if owner is None:
+                return None
+            return OwnerAuthDTO.model_validate(owner)
         except Exception as error:
             await self.session.rollback()
             raise DatabaseException(str(error))

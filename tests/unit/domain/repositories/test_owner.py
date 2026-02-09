@@ -3,6 +3,7 @@ from uuid import UUID, uuid4
 
 import pytest
 from pydantic import ValidationError
+from src.domain.dtos.auth import OwnerAuthDTO
 from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.owner import CreateOwnerDTO, OwnerOutDTO, UpdateOwnerDTO
 from src.domain.repositories.owner import OwnerRepository
@@ -15,6 +16,7 @@ class TestOwnerRepositoryContract:
         assert hasattr(OwnerRepository, 'create_owner')
         assert hasattr(OwnerRepository, 'get_owner')
         assert hasattr(OwnerRepository, 'get_owner_by_email')
+        assert hasattr(OwnerRepository, 'get_owner_auth_by_email')
         assert hasattr(OwnerRepository, 'update_owner')
         assert hasattr(OwnerRepository, 'delete_owner')
 
@@ -23,6 +25,9 @@ class TestOwnerRepositoryContract:
         assert getattr(OwnerRepository.get_owner, '__isabstractmethod__', False)
         assert getattr(
             OwnerRepository.get_owner_by_email, '__isabstractmethod__', False
+        )
+        assert getattr(
+            OwnerRepository.get_owner_auth_by_email, '__isabstractmethod__', False
         )
         assert getattr(OwnerRepository.update_owner, '__isabstractmethod__', False)
         assert getattr(OwnerRepository.delete_owner, '__isabstractmethod__', False)
@@ -59,6 +64,11 @@ class TestOwnerRepositoryContract:
 
             async def get_owner_by_email(self, email: str) -> OwnerOutDTO | None:
                 return out if email == base.email else None
+
+            async def get_owner_auth_by_email(self, email: str) -> OwnerAuthDTO | None:
+                if email != base.email:
+                    return None
+                return OwnerAuthDTO(id=owner_id, password='hashed')
 
             async def update_owner(
                 self, id: UUID, owner: UpdateOwnerDTO

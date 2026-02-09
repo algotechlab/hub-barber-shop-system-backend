@@ -41,8 +41,13 @@ class Settings(BaseSettings):
     POSTGRES_SCHEMA: str = 'barbersystem'
 
     # Mercado Pago (preapproval_plan / assinaturas)
-    MARKET_PAID_BASE_URL: str = 'https://api.mercadopago.com'
-    MARKET_PAID_ACCESS_TOKEN: str = ''  # ACESS_TOKEN no .env
+    MARKET_PAID_BASE_URL: str
+    MARKET_PAID_ACCESS_TOKEN: str
+
+    # Auth (JWT)
+    JWT_SECRET: str
+    JWT_ALGORITHM: str
+    JWT_EXPIRE_MINUTES: int
 
     @field_validator('BACKEND_CORS_ORIGINS', mode='before')
     def split_origins(cls, value: Any) -> Union[List[str], List[AnyHttpUrl]]:

@@ -5,6 +5,7 @@ from uuid import uuid4
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.exceptions.custom import DatabaseException
+from src.domain.dtos.auth import OwnerAuthDTO
 from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.owner import OwnerOutDTO, UpdateOwnerDTO
 from src.infrastructure.repositories.owner_postgres import OwnerRepositoryPostgres
@@ -129,6 +130,41 @@ class TestOwnerRepositoryPostgres:
 
         with pytest.raises(DatabaseException, match='DB error'):
             await repo.get_owner_by_email('john@example.com')
+
+        mock_session.rollback.assert_awaited_once()
+
+    async def test_get_owner_auth_by_email_returns_none_when_not_found(
+        self, repo, mock_session
+    ):
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = None
+        mock_session.execute = AsyncMock(return_value=mock_result)
+
+        result = await repo.get_owner_auth_by_email('john@example.com')
+
+        assert result is None
+
+    async def test_get_owner_auth_by_email_success(self, repo, mock_session):
+        mock_orm_owner = MagicMock()
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = mock_orm_owner
+        mock_session.execute = AsyncMock(return_value=mock_result)
+
+        expected_dto = MagicMock()
+        with patch.object(
+            OwnerAuthDTO, 'model_validate', return_value=expected_dto
+        ) as mv:
+            result = await repo.get_owner_auth_by_email('john@example.com')
+
+        mv.assert_called_once_with(mock_orm_owner)
+        assert result == expected_dto
+
+    async def test_get_owner_auth_by_email_rollback_on_error(self, repo, mock_session):
+        mock_session.execute = AsyncMock(side_effect=ValueError('DB error'))
+        mock_session.rollback = AsyncMock()
+
+        with pytest.raises(DatabaseException, match='DB error'):
+            await repo.get_owner_auth_by_email('john@example.com')
 
         mock_session.rollback.assert_awaited_once()
 

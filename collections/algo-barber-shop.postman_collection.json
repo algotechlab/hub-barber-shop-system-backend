@@ -1,0 +1,35 @@
+{
+  "info": {
+    "_postman_id": "03513999-9162-4720-bfe9-35d5003bf666",
+    "name": "algo-barber-shop",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "26207405",
+    "_collection_link": "https://go.postman.co/collection/26207405-03513999-9162-4720-bfe9-35d5003bf666?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Serviços",
+      "item": []
+    },
+    {
+      "name": "Usuários",
+      "item": []
+    },
+    {
+      "name": "Autenticação",
+      "item": []
+    },
+    {
+      "name": "Proprietários",
+      "item": []
+    },
+    {
+      "name": "Funcionários",
+      "item": []
+    },
+    {
+      "name": "Login",
+      "item": []
+    }
+  ]
+}
