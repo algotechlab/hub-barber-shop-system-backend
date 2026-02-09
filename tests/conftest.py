@@ -1,11 +1,12 @@
 import uuid
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import pytest
 from fastapi.testclient import TestClient
 from src.domain.dtos.employee import EmployeeBaseDTO, EmployeeOutDTO
+from src.domain.dtos.owner import CreateOwnerDTO, OwnerOutDTO
 from src.domain.dtos.users import UserBaseDTO, UserOutDTO
 from src.infrastructure.database.models.employees import Employee
 from src.infrastructure.database.models.users import User
@@ -149,3 +150,24 @@ def generate_user_out_schema(generate_user_out_dto: UserOutDTO) -> UserOutSchema
     return UserOutSchema(**{
         k: getattr(generate_user_out_dto, k) for k in UserOutSchema.model_fields
     })
+
+
+@pytest.fixture
+def owner_create_dto():
+    return CreateOwnerDTO(
+        name='John',
+        email='john@example.com',
+        password='plain',
+        phone='11999999999',
+    )
+
+
+@pytest.fixture
+def owner_out_dto(owner_create_dto):
+    return OwnerOutDTO(
+        id=uuid4(),
+        name=owner_create_dto.name,
+        email=owner_create_dto.email,
+        phone=owner_create_dto.phone,
+        created_at=datetime.now(timezone.utc),
+    )
