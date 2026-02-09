@@ -1,4 +1,4 @@
-import uuid
+from uuid import UUID
 
 from sqlalchemy import Boolean, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -16,6 +16,9 @@ class Employee(BaseModel):
     role: Mapped[str] = mapped_column(
         String(255), nullable=False, default=EmployeeRole.role_employee.value
     )
-    company_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey('company.id'), nullable=False
+    company_id: Mapped[UUID] = mapped_column(ForeignKey('company.id'), nullable=False)
+    branch_company_id: Mapped[UUID] = mapped_column(
+        ForeignKey('branch_company.id'),
+        nullable=True,
+        default=None,
     )
