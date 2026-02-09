@@ -64,3 +64,4 @@ jobs:
       - name: Run unit tests (coverage >= 98%)
         run: |
           poetry run pytest -m unit --cov=src --cov-report=term-missing:skip-covered --cov-fail-under=98 -vv
+

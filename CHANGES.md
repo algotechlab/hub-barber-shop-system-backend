@@ -12,3 +12,6 @@ Foram corrigidas as chaves estrangeiras de acordo com a estrutura exigida pela t
 
 **[v1.0.0] - 2025-11-14:**
 Foi adicionado o módulo completo de agenda e de produtos — utilizei o termo produto porque representa os serviços prestados pelos barbeiros. Além disso, implementei também o bloqueio de agenda, os filtros e uma reorganização dos linters, incluindo a reconfiguração do `pyproject.toml`.
+
+**[v1.1.10] - 2026-02-09:**
+Sendo implementado o `worflows`, do `github`, para melhores praticas de desenvolvimentos.
