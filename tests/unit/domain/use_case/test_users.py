@@ -55,6 +55,7 @@ class TestUsersUseCase:
             name='John Doe',
             email='john.doe@example.com',
             password=PLAIN_PASSWORD,
+            phone='11999999999',
             company_id=generate_uuid,
         )
         mock_hash_password.return_value = HASHED_PASSWORD

@@ -40,6 +40,7 @@ class TestCreateUserSchema:
         schema = CreateUserSchema(
             name=generate_user_base_dto.name,
             email=generate_user_base_dto.email,
+            phone=generate_user_base_dto.phone,
             password=generate_user_base_dto.password,
             company_id=generate_uuid,
         )
@@ -53,6 +54,7 @@ class TestCreateUserSchema:
         schema = CreateUserSchema(
             name=generate_user_base_dto.name,
             email=generate_user_base_dto.email,
+            phone=generate_user_base_dto.phone,
             password=generate_user_base_dto.password,
             company_id=generate_uuid,
         )

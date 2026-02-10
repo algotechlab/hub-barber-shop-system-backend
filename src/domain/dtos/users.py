@@ -9,6 +9,7 @@ class UserBaseDTO(BaseModel):
     name: str
     email: str
     password: str
+    phone: str
     company_id: UUID
 
 

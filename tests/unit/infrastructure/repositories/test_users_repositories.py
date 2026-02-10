@@ -5,6 +5,7 @@ from uuid import uuid4
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.exceptions.custom import DatabaseException
+from src.domain.dtos.auth import UserAuthDTO
 from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.users import UpdateUserDTO, UserBaseDTO, UserOutDTO
 from src.infrastructure.repositories.users_postgres import UsersRepositoryPostgres
@@ -26,6 +27,7 @@ class TestUsersRepositoryPostgres:
             name='Test User',
             email='test@example.com',
             password='hashed',
+            phone='11999999999',
             company_id=company_id,
         )
         now = datetime.now(timezone.utc)
@@ -33,6 +35,7 @@ class TestUsersRepositoryPostgres:
         mock_orm_user.id = uuid4()
         mock_orm_user.name = user_dto.name
         mock_orm_user.email = user_dto.email
+        mock_orm_user.phone = user_dto.phone
         mock_orm_user.password = user_dto.password
         mock_orm_user.company_id = company_id
         mock_orm_user.is_active = True
@@ -152,6 +155,7 @@ class TestUsersRepositoryPostgres:
             name='Test',
             email='test@example.com',
             password='hash',
+            phone='11999999999',
             company_id=uuid4(),
         )
 
@@ -195,6 +199,41 @@ class TestUsersRepositoryPostgres:
 
         with pytest.raises(DatabaseException, match='DB error'):
             await repo.get_user(uuid4())
+
+        mock_session.rollback.assert_awaited_once()
+
+    async def test_get_user_auth_by_phone_returns_none_when_not_found(
+        self, repo, mock_session
+    ):
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = None
+        mock_session.execute = AsyncMock(return_value=mock_result)
+
+        result = await repo.get_user_auth_by_phone('11999999999')
+
+        assert result is None
+
+    async def test_get_user_auth_by_phone_success(self, repo, mock_session):
+        mock_orm_user = MagicMock()
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = mock_orm_user
+        mock_session.execute = AsyncMock(return_value=mock_result)
+
+        expected_dto = MagicMock()
+        with patch.object(
+            UserAuthDTO, 'model_validate', return_value=expected_dto
+        ) as mv:
+            result = await repo.get_user_auth_by_phone('11999999999')
+
+        mv.assert_called_once_with(mock_orm_user)
+        assert result == expected_dto
+
+    async def test_get_user_auth_by_phone_rollback_on_error(self, repo, mock_session):
+        mock_session.execute = AsyncMock(side_effect=ValueError('DB error'))
+        mock_session.rollback = AsyncMock()
+
+        with pytest.raises(DatabaseException, match='DB error'):
+            await repo.get_user_auth_by_phone('11999999999')
 
         mock_session.rollback.assert_awaited_once()
 

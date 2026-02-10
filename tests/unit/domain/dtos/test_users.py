@@ -14,11 +14,13 @@ class TestUserBaseDTO:
             name=user.name,
             email=user.email,
             password=user.password,
+            phone=user.phone,
             company_id=generate_uuid,
         )
         assert dto.name == user.name
         assert dto.email == user.email
         assert dto.password == user.password
+        assert dto.phone == user.phone
         assert dto.company_id == generate_uuid
 
     def test_user_base_dto_model_dump(self, generate_uuid, generate_model_user):
@@ -27,12 +29,14 @@ class TestUserBaseDTO:
             name=user.name,
             email=user.email,
             password=user.password,
+            phone=user.phone,
             company_id=generate_uuid,
         )
         data = dto.model_dump()
         assert data['name'] == user.name
         assert data['email'] == user.email
         assert data['password'] == user.password
+        assert data['phone'] == user.phone
         assert data['company_id'] == generate_uuid
 
     def test_user_base_dto_missing_required_field_raises(self):
@@ -80,6 +84,7 @@ class TestUserOutDTO:
             name=user.name,
             email=user.email,
             password=user.password,
+            phone=user.phone,
             company_id=company_id,
             is_active=True,
             created_at=now,
@@ -103,6 +108,7 @@ class TestUserOutDTO:
             name=user.name,
             email=user.email,
             password=user.password,
+            phone=user.phone,
             company_id=company_id,
             is_active=True,
             created_at=now,

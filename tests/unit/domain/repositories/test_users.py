@@ -1,6 +1,7 @@
 from uuid import UUID
 
 import pytest
+from src.domain.dtos.auth import UserAuthDTO
 from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.users import UpdateUserDTO, UserBaseDTO, UserOutDTO
 from src.domain.repositories.users import UsersRepository
@@ -13,6 +14,7 @@ class TestUsersRepository:
     def test_repository_has_required_abstract_methods(self):
         assert hasattr(UsersRepository, 'list_users')
         assert hasattr(UsersRepository, 'get_user')
+        assert hasattr(UsersRepository, 'get_user_auth_by_phone')
         assert hasattr(UsersRepository, 'create_user')
         assert hasattr(UsersRepository, 'update_user')
         assert hasattr(UsersRepository, 'delete_user')
@@ -25,6 +27,9 @@ class TestUsersRepository:
                 return []
 
             async def get_user(self, id: UUID) -> UserOutDTO | None:
+                return None
+
+            async def get_user_auth_by_phone(self, phone: str) -> UserAuthDTO | None:
                 return None
 
             async def create_user(self, user: UserBaseDTO) -> UserOutDTO:

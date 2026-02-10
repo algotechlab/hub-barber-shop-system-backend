@@ -5,6 +5,7 @@ from uuid import uuid4
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.exceptions.custom import DatabaseException
+from src.domain.dtos.auth import EmployeeAuthDTO
 from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.employee import EmployeeBaseDTO, EmployeeOutDTO, UpdateEmployeeDTO
 from src.infrastructure.repositories.employee_postgres import EmployeeRepositoryPostgres
@@ -84,7 +85,7 @@ class TestEmployeeRepositoryPostgres:
         mock_result.scalar_one_or_none.return_value = None
         mock_session.execute = AsyncMock(return_value=mock_result)
 
-        result = await repo.get_employee(uuid4())
+        result = await repo.get_employee(uuid4(), uuid4())
 
         assert result is None
 
@@ -98,7 +99,7 @@ class TestEmployeeRepositoryPostgres:
         with patch.object(
             EmployeeOutDTO, 'model_validate', return_value=expected_dto
         ) as mv:
-            result = await repo.get_employee(uuid4())
+            result = await repo.get_employee(uuid4(), uuid4())
 
         mv.assert_called_once_with(mock_orm_employee)
         assert result == expected_dto
@@ -108,12 +109,50 @@ class TestEmployeeRepositoryPostgres:
         mock_session.rollback = AsyncMock()
 
         with pytest.raises(DatabaseException, match='DB error'):
-            await repo.get_employee(uuid4())
+            await repo.get_employee(uuid4(), uuid4())
+
+        mock_session.rollback.assert_awaited_once()
+
+    async def test_get_employee_auth_by_phone_returns_none_when_not_found(
+        self, repo, mock_session
+    ):
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = None
+        mock_session.execute = AsyncMock(return_value=mock_result)
+
+        result = await repo.get_employee_auth_by_phone('11999999999')
+
+        assert result is None
+
+    async def test_get_employee_auth_by_phone_success(self, repo, mock_session):
+        mock_orm_employee = MagicMock()
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = mock_orm_employee
+        mock_session.execute = AsyncMock(return_value=mock_result)
+
+        expected_dto = MagicMock()
+        with patch.object(
+            EmployeeAuthDTO, 'model_validate', return_value=expected_dto
+        ) as mv:
+            result = await repo.get_employee_auth_by_phone('11999999999')
+
+        mv.assert_called_once_with(mock_orm_employee)
+        assert result == expected_dto
+
+    async def test_get_employee_auth_by_phone_rollback_on_error(
+        self, repo, mock_session
+    ):
+        mock_session.execute = AsyncMock(side_effect=ValueError('DB error'))
+        mock_session.rollback = AsyncMock()
+
+        with pytest.raises(DatabaseException, match='DB error'):
+            await repo.get_employee_auth_by_phone('11999999999')
 
         mock_session.rollback.assert_awaited_once()
 
     async def test_list_employees_success(self, repo, mock_session):
         pagination = PaginationParamsDTO()
+        company_id = uuid4()
         mock_orm_employees = [MagicMock(), MagicMock()]
         mock_scalar_result = MagicMock()
         mock_scalar_result.all.return_value = mock_orm_employees
@@ -126,7 +165,7 @@ class TestEmployeeRepositoryPostgres:
         with patch.object(
             EmployeeOutDTO, 'model_validate', side_effect=expected_dtos
         ) as mv:
-            result = await repo.list_employees(pagination)
+            result = await repo.list_employees(pagination, company_id)
 
         assert result == expected_dtos
         assert mv.call_count == len(mock_orm_employees)
@@ -144,6 +183,7 @@ class TestEmployeeRepositoryPostgres:
         class _DummyEmployee:
             is_deleted = _DummyCol('is_deleted')
             name = _DummyCol('name')
+            company_id = _DummyCol('company_id')
 
         class _FakeQuery:
             def __init__(self):
@@ -164,6 +204,7 @@ class TestEmployeeRepositoryPostgres:
             return fake_query
 
         pagination = PaginationParamsDTO(filter_by='name', filter_value='John')
+        company_id = uuid4()
 
         mock_orm_employees = [MagicMock()]
         mock_scalar_result = MagicMock()
@@ -183,7 +224,7 @@ class TestEmployeeRepositoryPostgres:
             ),
             patch.object(EmployeeOutDTO, 'model_validate', side_effect=expected_dtos),
         ):
-            result = await repo.list_employees(pagination)
+            result = await repo.list_employees(pagination, company_id)
 
         assert ('eq', 'name', 'John') in fake_query.filter_args
         mock_session.execute.assert_awaited_once_with(fake_query)
@@ -194,7 +235,7 @@ class TestEmployeeRepositoryPostgres:
         mock_session.rollback = AsyncMock()
 
         with pytest.raises(DatabaseException, match='DB error'):
-            await repo.list_employees(PaginationParamsDTO())
+            await repo.list_employees(PaginationParamsDTO(), uuid4())
 
         mock_session.rollback.assert_awaited_once()
 
@@ -206,7 +247,9 @@ class TestEmployeeRepositoryPostgres:
         mock_session.execute = AsyncMock(return_value=mock_result)
         mock_session.commit = AsyncMock()
 
-        result = await repo.update_employee(uuid4(), UpdateEmployeeDTO(name='X'))
+        result = await repo.update_employee(
+            uuid4(), UpdateEmployeeDTO(name='X'), uuid4()
+        )
 
         assert result is None
         mock_session.commit.assert_awaited_once()
@@ -223,7 +266,7 @@ class TestEmployeeRepositoryPostgres:
             EmployeeOutDTO, 'model_validate', return_value=expected_dto
         ) as mv:
             result = await repo.update_employee(
-                uuid4(), UpdateEmployeeDTO(name='Updated')
+                uuid4(), UpdateEmployeeDTO(name='Updated'), uuid4()
             )
 
         mock_session.commit.assert_awaited_once()
@@ -235,7 +278,9 @@ class TestEmployeeRepositoryPostgres:
         mock_session.rollback = AsyncMock()
 
         with pytest.raises(DatabaseException, match='DB error'):
-            await repo.update_employee(uuid4(), UpdateEmployeeDTO(name='Updated'))
+            await repo.update_employee(
+                uuid4(), UpdateEmployeeDTO(name='Updated'), uuid4()
+            )
 
         mock_session.rollback.assert_awaited_once()
 
@@ -247,7 +292,7 @@ class TestEmployeeRepositoryPostgres:
         mock_session.execute = AsyncMock(return_value=mock_result)
         mock_session.commit = AsyncMock()
 
-        result = await repo.delete_employee(uuid4())
+        result = await repo.delete_employee(uuid4(), uuid4())
 
         assert result is True
         mock_session.commit.assert_awaited_once()
@@ -260,7 +305,7 @@ class TestEmployeeRepositoryPostgres:
         mock_session.execute = AsyncMock(return_value=mock_result)
         mock_session.commit = AsyncMock()
 
-        result = await repo.delete_employee(uuid4())
+        result = await repo.delete_employee(uuid4(), uuid4())
 
         assert result is False
         mock_session.commit.assert_awaited_once()
@@ -270,6 +315,6 @@ class TestEmployeeRepositoryPostgres:
         mock_session.rollback = AsyncMock()
 
         with pytest.raises(DatabaseException, match='DB error'):
-            await repo.delete_employee(uuid4())
+            await repo.delete_employee(uuid4(), uuid4())
 
         mock_session.rollback.assert_awaited_once()

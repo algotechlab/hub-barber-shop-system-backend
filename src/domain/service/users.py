@@ -1,6 +1,7 @@
 from typing import Optional
 from uuid import UUID
 
+from src.domain.dtos.auth import UserAuthDTO
 from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.users import UpdateUserDTO, UserBaseDTO, UserOutDTO
 from src.domain.repositories.users import UsersRepository
@@ -15,6 +16,9 @@ class UsersService:
 
     async def get_user(self, id: UUID) -> Optional[UserOutDTO]:
         return await self.users_repository.get_user(id)
+
+    async def get_user_auth_by_phone(self, phone: str) -> Optional[UserAuthDTO]:
+        return await self.users_repository.get_user_auth_by_phone(phone)
 
     async def create_user(self, user: UserBaseDTO) -> UserOutDTO:
         return await self.users_repository.create_user(user)
