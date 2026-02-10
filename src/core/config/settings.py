@@ -41,13 +41,17 @@ class Settings(BaseSettings):
     POSTGRES_SCHEMA: str = 'barbersystem'
 
     # Mercado Pago (preapproval_plan / assinaturas)
-    MARKET_PAID_BASE_URL: str
-    MARKET_PAID_ACCESS_TOKEN: str
+    # OBS: essas configs não devem impedir boot/migrations. A integração valida
+    # a presença do token quando for realmente usada.
+    MARKET_PAID_BASE_URL: str = 'https://api.mercadopago.com'
+    MARKET_PAID_ACCESS_TOKEN: str = (
+        'APP_USR-8460062634622735-011612-8d722fea2036739252f1f96b7015a251-1930594081'
+    )
 
     # Auth (JWT)
-    JWT_SECRET: str
-    JWT_ALGORITHM: str
-    JWT_EXPIRE_MINUTES: int
+    JWT_SECRET: str = 'algobarbersystem'
+    JWT_ALGORITHM: str = 'HS256'
+    JWT_EXPIRE_MINUTES: int = 36000
 
     @field_validator('BACKEND_CORS_ORIGINS', mode='before')
     def split_origins(cls, value: Any) -> Union[List[str], List[AnyHttpUrl]]:
