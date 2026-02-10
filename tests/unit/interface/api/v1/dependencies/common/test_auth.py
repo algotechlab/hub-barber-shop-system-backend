@@ -4,7 +4,11 @@ from uuid import uuid4
 import jwt
 import pytest
 from src.domain.execptions.auth import UnauthorizedException
-from src.interface.api.v1.dependencies.common.auth import get_current_owner_id
+from src.interface.api.v1.dependencies.common.auth import (
+    get_current_owner_id,
+    require_current_owner,
+)
+from starlette.requests import Request
 
 pytestmark = pytest.mark.unit
 
@@ -133,3 +137,31 @@ async def test_get_current_owner_id_raises_when_owner_does_not_exist():
                 session=AsyncMock(),
                 authorization='Bearer token',
             )
+
+
+@pytest.mark.asyncio
+async def test_require_current_owner_sets_request_state_owner_id():
+    owner_id = uuid4()
+    request = Request({
+        'type': 'http',
+        'headers': [],
+        'method': 'GET',
+        'path': '/',
+        'query_string': b'',
+        'scheme': 'http',
+        'server': ('test', 80),
+        'client': ('test', 1234),
+    })
+
+    with patch(
+        'src.interface.api.v1.dependencies.common.auth.get_current_owner_id',
+        return_value=owner_id,
+    ):
+        result = await require_current_owner(
+            request=request,
+            session=AsyncMock(),
+            authorization='Bearer token',
+        )
+
+    assert result == owner_id
+    assert request.state.owner_id == owner_id

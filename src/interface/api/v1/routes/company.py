@@ -1,9 +1,9 @@
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, Request, status
 
-from src.interface.api.v1.dependencies.common.auth import CurrentOwnerIdDep
+from src.interface.api.v1.dependencies.common.auth import require_current_owner
 from src.interface.api.v1.dependencies.company import CompanyRepositoryDep
 from src.interface.api.v1.schema.company import CompanyOutSchema, CreateCompanySchema
 
@@ -16,6 +16,7 @@ tags_metadata = {
 router = APIRouter(
     prefix='/company',
     tags=[tags_metadata['name']],
+    dependencies=[Depends(require_current_owner)],
 )
 
 
@@ -35,9 +36,9 @@ router = APIRouter(
 async def create_company(
     controller: CompanyRepositoryDep,
     company: CreateCompanySchema,
-    owner_id: CurrentOwnerIdDep,
+    request: Request,
 ) -> CompanyOutSchema:
-    return await controller.create_company(company, owner_id=owner_id)
+    return await controller.create_company(company, owner_id=request.state.owner_id)
 
 
 @router.get(

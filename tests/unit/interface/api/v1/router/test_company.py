@@ -2,8 +2,9 @@ from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
+from fastapi import Request
 from src.interface.api.v1.controller.company import CompanyController
-from src.interface.api.v1.dependencies.common.auth import get_current_owner_id
+from src.interface.api.v1.dependencies.common.auth import require_current_owner
 from src.interface.api.v1.dependencies.common.session import get_verified_session
 from src.interface.api.v1.dependencies.company import get_company_controller
 from src.main import app
@@ -22,12 +23,13 @@ def override_dependency_company():
     def override_get_company_controller():
         return mock_controller
 
-    async def override_get_current_owner_id():
-        return uuid4()
+    async def override_require_current_owner(request: Request):
+        request.state.owner_id = uuid4()
+        return request.state.owner_id
 
     app.dependency_overrides[get_verified_session] = override_get_verified_session
     app.dependency_overrides[get_company_controller] = override_get_company_controller
-    app.dependency_overrides[get_current_owner_id] = override_get_current_owner_id
+    app.dependency_overrides[require_current_owner] = override_require_current_owner
     yield mock_controller
     app.dependency_overrides.clear()
 
@@ -73,14 +75,17 @@ class TestCompanyRoutes:
             'owner_id': str(owner_id),
         }
 
-        response = client.get(f'{URL_COMPANY}/{company_id}')
+        response = client.get(
+            f'{URL_COMPANY}/{company_id}',
+            headers={'Authorization': 'Bearer tok'},
+        )
 
         _assert_status(response, 200)
 
     def test_list_companies_returns_200(self, client, override_dependency_company):
         override_dependency_company.list_companies.return_value = []
 
-        response = client.get(URL_COMPANY)
+        response = client.get(URL_COMPANY, headers={'Authorization': 'Bearer tok'})
 
         _assert_status(response, 200)
         assert response.json() == []
@@ -89,6 +94,9 @@ class TestCompanyRoutes:
         override_dependency_company.delete_company.return_value = None
         company_id = uuid4()
 
-        response = client.delete(f'{URL_COMPANY}/{company_id}')
+        response = client.delete(
+            f'{URL_COMPANY}/{company_id}',
+            headers={'Authorization': 'Bearer tok'},
+        )
 
         _assert_status(response, 204)

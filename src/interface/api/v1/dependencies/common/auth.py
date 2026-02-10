@@ -2,7 +2,7 @@ from typing import Annotated, Optional
 from uuid import UUID
 
 import jwt
-from fastapi import Depends, Header
+from fastapi import Depends, Header, Request
 
 from src.core.config.settings import get_settings
 from src.domain.execptions.auth import UnauthorizedException
@@ -59,6 +59,22 @@ async def get_current_owner_id(
     if owner is None:
         raise UnauthorizedException('Owner inválido')
 
+    return owner_id
+
+
+async def require_current_owner(
+    request: Request,
+    session: VerifiedSessionDep,
+    authorization: AuthorizationHeaderDep,
+) -> UUID:
+    """
+    Valida o Bearer token e salva o owner_id em request.state.owner_id.
+
+    Útil para proteger um router inteiro
+    Com dependencies=[Depends(require_current_owner)].
+    """
+    owner_id = await get_current_owner_id(session=session, authorization=authorization)
+    request.state.owner_id = owner_id
     return owner_id
 
 
