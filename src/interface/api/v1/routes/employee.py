@@ -1,7 +1,8 @@
 from uuid import UUID
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, Request, status
 
+from src.interface.api.v1.dependencies.common.auth import require_current_employee
 from src.interface.api.v1.dependencies.common.pagination import PaginationParamsDep
 from src.interface.api.v1.dependencies.employee import EmployeeRepositoryDep
 from src.interface.api.v1.schema.employee import (
@@ -11,9 +12,15 @@ from src.interface.api.v1.schema.employee import (
     UpdateEmployeeSchema,
 )
 
+tags_metadata = {
+    'name': 'Funcionários',
+    'description': ('Modulo de funcionários.'),
+}
+
 router = APIRouter(
     prefix='/employees',
-    tags=['employees'],
+    tags=[tags_metadata['name']],
+    dependencies=[Depends(require_current_employee)],
 )
 
 
@@ -21,9 +28,11 @@ router = APIRouter(
     '', description='Rota para listar funcionários', status_code=status.HTTP_200_OK
 )
 async def list_employees(
-    controller: EmployeeRepositoryDep, pagination: PaginationParamsDep
+    controller: EmployeeRepositoryDep, pagination: PaginationParamsDep, request: Request
 ) -> list[EmployeeSchema]:
-    return await controller.list_employees(pagination)
+    return await controller.list_employees(
+        pagination, company_id=request.state.company_id
+    )
 
 
 @router.post(
@@ -33,9 +42,11 @@ async def list_employees(
     response_model=EmployeeOutSchema,
 )
 async def create_employee(
-    controller: EmployeeRepositoryDep, employee: CreateEmployeeSchema
+    controller: EmployeeRepositoryDep, employee: CreateEmployeeSchema, request: Request
 ) -> EmployeeOutSchema:
-    return await controller.create_employee(employee)
+    return await controller.create_employee(
+        employee, company_id=request.state.company_id
+    )
 
 
 @router.get(
@@ -45,9 +56,11 @@ async def create_employee(
     response_model=EmployeeOutSchema,
 )
 async def get_employee(
-    controller: EmployeeRepositoryDep, employee_id: UUID
+    controller: EmployeeRepositoryDep, employee_id: UUID, request: Request
 ) -> EmployeeOutSchema:
-    return await controller.get_employee(employee_id)
+    return await controller.get_employee(
+        employee_id, company_id=request.state.company_id
+    )
 
 
 @router.patch(
@@ -57,9 +70,14 @@ async def get_employee(
     response_model=EmployeeOutSchema,
 )
 async def update_employee(
-    controller: EmployeeRepositoryDep, employee_id: UUID, employee: UpdateEmployeeSchema
+    controller: EmployeeRepositoryDep,
+    employee_id: UUID,
+    employee: UpdateEmployeeSchema,
+    request: Request,
 ) -> EmployeeOutSchema:
-    return await controller.update_employee(employee_id, employee)
+    return await controller.update_employee(
+        employee_id, employee, company_id=request.state.company_id
+    )
 
 
 @router.delete(
@@ -67,5 +85,9 @@ async def update_employee(
     description='Rota para deletar funcionário',
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_employee(controller: EmployeeRepositoryDep, employee_id: UUID) -> None:
-    return await controller.delete_employee(employee_id)
+async def delete_employee(
+    controller: EmployeeRepositoryDep, employee_id: UUID, request: Request
+) -> None:
+    return await controller.delete_employee(
+        employee_id, company_id=request.state.company_id
+    )

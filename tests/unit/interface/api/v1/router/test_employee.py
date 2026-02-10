@@ -2,8 +2,10 @@ import uuid
 from unittest.mock import AsyncMock
 
 import pytest
+from fastapi import Request
 from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.interface.api.v1.controller.employee import EmployeeController
+from src.interface.api.v1.dependencies.common.auth import require_current_employee
 from src.interface.api.v1.dependencies.common.pagination import get_pagination_params
 from src.interface.api.v1.dependencies.employee import get_employee_controller
 from src.interface.api.v1.schema.employee import (
@@ -29,6 +31,15 @@ def _install_overrides() -> AsyncMock:
 
     app.dependency_overrides[get_employee_controller] = override_employee_controller
     app.dependency_overrides[get_pagination_params] = override_pagination
+
+    async def override_require_current_employee(request: Request):
+        request.state.company_id = uuid.uuid4()
+        request.state.employee_id = uuid.uuid4()
+        return request.state.employee_id
+
+    app.dependency_overrides[require_current_employee] = (
+        override_require_current_employee
+    )
     return mock_controller
 
 
@@ -74,7 +85,6 @@ class TestEmployeeRoutes:
             password='plain',
             is_active=True,
             role='admin',
-            company_id=uuid.uuid4(),
         ).model_dump(mode='json')
 
         response = client.post(URL_EMPLOYEES, json=payload)

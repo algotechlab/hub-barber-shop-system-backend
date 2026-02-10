@@ -89,6 +89,7 @@ class TestUsersRoutes:
         payload = {
             'name': 'John Doe',
             'email': 'john.doe@example.com',
+            'phone': '11999999999',
             'password': 'password',
             'company_id': str(generate_uuid),
         }

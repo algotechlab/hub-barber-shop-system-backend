@@ -21,11 +21,12 @@ class TestEmployeeUseCase:
         self, use_case, mock_service, employee_out_dto
     ):
         pagination = PaginationParamsDTO()
+        company_id = uuid4()
         mock_service.list_employees.return_value = [employee_out_dto]
 
-        result = await use_case.list_employees(pagination)
+        result = await use_case.list_employees(pagination, company_id)
 
-        mock_service.list_employees.assert_awaited_once_with(pagination)
+        mock_service.list_employees.assert_awaited_once_with(pagination, company_id)
         assert result == [employee_out_dto]
 
     @patch('src.domain.use_case.employee.hash_password')
@@ -51,30 +52,35 @@ class TestEmployeeUseCase:
         self, use_case, mock_service, employee_out_dto
     ):
         employee_id = uuid4()
+        company_id = uuid4()
         mock_service.get_employee.return_value = employee_out_dto
 
-        result = await use_case.get_employee(employee_id)
+        result = await use_case.get_employee(employee_id, company_id)
 
-        mock_service.get_employee.assert_awaited_once_with(employee_id)
+        mock_service.get_employee.assert_awaited_once_with(employee_id, company_id)
         assert result == employee_out_dto
 
     async def test_update_employee_delegates_to_service(
         self, use_case, mock_service, employee_out_dto
     ):
         employee_id = uuid4()
+        company_id = uuid4()
         update_dto = UpdateEmployeeDTO(name='Updated')
         mock_service.update_employee.return_value = employee_out_dto
 
-        result = await use_case.update_employee(employee_id, update_dto)
+        result = await use_case.update_employee(employee_id, update_dto, company_id)
 
-        mock_service.update_employee.assert_awaited_once_with(employee_id, update_dto)
+        mock_service.update_employee.assert_awaited_once_with(
+            employee_id, update_dto, company_id
+        )
         assert result == employee_out_dto
 
     async def test_delete_employee_delegates_to_service(self, use_case, mock_service):
         employee_id = uuid4()
+        company_id = uuid4()
         mock_service.delete_employee.return_value = True
 
-        result = await use_case.delete_employee(employee_id)
+        result = await use_case.delete_employee(employee_id, company_id)
 
-        mock_service.delete_employee.assert_awaited_once_with(employee_id)
+        mock_service.delete_employee.assert_awaited_once_with(employee_id, company_id)
         assert result is True

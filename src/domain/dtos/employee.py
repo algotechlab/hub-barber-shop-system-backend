@@ -20,7 +20,6 @@ class EmployeeOutDTO(BaseModel):
     name: str
     last_name: str
     phone: str
-    password: str
     is_active: bool
     role: str
     company_id: UUID

@@ -44,6 +44,18 @@ class TestUsersService:
 
         assert result is None
 
+    async def test_get_user_auth_by_phone_delegates_to_repository(
+        self, users_service, mock_repository_user
+    ):
+        mock_repository_user.get_user_auth_by_phone.return_value = None
+
+        result = await users_service.get_user_auth_by_phone('11999999999')
+
+        mock_repository_user.get_user_auth_by_phone.assert_awaited_once_with(
+            '11999999999'
+        )
+        assert result is None
+
     async def test_create_user_delegates_to_repository(
         self, users_service, mock_repository_user, generate_uuid, generate_model_user
     ):
@@ -53,6 +65,7 @@ class TestUsersService:
             name=user.name,
             email=user.email,
             password=user.password,
+            phone=user.phone,
             company_id=company_id,
         )
         mock_repository_user.create_user.return_value = user_dto

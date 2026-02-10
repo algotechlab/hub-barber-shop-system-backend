@@ -16,21 +16,23 @@ class EmployeeUseCase:
         self.employee_service = employee_service
 
     async def list_employees(
-        self, pagination: PaginationParamsDTO
+        self, pagination: PaginationParamsDTO, company_id: UUID
     ) -> list[EmployeeOutDTO]:
-        return await self.employee_service.list_employees(pagination)
+        return await self.employee_service.list_employees(pagination, company_id)
 
     async def create_employee(self, employee: EmployeeBaseDTO) -> EmployeeOutDTO:
         employee.password = hash_password(employee.password)
         return await self.employee_service.create_employee(employee)
 
-    async def get_employee(self, id: UUID) -> Optional[EmployeeOutDTO]:
-        return await self.employee_service.get_employee(id)
+    async def get_employee(
+        self, id: UUID, company_id: UUID
+    ) -> Optional[EmployeeOutDTO]:
+        return await self.employee_service.get_employee(id, company_id)
 
     async def update_employee(
-        self, id: UUID, employee: UpdateEmployeeDTO
+        self, id: UUID, employee: UpdateEmployeeDTO, company_id: UUID
     ) -> Optional[EmployeeOutDTO]:
-        return await self.employee_service.update_employee(id, employee)
+        return await self.employee_service.update_employee(id, employee, company_id)
 
-    async def delete_employee(self, id: UUID) -> Optional[bool]:
-        return await self.employee_service.delete_employee(id)
+    async def delete_employee(self, id: UUID, company_id: UUID) -> Optional[bool]:
+        return await self.employee_service.delete_employee(id, company_id)

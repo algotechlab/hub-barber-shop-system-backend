@@ -5,6 +5,7 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.exceptions.custom import DatabaseException
+from src.domain.dtos.auth import EmployeeAuthDTO
 from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.employee import (
     EmployeeBaseDTO,
@@ -30,10 +31,14 @@ class EmployeeRepositoryPostgres(EmployeeRepository):
             await self.session.rollback()
             raise DatabaseException(str(error))
 
-    async def get_employee(self, id: UUID) -> Optional[EmployeeOutDTO]:
+    async def get_employee(
+        self, id: UUID, company_id: UUID
+    ) -> Optional[EmployeeOutDTO]:
         try:
             query = select(Employee).where(
-                Employee.id.__eq__(id), Employee.is_deleted.__eq__(False)
+                Employee.id.__eq__(id),
+                Employee.company_id.__eq__(company_id),
+                Employee.is_deleted.__eq__(False),
             )
             result = await self.session.execute(query)
             employee = result.scalar_one_or_none()
@@ -46,11 +51,28 @@ class EmployeeRepositoryPostgres(EmployeeRepository):
             await self.session.rollback()
             raise DatabaseException(str(error))
 
+    async def get_employee_auth_by_phone(self, phone: str) -> Optional[EmployeeAuthDTO]:
+        try:
+            query = select(Employee).where(
+                Employee.phone.__eq__(phone), Employee.is_deleted.__eq__(False)
+            )
+            result = await self.session.execute(query)
+            employee = result.scalar_one_or_none()
+            if employee is None:
+                return None
+            return EmployeeAuthDTO.model_validate(employee)
+        except Exception as error:
+            await self.session.rollback()
+            raise DatabaseException(str(error))
+
     async def list_employees(
-        self, pagination: PaginationParamsDTO
+        self, pagination: PaginationParamsDTO, company_id: UUID
     ) -> list[EmployeeOutDTO]:
         try:
-            query = select(Employee).where(Employee.is_deleted.__eq__(False))
+            query = select(Employee).where(
+                Employee.is_deleted.__eq__(False),
+                Employee.company_id.__eq__(company_id),
+            )
 
             if pagination.filter_by and pagination.filter_value:
                 query = query.filter(
@@ -67,14 +89,18 @@ class EmployeeRepositoryPostgres(EmployeeRepository):
             raise DatabaseException(str(error))
 
     async def update_employee(
-        self, id: UUID, employee: UpdateEmployeeDTO
+        self, id: UUID, employee: UpdateEmployeeDTO, company_id: UUID
     ) -> Optional[EmployeeOutDTO]:
         try:
             update_data = employee.model_dump(exclude_unset=True, exclude_none=True)
 
             stmt = (
                 update(Employee)
-                .where(Employee.id.__eq__(id), Employee.is_deleted.__eq__(False))
+                .where(
+                    Employee.id.__eq__(id),
+                    Employee.is_deleted.__eq__(False),
+                    Employee.company_id.__eq__(company_id),
+                )
                 .values(**update_data)
                 .returning(Employee)
             )
@@ -92,11 +118,15 @@ class EmployeeRepositoryPostgres(EmployeeRepository):
             await self.session.rollback()
             raise DatabaseException(str(error))
 
-    async def delete_employee(self, id: UUID) -> bool:
+    async def delete_employee(self, id: UUID, company_id: UUID) -> bool:
         try:
             query = (
                 update(Employee)
-                .where(Employee.id.__eq__(id), Employee.is_deleted.__eq__(False))
+                .where(
+                    Employee.id.__eq__(id),
+                    Employee.is_deleted.__eq__(False),
+                    Employee.company_id.__eq__(company_id),
+                )
                 .values(is_deleted=True)
             )
             result = await self.session.execute(query)

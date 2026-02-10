@@ -10,7 +10,6 @@ class EmployeeSchema(BaseModel):
     name: str
     last_name: str
     phone: str
-    password: str
     is_active: bool
     role: str
     company_id: UUID
@@ -21,7 +20,6 @@ class EmployeeOutSchema(BaseModel):
     name: str
     last_name: str
     phone: str
-    password: str
     is_active: bool
     role: str
     company_id: UUID
@@ -36,7 +34,6 @@ class CreateEmployeeSchema(BaseModel):
     password: str
     is_active: bool
     role: str
-    company_id: UUID
 
 
 class UpdateEmployeeSchema(BaseModel):

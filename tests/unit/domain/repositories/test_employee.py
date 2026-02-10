@@ -3,6 +3,7 @@ from uuid import UUID, uuid4
 
 import pytest
 from pydantic import ValidationError
+from src.domain.dtos.auth import EmployeeAuthDTO
 from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.employee import EmployeeBaseDTO, EmployeeOutDTO, UpdateEmployeeDTO
 from src.domain.repositories.employee import EmployeeRepository
@@ -14,6 +15,7 @@ class TestEmployeeRepositoryContract:
         assert hasattr(EmployeeRepository, 'list_employees')
         assert hasattr(EmployeeRepository, 'create_employee')
         assert hasattr(EmployeeRepository, 'get_employee')
+        assert hasattr(EmployeeRepository, 'get_employee_auth_by_phone')
         assert hasattr(EmployeeRepository, 'update_employee')
         assert hasattr(EmployeeRepository, 'delete_employee')
 
@@ -24,6 +26,9 @@ class TestEmployeeRepositoryContract:
             EmployeeRepository.create_employee, '__isabstractmethod__', False
         )
         assert getattr(EmployeeRepository.get_employee, '__isabstractmethod__', False)
+        assert getattr(
+            EmployeeRepository.get_employee_auth_by_phone, '__isabstractmethod__', False
+        )
         assert getattr(
             EmployeeRepository.update_employee, '__isabstractmethod__', False
         )
@@ -60,7 +65,7 @@ class TestEmployeeRepositoryContract:
 
         class ConcreteEmployeeRepository(EmployeeRepository):
             async def list_employees(
-                self, pagination: PaginationParamsDTO
+                self, pagination: PaginationParamsDTO, company_id: UUID
             ) -> list[EmployeeOutDTO]:
                 return [out]
 
@@ -69,31 +74,48 @@ class TestEmployeeRepositoryContract:
             ) -> EmployeeOutDTO:
                 return out
 
-            async def get_employee(self, id: UUID) -> EmployeeOutDTO | None:
-                return out if id == employee_id else None
+            async def get_employee(
+                self, id: UUID, company_id: UUID
+            ) -> EmployeeOutDTO | None:
+                if id != employee_id or company_id != base.company_id:
+                    return None
+                return out
+
+            async def get_employee_auth_by_phone(
+                self, phone: str
+            ) -> EmployeeAuthDTO | None:
+                if phone != base.phone:
+                    return None
+                return EmployeeAuthDTO(
+                    id=employee_id,
+                    password='hashed',
+                    company_id=company_id,
+                )
 
             async def update_employee(
-                self, id: UUID, employee: UpdateEmployeeDTO
+                self, id: UUID, employee: UpdateEmployeeDTO, company_id: UUID
             ) -> EmployeeOutDTO | None:
                 return out if id == employee_id else None
 
-            async def delete_employee(self, id: UUID) -> bool | None:
+            async def delete_employee(self, id: UUID, company_id: UUID) -> bool | None:
                 return id == employee_id
 
         repo = ConcreteEmployeeRepository()
-        result_list = await repo.list_employees(PaginationParamsDTO())
+        result_list = await repo.list_employees(PaginationParamsDTO(), company_id)
         assert result_list == [out]
 
         created = await repo.create_employee(base)
         assert created == out
 
-        found = await repo.get_employee(employee_id)
+        found = await repo.get_employee(employee_id, company_id)
         assert found == out
 
-        updated = await repo.update_employee(employee_id, UpdateEmployeeDTO(name='X'))
+        updated = await repo.update_employee(
+            employee_id, UpdateEmployeeDTO(name='X'), company_id
+        )
         assert updated == out
 
-        deleted = await repo.delete_employee(employee_id)
+        deleted = await repo.delete_employee(employee_id, company_id)
         assert deleted is True
 
     def test_filters_are_validated_by_pagination_dto(self):

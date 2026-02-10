@@ -22,7 +22,6 @@ class TestEmployeeSchema:
             name='John',
             last_name='Doe',
             phone='11999999999',
-            password='hashed',
             is_active=True,
             role='admin',
             company_id=company_id,
@@ -41,7 +40,6 @@ class TestEmployeeSchema:
                 name='John',
                 # last_name missing
                 phone='11999999999',
-                password='hashed',
                 is_active=True,
                 role='admin',
                 company_id=uuid4(),
@@ -51,7 +49,6 @@ class TestEmployeeSchema:
 @pytest.mark.unit
 class TestCreateEmployeeSchema:
     def test_valid_create_employee_schema(self):
-        company_id = uuid4()
         schema = CreateEmployeeSchema(
             name='Maria',
             last_name='Silva',
@@ -59,7 +56,6 @@ class TestCreateEmployeeSchema:
             password='plain',
             is_active=True,
             role='employee',
-            company_id=company_id,
         )
 
         assert schema.name == 'Maria'
@@ -67,7 +63,6 @@ class TestCreateEmployeeSchema:
         assert schema.phone == '11988887777'
         assert schema.password == 'plain'
         assert schema.role == 'employee'
-        assert schema.company_id == company_id
 
     def test_create_employee_schema_missing_required_field_raises(self):
         with pytest.raises(ValidationError):
@@ -78,7 +73,6 @@ class TestCreateEmployeeSchema:
                 # password missing
                 is_active=True,
                 role='employee',
-                company_id=uuid4(),
             )
 
 
@@ -118,7 +112,6 @@ class TestEmployeeOutSchema:
             name='John',
             last_name='Doe',
             phone='11999999999',
-            password='hashed',
             is_active=True,
             role='admin',
             company_id=company_id,

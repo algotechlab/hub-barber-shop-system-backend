@@ -53,7 +53,6 @@ class TestEmployeeBaseDTO:
                 name='John',
                 # last_name missing
                 phone='11999999999',
-                password='plain',
                 is_active=True,
                 role='admin',
                 company_id=uuid4(),
@@ -95,7 +94,6 @@ class TestEmployeeOutDTO:
             name='John',
             last_name='Doe',
             phone='11999999999',
-            password='hashed',
             is_active=True,
             role='admin',
             company_id=company_id,

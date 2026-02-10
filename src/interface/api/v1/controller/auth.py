@@ -1,6 +1,12 @@
-from src.domain.dtos.auth import OwnerLoginDTO
+from src.domain.dtos.auth import EmployeeLoginDTO, OwnerLoginDTO, UserLoginDTO
 from src.domain.use_case.auth import AuthUseCase
-from src.interface.api.v1.schema.auth import OwnerLoginSchema, TokenOutSchema
+from src.interface.api.v1.schema.auth import (
+    EmployeeLoginSchema,
+    OwnerLoginSchema,
+    TokenOutSchema,
+    TokenWithCompanyOutSchema,
+    UserLoginSchema,
+)
 
 
 class AuthController:
@@ -11,3 +17,17 @@ class AuthController:
         dto = OwnerLoginDTO(**credentials.model_dump())
         token = await self.auth_use_case.login_owner(dto)
         return TokenOutSchema(**token.model_dump())
+
+    async def login_employee(
+        self, credentials: EmployeeLoginSchema
+    ) -> TokenWithCompanyOutSchema:
+        dto = EmployeeLoginDTO(**credentials.model_dump())
+        token = await self.auth_use_case.login_employee(dto)
+        return TokenWithCompanyOutSchema(**token.model_dump())
+
+    async def login_user(
+        self, credentials: UserLoginSchema
+    ) -> TokenWithCompanyOutSchema:
+        dto = UserLoginDTO(**credentials.model_dump())
+        token = await self.auth_use_case.login_user(dto)
+        return TokenWithCompanyOutSchema(**token.model_dump())

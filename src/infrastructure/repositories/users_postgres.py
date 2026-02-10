@@ -5,6 +5,7 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.exceptions.custom import DatabaseException
+from src.domain.dtos.auth import UserAuthDTO
 from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.users import UpdateUserDTO, UserBaseDTO, UserOutDTO
 from src.domain.repositories.users import UsersRepository
@@ -38,6 +39,20 @@ class UsersRepositoryPostgres(UsersRepository):
                 return None
 
             return UserOutDTO.model_validate(user)
+        except Exception as error:
+            await self.session.rollback()
+            raise DatabaseException(str(error))
+
+    async def get_user_auth_by_phone(self, phone: str) -> Optional[UserAuthDTO]:
+        try:
+            query = select(User).where(
+                User.phone.__eq__(phone), User.is_deleted.__eq__(False)
+            )
+            result = await self.session.execute(query)
+            user = result.scalar_one_or_none()
+            if user is None:
+                return None
+            return UserAuthDTO.model_validate(user)
         except Exception as error:
             await self.session.rollback()
             raise DatabaseException(str(error))
