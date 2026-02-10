@@ -23,9 +23,6 @@ class Schedule(BaseModel):
     company_id: Mapped[UUID] = mapped_column(
         ForeignKey('company.id'), nullable=False, index=True
     )
-    branch_company_id: Mapped[UUID] = mapped_column(
-        ForeignKey('branch_company.id'), nullable=True, default=None
-    )
     time_register: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, index=True
     )

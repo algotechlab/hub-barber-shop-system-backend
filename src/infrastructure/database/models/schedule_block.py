@@ -13,6 +13,3 @@ class ScheduleBlock(BaseModel):
     employee_id: Mapped[UUID] = mapped_column(ForeignKey('employee.id'), nullable=False)
     is_block: Mapped[bool] = mapped_column(Boolean, default=False)
     company_id: Mapped[UUID] = mapped_column(ForeignKey('company.id'), nullable=False)
-    branch_company_id: Mapped[UUID] = mapped_column(
-        ForeignKey('branch_company.id'), nullable=True, default=None
-    )

@@ -17,8 +17,3 @@ class Employee(BaseModel):
         String(255), nullable=False, default=EmployeeRole.role_employee.value
     )
     company_id: Mapped[UUID] = mapped_column(ForeignKey('company.id'), nullable=False)
-    branch_company_id: Mapped[UUID] = mapped_column(
-        ForeignKey('branch_company.id'),
-        nullable=True,
-        default=None,
-    )
