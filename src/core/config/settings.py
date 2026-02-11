@@ -53,6 +53,19 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = 'HS256'
     JWT_EXPIRE_MINUTES: int = 36000
 
+    # AWS S3 (Upload de imagens)
+    AWS_REGION: str = 'us-east-1'
+    AWS_S3_BUCKET_NAME: str = ''
+    AWS_S3_PUBLIC_BASE_URL: str = ''
+    AWS_S3_ENDPOINT_URL: str = ''
+    AWS_S3_PUBLIC_READ: bool = True
+
+    AWS_ACCESS_KEY_ID: str = ''
+    AWS_SECRET_ACCESS_KEY: str = ''
+
+    S3_UPLOAD_MAX_SIZE_MB: int = 5
+    S3_ALLOWED_IMAGE_CONTENT_TYPES: str = 'image/jpeg,image/png,image/webp'
+
     @field_validator('BACKEND_CORS_ORIGINS', mode='before')
     def split_origins(cls, value: Any) -> Union[List[str], List[AnyHttpUrl]]:
         """

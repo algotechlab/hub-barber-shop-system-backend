@@ -16,20 +16,722 @@
       "item": []
     },
     {
-      "name": "Autenticação",
-      "item": []
-    },
-    {
-      "name": "Proprietários",
-      "item": []
-    },
-    {
       "name": "Funcionários",
-      "item": []
+      "item": [
+        {
+          "name": "Listagem de funcionarios",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkOWIwZDk4ZC03MDhhLTQ0NTEtYjFiMC04NTIxNjZlYjU3OWIiLCJ0eXAiOiJlbXBsb3llZSIsImlhdCI6MTc3MDc3NTUxMiwiZXhwIjoxNzcyOTM1NTEyLCJjb21wYW55X2lkIjoiNWIwZDYxYmYtYWFlZS00NDRjLWJiMGMtNzc3ZmQzNzljMDg5In0.iSEFiBd8uYNY24nwCH8u1kWtOgcuaenXhdGclX2YmaI",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{URL_BASE}}/api/v1/employees",
+              "host": [
+                "{{URL_BASE}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "employees"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buscando o funcionário por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwYWRhZWQ3Yi0xM2I4LTQxMGUtOTJmNS0xY2ZjNTBjZjZhZTYiLCJ0eXAiOiJlbXBsb3llZSIsImlhdCI6MTc3MDY5MjgyOCwiZXhwIjoxNzcyODUyODI4LCJjb21wYW55X2lkIjoiNWU2NjdmZjYtNWE2Yy00Zjc3LTkwZDgtMjU1ZTA0YWZjZDFlIn0.O-suFe52-scQweNd3aJGIoBzSx4LBnOJFZdpRTBXIco",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{URL_BASE}}/api/v1/employees/:employee_id",
+              "host": [
+                "{{URL_BASE}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "employees",
+                ":employee_id"
+              ],
+              "variable": [
+                {
+                  "key": "employee_id",
+                  "value": "0adaed7b-13b8-410e-92f5-1cfc50cf6ae6"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Criação de um funcionário",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5NzZlZTJkYS0xNzc5LTRhZmItODhiYy02ZWJhMWQ5MDk2NzMiLCJ0eXAiOiJvd25lciIsImlhdCI6MTc3MDc3NTMyOCwiZXhwIjoxNzcyOTM1MzI4fQ.flgAahd1rSXA7MyjiREPL1DHZigoSySVm-kHlC4IZVU",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Henrique\",\n  \"last_name\": \"Cheater\",\n  \"phone\": \"5561994261245\",\n  \"password\": \"Binfae@45\",\n  \"is_active\": true,\n  \"role\": \"EMMPLOYEE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{URL_BASE}}/api/v1/employees",
+              "host": [
+                "{{URL_BASE}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "employees"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Atualizar um funcionario",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwYWRhZWQ3Yi0xM2I4LTQxMGUtOTJmNS0xY2ZjNTBjZjZhZTYiLCJ0eXAiOiJlbXBsb3llZSIsImlhdCI6MTc3MDY5MjgyOCwiZXhwIjoxNzcyODUyODI4LCJjb21wYW55X2lkIjoiNWU2NjdmZjYtNWE2Yy00Zjc3LTkwZDgtMjU1ZTA0YWZjZDFlIn0.O-suFe52-scQweNd3aJGIoBzSx4LBnOJFZdpRTBXIco",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Lula ama bolsonaro\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{URL_BASE}}/api/v1/employees/:employee_id",
+              "host": [
+                "{{URL_BASE}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "employees",
+                ":employee_id"
+              ],
+              "variable": [
+                {
+                  "key": "employee_id",
+                  "value": "0adaed7b-13b8-410e-92f5-1cfc50cf6ae6"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Deletar um funcionário",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwYWRhZWQ3Yi0xM2I4LTQxMGUtOTJmNS0xY2ZjNTBjZjZhZTYiLCJ0eXAiOiJlbXBsb3llZSIsImlhdCI6MTc3MDY5MjgyOCwiZXhwIjoxNzcyODUyODI4LCJjb21wYW55X2lkIjoiNWU2NjdmZjYtNWE2Yy00Zjc3LTkwZDgtMjU1ZTA0YWZjZDFlIn0.O-suFe52-scQweNd3aJGIoBzSx4LBnOJFZdpRTBXIco",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{URL_BASE}}/api/v1/employees/:employee_id",
+              "host": [
+                "{{URL_BASE}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "employees",
+                ":employee_id"
+              ],
+              "variable": [
+                {
+                  "key": "employee_id",
+                  "value": "f13ecbc0-50fc-4cbe-b4ca-75813c2ee473"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
     },
     {
       "name": "Login",
-      "item": []
+      "item": [
+        {
+          "name": "Auth - Owner",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"hedrisgts@gmail.com\",\n  \"password\": \"Binfae@45\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{URL_BASE}}/api/v1/auth/login",
+              "host": [
+                "{{URL_BASE}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Auth - Employee",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"5561994261245\",\n  \"password\": \"Binfae@45\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{URL_BASE}}/api/v1/auth/login/employee",
+              "host": [
+                "{{URL_BASE}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login",
+                "employee"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Auth - Users",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"556199462145\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{URL_BASE}}/api/v1/auth/login/user",
+              "host": [
+                "{{URL_BASE}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login",
+                "user"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Companias",
+      "item": [
+        {
+          "name": "Cadastrando uma compania",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5NzZlZTJkYS0xNzc5LTRhZmItODhiYy02ZWJhMWQ5MDk2NzMiLCJ0eXAiOiJvd25lciIsImlhdCI6MTc3MDc3NTIwMiwiZXhwIjoxNzcyOTM1MjAyfQ.jVICIYe6hAC5NzC7C0QMSLBFLd_JwL6eid_Hnibz2X4",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"dgbarbershop\",\n  \"slug\": \"dgbarbershop\",\n  \"is_active\": true\n}"
+            },
+            "url": {
+              "raw": "{{URL_BASE}}/api/v1/company",
+              "host": [
+                "{{URL_BASE}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "company"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listagem de companias",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0ODk2MjgxMS1kZDg3LTQ2NjMtOGU1My0wMzMwNTQ4ZmYzZTUiLCJpYXQiOjE3NzA2ODE3MTAsImV4cCI6MTc3Mjg0MTcxMH0.4dnMwobUXPUGhX42J-HhL3RV6cpHoNUGH7RpIbqo7T4",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{URL_BASE}}/api/v1/company",
+              "host": [
+                "{{URL_BASE}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "company"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buscando a compania por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0ODk2MjgxMS1kZDg3LTQ2NjMtOGU1My0wMzMwNTQ4ZmYzZTUiLCJpYXQiOjE3NzA2ODE3MTAsImV4cCI6MTc3Mjg0MTcxMH0.4dnMwobUXPUGhX42J-HhL3RV6cpHoNUGH7RpIbqo7T4",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{URL_BASE}}/api/v1/company/:company_id",
+              "host": [
+                "{{URL_BASE}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "company",
+                ":company_id"
+              ],
+              "variable": [
+                {
+                  "key": "company_id",
+                  "value": "5e667ff6-5a6c-4f77-90d8-255e04afcd1e"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Deletar uma compania",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0ODk2MjgxMS1kZDg3LTQ2NjMtOGU1My0wMzMwNTQ4ZmYzZTUiLCJpYXQiOjE3NzA2ODE3MTAsImV4cCI6MTc3Mjg0MTcxMH0.4dnMwobUXPUGhX42J-HhL3RV6cpHoNUGH7RpIbqo7T4",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{URL_BASE}}/api/v1/company/:company_id",
+              "host": [
+                "{{URL_BASE}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "company",
+                ":company_id"
+              ],
+              "variable": [
+                {
+                  "key": "company_id",
+                  "value": "e6e5e073-2e42-4d54-9cdc-ce14b149deac"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Produtos",
+      "item": [
+        {
+          "name": "Listagem de produtos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkOWIwZDk4ZC03MDhhLTQ0NTEtYjFiMC04NTIxNjZlYjU3OWIiLCJ0eXAiOiJlbXBsb3llZSIsImlhdCI6MTc3MDc3NTUxMiwiZXhwIjoxNzcyOTM1NTEyLCJjb21wYW55X2lkIjoiNWIwZDYxYmYtYWFlZS00NDRjLWJiMGMtNzc3ZmQzNzljMDg5In0.iSEFiBd8uYNY24nwCH8u1kWtOgcuaenXhdGclX2YmaI",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{URL_BASE}}/api/v1/products",
+              "host": [
+                "{{URL_BASE}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Criação do produto",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkOWIwZDk4ZC03MDhhLTQ0NTEtYjFiMC04NTIxNjZlYjU3OWIiLCJ0eXAiOiJlbXBsb3llZSIsImlhdCI6MTc3MDc3NTUxMiwiZXhwIjoxNzcyOTM1NTEyLCJjb21wYW55X2lkIjoiNWIwZDYxYmYtYWFlZS00NDRjLWJiMGMtNzc3ZmQzNzljMDg5In0.iSEFiBd8uYNY24nwCH8u1kWtOgcuaenXhdGclX2YmaI",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Exemplo\",\n  \"description\": \"Exemplo 02\",\n  \"price\": 10,\n  \"category\": \"cabelo\",\n  \"status\": true,\n  \"url_image\": \"https://algo-tech-barber.s3.us-east-2.amazonaws.com/companies/5b0d61bf-aaee-444c-bb0c-777fd379c089/products/c34d6b9b6b3c4529bbea5c8955202735.jpeg\"\n}"
+            },
+            "url": {
+              "raw": "{{URL_BASE}}/api/v1/products",
+              "host": [
+                "{{URL_BASE}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload da imagem do bucket",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkOWIwZDk4ZC03MDhhLTQ0NTEtYjFiMC04NTIxNjZlYjU3OWIiLCJ0eXAiOiJlbXBsb3llZSIsImlhdCI6MTc3MDc3NTUxMiwiZXhwIjoxNzcyOTM1NTEyLCJjb21wYW55X2lkIjoiNWIwZDYxYmYtYWFlZS00NDRjLWJiMGMtNzc3ZmQzNzljMDg5In0.iSEFiBd8uYNY24nwCH8u1kWtOgcuaenXhdGclX2YmaI",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "uuid": "1a54e8b5-221e-46c6-ad25-baf5f42e4518",
+                  "src": "/Users/hedrispereira/Downloads/WhatsApp Image 2026-01-08 at 14.59.48.jpeg"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{URL_BASE}}/api/v1/products/upload-image",
+              "host": [
+                "{{URL_BASE}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products",
+                "upload-image"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buscando o produto por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkOWIwZDk4ZC03MDhhLTQ0NTEtYjFiMC04NTIxNjZlYjU3OWIiLCJ0eXAiOiJlbXBsb3llZSIsImlhdCI6MTc3MDc3NTUxMiwiZXhwIjoxNzcyOTM1NTEyLCJjb21wYW55X2lkIjoiNWIwZDYxYmYtYWFlZS00NDRjLWJiMGMtNzc3ZmQzNzljMDg5In0.iSEFiBd8uYNY24nwCH8u1kWtOgcuaenXhdGclX2YmaI",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{URL_BASE}}/api/v1/products/:product_id",
+              "host": [
+                "{{URL_BASE}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products",
+                ":product_id"
+              ],
+              "variable": [
+                {
+                  "key": "product_id",
+                  "value": "970a5a6d-3d2b-4fbe-aa5c-9dfff617a39f"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Deletando o produto",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkOWIwZDk4ZC03MDhhLTQ0NTEtYjFiMC04NTIxNjZlYjU3OWIiLCJ0eXAiOiJlbXBsb3llZSIsImlhdCI6MTc3MDc3NTUxMiwiZXhwIjoxNzcyOTM1NTEyLCJjb21wYW55X2lkIjoiNWIwZDYxYmYtYWFlZS00NDRjLWJiMGMtNzc3ZmQzNzljMDg5In0.iSEFiBd8uYNY24nwCH8u1kWtOgcuaenXhdGclX2YmaI",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{URL_BASE}}/api/v1/products/:product_id",
+              "host": [
+                "{{URL_BASE}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products",
+                ":product_id"
+              ],
+              "variable": [
+                {
+                  "key": "product_id",
+                  "value": "970a5a6d-3d2b-4fbe-aa5c-9dfff617a39f"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Atualizar o produto",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkOWIwZDk4ZC03MDhhLTQ0NTEtYjFiMC04NTIxNjZlYjU3OWIiLCJ0eXAiOiJlbXBsb3llZSIsImlhdCI6MTc3MDc3NTUxMiwiZXhwIjoxNzcyOTM1NTEyLCJjb21wYW55X2lkIjoiNWIwZDYxYmYtYWFlZS00NDRjLWJiMGMtNzc3ZmQzNzljMDg5In0.iSEFiBd8uYNY24nwCH8u1kWtOgcuaenXhdGclX2YmaI",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Exemplo\",\n  \"description\": \"Exemplo 02\",\n  \"price\": 10,\n  \"category\": \"cabelo\",\n  \"status\": true,\n  \"url_image\": \"https://algo-tech-barber.s3.us-east-2.amazonaws.com/companies/5b0d61bf-aaee-444c-bb0c-777fd379c089/products/c34d6b9b6b3c4529bbea5c8955202735.jpeg\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{URL_BASE}}/api/v1/products/:product_id",
+              "host": [
+                "{{URL_BASE}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products",
+                ":product_id"
+              ],
+              "variable": [
+                {
+                  "key": "product_id",
+                  "value": "970a5a6d-3d2b-4fbe-aa5c-9dfff617a39f"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Proprietarios",
+      "item": [
+        {
+          "name": "Cria um Owner",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Hedris\",\n  \"email\": \"hedrisgts@gmail.com\",\n  \"password\": \"Binfae@45\",\n  \"phone\": \"5561994261245\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{URL_BASE}}/api/v1/owners",
+              "host": [
+                "{{URL_BASE}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "owners"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listagem de Owner",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{URL_BASE}}/api/v1/owners",
+              "host": [
+                "{{URL_BASE}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "owners"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar Owner por UUID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{URL_BASE}}/api/v1/owners/:owener_id",
+              "host": [
+                "{{URL_BASE}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "owners",
+                ":owener_id"
+              ],
+              "variable": [
+                {
+                  "key": "owener_id",
+                  "value": "976ee2da-1779-4afb-88bc-6eba1d909673"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Atualizar um Owner",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Hedris\",\n  \"email\": \"hedrisgts@gmail.com\",\n  \"password\": \"Binfae@45\",\n  \"phone\": \"5561994261245\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{URL_BASE}}/api/v1/owners/:owner_id",
+              "host": [
+                "{{URL_BASE}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "owners",
+                ":owner_id"
+              ],
+              "variable": [
+                {
+                  "key": "owner_id",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
     }
   ]
 }
