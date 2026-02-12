@@ -1,13 +1,21 @@
+import json
 from unittest.mock import MagicMock
 
 import pytest
 from fastapi import Request
+from fastapi.exceptions import RequestValidationError
 from src.core.exceptions.custom import (
     DomainException,
     InfrastructureException,
     MultipleException,
 )
-from src.interface.api.v1.middlewares.exceptions import custom_exception_handler
+from src.interface.api.v1.middlewares.exceptions import (
+    custom_exception_handler,
+    request_validation_exception_handler,
+    sanitize_for_json,
+)
+
+STATUS_CODE_422 = 422
 
 
 @pytest.mark.unit
@@ -39,8 +47,6 @@ class TestCustomExceptionHandler:
         exc = MultipleException(err1, err2)
         response = await custom_exception_handler(request_mock, exc)
         assert response.status_code == status_code
-        import json
-
         content = json.loads(response.body.decode())
         assert isinstance(content, list)
         assert len(content) >= 1
@@ -50,3 +56,29 @@ class TestCustomExceptionHandler:
         exc = ValueError('Qualquer erro')
         response = await custom_exception_handler(request_mock, exc)
         assert response.status_code == status_code
+
+
+@pytest.mark.unit
+class TestRequestValidationExceptionHandler:
+    @pytest.fixture
+    def request_mock(self):
+        return MagicMock(spec=Request)
+
+    async def test_request_validation_exception_handler_returns_422_and_sanitizes_body(
+        self, request_mock
+    ):
+        exc = RequestValidationError(
+            [{'loc': ('body',), 'msg': 'Invalid', 'type': 'value_error'}],
+            body=b'\x89PNG\r\n\x1a\n' + b'\x00' * 10,
+        )
+        response = await request_validation_exception_handler(request_mock, exc)
+
+        assert response.status_code == STATUS_CODE_422
+        content = json.loads(response.body.decode())
+        assert content['code'] == 'VALIDATION_ERROR'
+        assert 'errors' in content
+
+    async def test_sanitize_for_json_bytes(self):
+        out = sanitize_for_json({'body': b'\x89PNG\r\n\x1a\n'})
+        assert isinstance(out['body'], str)
+        assert out['body'].startswith('<bytes:')

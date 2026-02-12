@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
 from starlette.middleware.cors import CORSMiddleware
 
 from src.core.config.settings import get_settings
@@ -10,7 +11,10 @@ from src.core.exceptions.custom import (
 from src.infrastructure.database import load_all_models
 from src.interface.api import app_router
 from src.interface.api.v1 import v1_tags_metadata
-from src.interface.api.v1.middlewares.exceptions import custom_exception_handler
+from src.interface.api.v1.middlewares.exceptions import (
+    custom_exception_handler,
+    request_validation_exception_handler,
+)
 
 settings = get_settings()
 
@@ -38,6 +42,7 @@ load_all_models()
 app.add_exception_handler(DomainException, custom_exception_handler)
 app.add_exception_handler(InfrastructureException, custom_exception_handler)
 app.add_exception_handler(MultipleException, custom_exception_handler)
+app.add_exception_handler(RequestValidationError, request_validation_exception_handler)
 app.add_exception_handler(Exception, custom_exception_handler)
 
 app.include_router(app_router)

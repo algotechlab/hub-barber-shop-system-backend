@@ -80,7 +80,10 @@ class ServiceRepositoryPostgres(ServiceRepository):
             )
             result = await self.session.execute(query)
             await self.session.commit()
-            return ServiceDTO.model_validate(result.scalar_one_or_none())
+            updated = result.scalar_one_or_none()
+            if updated is None:
+                return None
+            return ServiceDTO.model_validate(updated)
         except Exception as error:
             await self.session.rollback()
             raise DatabaseException(str(error))
