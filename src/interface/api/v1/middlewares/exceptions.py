@@ -1,6 +1,7 @@
 from typing import Union
 
 from fastapi import Request, status
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from src.core.exceptions.custom import (
@@ -9,6 +10,39 @@ from src.core.exceptions.custom import (
     MultipleException,
 )
 from src.core.utils.get_from_sequence import get_from_sequence
+
+
+def sanitize_for_json(obj: object) -> object:
+    """
+    Garante que não existam bytes na resposta JSON.
+
+    O FastAPI tenta serializar bytes como utf-8 por padrão, o que pode quebrar
+    quando o payload é binário (ex.: PNG).
+    """
+    if isinstance(obj, bytes):
+        return f'<bytes:{len(obj)}>'
+    if isinstance(obj, dict):
+        return {k: sanitize_for_json(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple, set)):
+        return [sanitize_for_json(v) for v in obj]
+    return obj
+
+
+# Compat: testes/uso antigo
+_sanitize_for_json = sanitize_for_json
+
+
+async def request_validation_exception_handler(
+    request: Request, exc: RequestValidationError
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={
+            'code': 'VALIDATION_ERROR',
+            'message': 'Erro de validação',
+            'errors': sanitize_for_json(exc.errors()),
+        },
+    )
 
 
 async def custom_exception_handler(

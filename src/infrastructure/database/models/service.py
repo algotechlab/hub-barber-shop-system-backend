@@ -15,4 +15,5 @@ class Service(BaseModel):
     category: Mapped[str] = mapped_column(String(30), nullable=False)
     time_to_spend: Mapped[Interval] = mapped_column(Interval, nullable=False)
     status: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    url_image: Mapped[str] = mapped_column(String(255), nullable=False)
     company_id: Mapped[UUID] = mapped_column(ForeignKey('company.id'), nullable=False)

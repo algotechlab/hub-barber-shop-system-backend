@@ -189,3 +189,124 @@ class TestS3StorageUpload:
         assert result.url.startswith('https://cdn.example.com/companies/')
         assert result.key.startswith('companies/')
         client.put_object.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_upload_service_image_success_returns_url(self, monkeypatch):
+        settings = SimpleNamespace(
+            AWS_REGION='us-east-1',
+            AWS_S3_BUCKET_NAME='bucket',
+            AWS_S3_PUBLIC_BASE_URL='https://cdn.example.com',
+            AWS_S3_ENDPOINT_URL='',
+            AWS_S3_PUBLIC_READ=True,
+            AWS_ACCESS_KEY_ID='',
+            AWS_SECRET_ACCESS_KEY='',
+            S3_UPLOAD_MAX_SIZE_MB=5,
+            S3_ALLOWED_IMAGE_CONTENT_TYPES='image/png',
+        )
+        monkeypatch.setattr(
+            'src.infrastructure.storage.s3.get_settings', lambda: settings
+        )
+
+        async def immediate(fn, *args, **kwargs):
+            return fn(*args, **kwargs)
+
+        monkeypatch.setattr(
+            'src.infrastructure.storage.s3.run_in_threadpool', immediate
+        )
+
+        client = Mock()
+        storage = S3Storage(client=client)
+        file = AsyncMock()
+        file.filename = 'a.png'
+        file.content_type = 'image/png'
+        file.read.return_value = b'123'
+
+        result = await storage.upload_service_image(
+            file=file, company_id=uuid.UUID(int=1)
+        )
+
+        assert '/services/' in result.key
+        assert result.url.startswith('https://cdn.example.com/companies/')
+        client.put_object.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_upload_service_image_rejects_invalid_content_type(self, monkeypatch):
+        settings = SimpleNamespace(
+            AWS_REGION='us-east-1',
+            AWS_S3_BUCKET_NAME='bucket',
+            AWS_S3_PUBLIC_BASE_URL='',
+            AWS_S3_ENDPOINT_URL='',
+            AWS_S3_PUBLIC_READ=True,
+            AWS_ACCESS_KEY_ID='',
+            AWS_SECRET_ACCESS_KEY='',
+            S3_UPLOAD_MAX_SIZE_MB=5,
+            S3_ALLOWED_IMAGE_CONTENT_TYPES='image/png',
+        )
+        monkeypatch.setattr(
+            'src.infrastructure.storage.s3.get_settings', lambda: settings
+        )
+
+        client = Mock()
+        storage = S3Storage(client=client)
+        file = AsyncMock()
+        file.filename = 'a.txt'
+        file.content_type = 'text/plain'
+        file.read.return_value = b'123'
+
+        with pytest.raises(InvalidFileTypeException):
+            await storage.upload_service_image(file=file, company_id=uuid.uuid4())
+
+    @pytest.mark.asyncio
+    async def test_upload_service_image_rejects_large_file(self, monkeypatch):
+        settings = SimpleNamespace(
+            AWS_REGION='us-east-1',
+            AWS_S3_BUCKET_NAME='bucket',
+            AWS_S3_PUBLIC_BASE_URL='',
+            AWS_S3_ENDPOINT_URL='',
+            AWS_S3_PUBLIC_READ=True,
+            AWS_ACCESS_KEY_ID='',
+            AWS_SECRET_ACCESS_KEY='',
+            S3_UPLOAD_MAX_SIZE_MB=1,
+            S3_ALLOWED_IMAGE_CONTENT_TYPES='image/png',
+        )
+        monkeypatch.setattr(
+            'src.infrastructure.storage.s3.get_settings', lambda: settings
+        )
+
+        client = Mock()
+        storage = S3Storage(client=client)
+        big = b'a' * (1024 * 1024 + 1)
+        file = AsyncMock()
+        file.filename = 'a.png'
+        file.content_type = 'image/png'
+        file.read.return_value = big
+
+        with pytest.raises(FileTooLargeException):
+            await storage.upload_service_image(file=file, company_id=uuid.uuid4())
+
+    @pytest.mark.asyncio
+    async def test_upload_service_image_requires_bucket_name(self, monkeypatch):
+        settings = SimpleNamespace(
+            AWS_REGION='us-east-1',
+            AWS_S3_BUCKET_NAME='',
+            AWS_S3_PUBLIC_BASE_URL='',
+            AWS_S3_ENDPOINT_URL='',
+            AWS_S3_PUBLIC_READ=True,
+            AWS_ACCESS_KEY_ID='',
+            AWS_SECRET_ACCESS_KEY='',
+            S3_UPLOAD_MAX_SIZE_MB=5,
+            S3_ALLOWED_IMAGE_CONTENT_TYPES='image/png',
+        )
+        monkeypatch.setattr(
+            'src.infrastructure.storage.s3.get_settings', lambda: settings
+        )
+
+        client = Mock()
+        storage = S3Storage(client=client)
+        file = AsyncMock()
+        file.filename = 'a.png'
+        file.content_type = 'image/png'
+        file.read.return_value = b'123'
+
+        with pytest.raises(UploadFailedException):
+            await storage.upload_service_image(file=file, company_id=uuid.uuid4())
