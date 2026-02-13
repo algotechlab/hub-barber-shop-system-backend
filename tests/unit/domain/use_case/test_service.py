@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
+from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.service import CreateServiceDTO, ServiceDTO, UpdateServiceDTO
 from src.domain.execptions.service import ServiceNotFoundException
 from src.domain.use_case.service import ServiceUseCase
@@ -80,9 +81,10 @@ async def test_list_services_delegates_to_service_layer():
     use_case = ServiceUseCase(service)
     company_id = uuid4()
 
-    result = await use_case.list_services(company_id)
+    pagination = PaginationParamsDTO()
+    result = await use_case.list_services(pagination, company_id)
 
-    service.list_services.assert_awaited_once_with(company_id)
+    service.list_services.assert_awaited_once_with(pagination, company_id)
     assert result == []
 
 

@@ -3,6 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, File, Request, UploadFile, status
 
 from src.interface.api.v1.dependencies.common.auth import require_current_employee
+from src.interface.api.v1.dependencies.common.pagination import PaginationParamsDep
 from src.interface.api.v1.dependencies.product import ProductRepositoryDep
 from src.interface.api.v1.schema.product import (
     CreateProductSchema,
@@ -26,9 +27,11 @@ router = APIRouter(
 
 @router.get('', description='Rota para listar produtos', status_code=status.HTTP_200_OK)
 async def list_products(
-    controller: ProductRepositoryDep, request: Request
+    controller: ProductRepositoryDep, request: Request, pagination: PaginationParamsDep
 ) -> list[ProductSchema]:
-    return await controller.list_products(company_id=request.state.company_id)
+    return await controller.list_products(
+        pagination, company_id=request.state.company_id
+    )
 
 
 @router.post(

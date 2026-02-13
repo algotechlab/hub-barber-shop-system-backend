@@ -180,22 +180,39 @@ class TestEmployeeRepositoryPostgres:
             def __eq__(self, other):
                 return ('eq', self.name, other)
 
+            def ilike(self, pattern: str):
+                return ('ilike', self.name, pattern)
+
+            def desc(self):
+                return ('desc', self.name)
+
         class _DummyEmployee:
             is_deleted = _DummyCol('is_deleted')
             name = _DummyCol('name')
             company_id = _DummyCol('company_id')
+            created_at = _DummyCol('created_at')
 
         class _FakeQuery:
             def __init__(self):
                 self.where_args = []
-                self.filter_args = []
+                self.order_by_args = []
+                self.offset_value = None
+                self.limit_value = None
 
             def where(self, *args):
                 self.where_args.extend(args)
                 return self
 
-            def filter(self, *args):
-                self.filter_args.extend(args)
+            def order_by(self, *args):
+                self.order_by_args.extend(args)
+                return self
+
+            def offset(self, value):
+                self.offset_value = value
+                return self
+
+            def limit(self, value):
+                self.limit_value = value
                 return self
 
         fake_query = _FakeQuery()
@@ -226,7 +243,10 @@ class TestEmployeeRepositoryPostgres:
         ):
             result = await repo.list_employees(pagination, company_id)
 
-        assert ('eq', 'name', 'John') in fake_query.filter_args
+        assert ('ilike', 'name', '%John%') in fake_query.where_args
+        assert ('desc', 'created_at') in fake_query.order_by_args
+        assert fake_query.offset_value == pagination.offset
+        assert fake_query.limit_value == pagination.limit
         mock_session.execute.assert_awaited_once_with(fake_query)
         assert result == expected_dtos
 

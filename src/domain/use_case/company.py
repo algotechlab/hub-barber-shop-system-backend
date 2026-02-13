@@ -1,6 +1,7 @@
 from typing import List
 from uuid import UUID
 
+from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.company import CompanyDTO, CreateCompanyDTO
 from src.domain.execptions.company import (
     CompanyAlreadyExistsException,
@@ -27,8 +28,8 @@ class CompanyUseCase:
             raise CompanyNotFoundException(f'Compania com id {id} não encontrada')
         return company
 
-    async def list_companies(self) -> List[CompanyDTO]:
-        return await self.company_service.list_companies()
+    async def list_companies(self, pagination: PaginationParamsDTO) -> List[CompanyDTO]:
+        return await self.company_service.list_companies(pagination)
 
     async def delete_company(self, id: UUID) -> bool:
         deleted = await self.company_service.delete_company(id)

@@ -1,9 +1,9 @@
 from typing import Optional
 from uuid import UUID
 
+from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.employee import EmployeeBaseDTO, UpdateEmployeeDTO
 from src.domain.use_case.employee import EmployeeUseCase
-from src.interface.api.v1.schema.common.pagination import PaginationParamsBaseSchema
 from src.interface.api.v1.schema.employee import (
     CreateEmployeeSchema,
     EmployeeOutSchema,
@@ -17,7 +17,7 @@ class EmployeeController:
         self.employee_use_case = employee_use_case
 
     async def list_employees(
-        self, pagination: PaginationParamsBaseSchema, company_id: UUID
+        self, pagination: PaginationParamsDTO, company_id: UUID
     ) -> list[EmployeeSchema]:
         return await self.employee_use_case.list_employees(pagination, company_id)
 

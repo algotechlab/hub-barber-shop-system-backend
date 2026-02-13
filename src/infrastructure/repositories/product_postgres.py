@@ -5,6 +5,7 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.exceptions.custom import DatabaseException
+from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.product import CreateProductDTO, ProductDTO, UpdateProductDTO
 from src.domain.repositories.product import ProductRepository
 from src.infrastructure.database.models.product import Product
@@ -41,11 +42,27 @@ class ProductRepositoryPostgres(ProductRepository):
             await self.session.rollback()
             raise DatabaseException(str(error))
 
-    async def list_products(self, company_id: UUID) -> List[ProductDTO]:
+    async def list_products(
+        self, pagination: PaginationParamsDTO, company_id: UUID
+    ) -> List[ProductDTO]:
         try:
-            query = select(Product).where(
-                Product.company_id.__eq__(company_id), Product.is_deleted.__eq__(False)
+            query = (
+                select(Product)
+                .where(
+                    Product.company_id.__eq__(company_id),
+                    Product.is_deleted.__eq__(False),
+                )
+                .order_by(Product.created_at.desc())
             )
+
+            if pagination.filter_by and pagination.filter_value:
+                query = query.filter(
+                    getattr(Product, pagination.filter_by).ilike(
+                        f'%{pagination.filter_value}%'
+                    )
+                )
+
+            query = query.offset(pagination.offset).limit(pagination.limit)
             result = await self.session.execute(query)
             products = result.scalars().all()
             return [ProductDTO.model_validate(product) for product in products]

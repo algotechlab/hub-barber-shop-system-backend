@@ -5,6 +5,7 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.exceptions.custom import DatabaseException
+from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.company import CompanyDTO, CreateCompanyDTO
 from src.domain.repositories.company import CompanyRepository
 from src.infrastructure.database.models.companies import Company
@@ -46,9 +47,22 @@ class CompanyRepositoryPostgres(CompanyRepository):
         except Exception:
             await self.session.rollback()
 
-    async def list_companies(self) -> List[CompanyDTO]:
+    async def list_companies(self, pagination: PaginationParamsDTO) -> List[CompanyDTO]:
         try:
-            query = select(Company).where(Company.is_deleted.__eq__(False))
+            query = (
+                select(Company)
+                .where(Company.is_deleted.__eq__(False))
+                .order_by(Company.created_at.desc())
+            )
+
+            if pagination.filter_by and pagination.filter_value:
+                query = query.filter(
+                    getattr(Company, pagination.filter_by).ilike(
+                        f'%{pagination.filter_value}%'
+                    )
+                )
+
+            query = query.offset(pagination.offset).limit(pagination.limit)
             result = await self.session.execute(query)
             companies = result.scalars().all()
             return [CompanyDTO.model_validate(company) for company in companies]

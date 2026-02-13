@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
+from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.product import CreateProductDTO, ProductDTO, UpdateProductDTO
 from src.domain.service.product import ProductService
 
@@ -50,9 +51,10 @@ async def test_list_products_delegates_to_repository():
     company_id = uuid4()
     repo.list_products.return_value = []
 
-    result = await service.list_products(company_id)
+    pagination = PaginationParamsDTO()
+    result = await service.list_products(pagination, company_id)
 
-    repo.list_products.assert_awaited_once_with(company_id)
+    repo.list_products.assert_awaited_once_with(pagination, company_id)
     assert result == []
 
 

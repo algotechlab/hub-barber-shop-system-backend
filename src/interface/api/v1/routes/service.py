@@ -4,6 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, File, Request, UploadFile, status
 
 from src.interface.api.v1.dependencies.common.auth import require_current_employee
+from src.interface.api.v1.dependencies.common.pagination import PaginationParamsDep
 from src.interface.api.v1.dependencies.service import ServiceRepositoryDep
 from src.interface.api.v1.schema.service import (
     CreateServiceSchema,
@@ -51,9 +52,11 @@ async def create_service(
     },
 )
 async def list_services(
-    controller: ServiceRepositoryDep, request: Request
+    controller: ServiceRepositoryDep, request: Request, pagination: PaginationParamsDep
 ) -> List[ServiceSchema]:
-    return await controller.list_services(company_id=request.state.company_id)
+    return await controller.list_services(
+        pagination, company_id=request.state.company_id
+    )
 
 
 @router.get(

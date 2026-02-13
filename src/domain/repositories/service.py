@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List, Optional
 from uuid import UUID
 
+from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.service import CreateServiceDTO, ServiceDTO, UpdateServiceDTO
 
 
@@ -13,7 +14,9 @@ class ServiceRepository(ABC):
     async def get_service(self, id: UUID, company_id: UUID) -> Optional[ServiceDTO]: ...
 
     @abstractmethod
-    async def list_services(self, company_id: UUID) -> List[ServiceDTO]: ...
+    async def list_services(
+        self, pagination: PaginationParamsDTO, company_id: UUID
+    ) -> List[ServiceDTO]: ...
 
     @abstractmethod
     async def update_service(

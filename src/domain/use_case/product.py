@@ -1,6 +1,7 @@
 from typing import List
 from uuid import UUID
 
+from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.product import CreateProductDTO, ProductDTO, UpdateProductDTO
 from src.domain.execptions.product import ProductNotFoundException
 from src.domain.service.product import ProductService
@@ -19,8 +20,10 @@ class ProductUseCase:
             raise ProductNotFoundException('Produto não encontrado')
         return product
 
-    async def list_products(self, company_id: UUID) -> List[ProductDTO]:
-        return await self.product_service.list_products(company_id)
+    async def list_products(
+        self, pagination: PaginationParamsDTO, company_id: UUID
+    ) -> List[ProductDTO]:
+        return await self.product_service.list_products(pagination, company_id)
 
     async def update_product(
         self, id: UUID, product: UpdateProductDTO, company_id: UUID

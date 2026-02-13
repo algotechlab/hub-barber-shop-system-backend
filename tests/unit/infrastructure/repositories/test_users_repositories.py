@@ -86,9 +86,12 @@ class TestUsersRepositoryPostgres:
             def __eq__(self, other):  # noqa: D105
                 return ('eq', self.name, other)
 
+            def ilike(self, pattern: str):
+                return ('ilike', self.name, pattern)
+
         class _DummyUser:
             is_deleted = _DummyCol('is_deleted')
-            created_at = object()
+            created_at = _DummyCol('created_at')
             name = _DummyCol('name')
 
         class _FakeQuery:
@@ -96,6 +99,8 @@ class TestUsersRepositoryPostgres:
                 self.where_args = []
                 self.order_by_args = []
                 self.filter_args = []
+                self.offset_value = None
+                self.limit_value = None
 
             def where(self, *args):
                 self.where_args.extend(args)
@@ -107,6 +112,14 @@ class TestUsersRepositoryPostgres:
 
             def filter(self, *args):
                 self.filter_args.extend(args)
+                return self
+
+            def offset(self, value):
+                self.offset_value = value
+                return self
+
+            def limit(self, value):
+                self.limit_value = value
                 return self
 
         fake_query = _FakeQuery()
@@ -134,7 +147,9 @@ class TestUsersRepositoryPostgres:
             result = await repo.list_users(pagination)
 
         # garante que o filtro foi aplicado com o campo e valor corretos
-        assert ('eq', 'name', 'John') in fake_query.filter_args
+        assert ('ilike', 'name', '%John%') in fake_query.filter_args
+        assert fake_query.offset_value == pagination.offset
+        assert fake_query.limit_value == pagination.limit
         # e que a query filtrada foi a que foi executada
         mock_session.execute.assert_awaited_once_with(fake_query)
         assert result == expected_dtos

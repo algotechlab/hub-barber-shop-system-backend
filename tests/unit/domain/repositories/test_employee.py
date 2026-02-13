@@ -121,4 +121,4 @@ class TestEmployeeRepositoryContract:
     def test_filters_are_validated_by_pagination_dto(self):
         # Tratativa de filtros: filter_by precisa ser um campo permitido
         with pytest.raises(ValidationError):
-            PaginationParamsDTO(filter_by='email', filter_value='x')
+            PaginationParamsDTO(filter_by='invalid_field', filter_value='x')

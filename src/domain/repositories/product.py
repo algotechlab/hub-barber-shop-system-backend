@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List, Optional
 from uuid import UUID
 
+from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.product import CreateProductDTO, ProductDTO, UpdateProductDTO
 
 
@@ -13,7 +14,9 @@ class ProductRepository(ABC):
     async def get_product(self, id: UUID, company_id: UUID) -> Optional[ProductDTO]: ...
 
     @abstractmethod
-    async def list_products(self, company_id: UUID) -> List[ProductDTO]: ...
+    async def list_products(
+        self, pagination: PaginationParamsDTO, company_id: UUID
+    ) -> List[ProductDTO]: ...
 
     @abstractmethod
     async def update_product(

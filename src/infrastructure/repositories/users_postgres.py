@@ -67,8 +67,12 @@ class UsersRepositoryPostgres(UsersRepository):
 
             if pagination.filter_by and pagination.filter_value:
                 query = query.filter(
-                    getattr(User, pagination.filter_by).__eq__(pagination.filter_value)
+                    getattr(User, pagination.filter_by).ilike(
+                        f'%{pagination.filter_value}%'
+                    )
                 )
+
+            query = query.offset(pagination.offset).limit(pagination.limit)
             result = await self.session.execute(query)
             users = result.scalars().all()
             return [UserOutDTO.model_validate(user) for user in users]

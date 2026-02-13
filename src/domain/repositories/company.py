@@ -2,6 +2,7 @@ from abc import abstractmethod
 from typing import List
 from uuid import UUID
 
+from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.company import CompanyDTO, CreateCompanyDTO
 
 
@@ -16,7 +17,9 @@ class CompanyRepository:
     async def get_company(self, id: UUID) -> CompanyDTO: ...
 
     @abstractmethod
-    async def list_companies(self) -> List[CompanyDTO]: ...
+    async def list_companies(
+        self, pagination: PaginationParamsDTO
+    ) -> List[CompanyDTO]: ...
 
     @abstractmethod
     async def delete_company(self, id: UUID) -> bool: ...

@@ -5,6 +5,7 @@ from uuid import uuid4
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.exceptions.custom import DatabaseException
+from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.company import CompanyDTO, CreateCompanyDTO
 from src.infrastructure.repositories.company_postgres import CompanyRepositoryPostgres
 
@@ -147,7 +148,7 @@ async def test_list_companies_success(repo, mock_session):
 
     expected_dtos = [MagicMock(), MagicMock()]
     with patch.object(CompanyDTO, 'model_validate', side_effect=expected_dtos) as mv:
-        result = await repo.list_companies()
+        result = await repo.list_companies(PaginationParamsDTO())
 
     assert result == expected_dtos
     assert mv.call_count == len(mock_orm_companies)
@@ -159,9 +160,89 @@ async def test_list_companies_rollback_on_error(repo, mock_session):
     mock_session.rollback = AsyncMock()
 
     with pytest.raises(DatabaseException, match='DB error'):
-        await repo.list_companies()
+        await repo.list_companies(PaginationParamsDTO())
 
     mock_session.rollback.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_list_companies_applies_filter_when_params_present(repo, mock_session):
+    class _DummyCol:
+        def __init__(self, name: str):
+            self.name = name
+
+        def __eq__(self, other):
+            return ('eq', self.name, other)
+
+        def ilike(self, pattern: str):
+            return ('ilike', self.name, pattern)
+
+        def desc(self):
+            return ('desc', self.name)
+
+    class _DummyCompany:
+        is_deleted = _DummyCol('is_deleted')
+        created_at = _DummyCol('created_at')
+        name = _DummyCol('name')
+
+    class _FakeQuery:
+        def __init__(self):
+            self.where_args = []
+            self.filter_args = []
+            self.order_by_args = []
+            self.offset_value = None
+            self.limit_value = None
+
+        def where(self, *args):
+            self.where_args.extend(args)
+            return self
+
+        def filter(self, *args):
+            self.filter_args.extend(args)
+            return self
+
+        def order_by(self, *args):
+            self.order_by_args.extend(args)
+            return self
+
+        def offset(self, value):
+            self.offset_value = value
+            return self
+
+        def limit(self, value):
+            self.limit_value = value
+            return self
+
+    fake_query = _FakeQuery()
+
+    def _fake_select(_model):  # noqa: ANN001
+        return fake_query
+
+    pagination = PaginationParamsDTO(filter_by='name', filter_value='John')
+
+    mock_orm_companies = [MagicMock()]
+    mock_scalar_result = MagicMock()
+    mock_scalar_result.all.return_value = mock_orm_companies
+    mock_result = MagicMock()
+    mock_result.scalars.return_value = mock_scalar_result
+    mock_session.execute = AsyncMock(return_value=mock_result)
+
+    expected_dtos = [MagicMock()]
+    with (
+        patch('src.infrastructure.repositories.company_postgres.select', _fake_select),
+        patch(
+            'src.infrastructure.repositories.company_postgres.Company', _DummyCompany
+        ),
+        patch.object(CompanyDTO, 'model_validate', side_effect=expected_dtos),
+    ):
+        result = await repo.list_companies(pagination)
+
+    assert ('ilike', 'name', '%John%') in fake_query.filter_args
+    assert ('desc', 'created_at') in fake_query.order_by_args
+    assert fake_query.offset_value == pagination.offset
+    assert fake_query.limit_value == pagination.limit
+    mock_session.execute.assert_awaited_once_with(fake_query)
+    assert result == expected_dtos
 
 
 @pytest.mark.asyncio

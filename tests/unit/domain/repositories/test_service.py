@@ -1,6 +1,7 @@
 from uuid import UUID, uuid4
 
 import pytest
+from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.service import CreateServiceDTO, ServiceDTO, UpdateServiceDTO
 from src.domain.repositories.service import ServiceRepository
 
@@ -60,7 +61,9 @@ class TestServiceRepositoryContract:
                     out if (id == service_id and company_id == out.company_id) else None
                 )
 
-            async def list_services(self, company_id: UUID) -> list[ServiceDTO]:
+            async def list_services(
+                self, pagination: PaginationParamsDTO, company_id: UUID
+            ) -> list[ServiceDTO]:
                 return [out]
 
             async def update_service(
@@ -72,7 +75,7 @@ class TestServiceRepositoryContract:
                 return id == service_id
 
         repo = ConcreteServiceRepository()
-        assert await repo.list_services(company_id) == [out]
+        assert await repo.list_services(PaginationParamsDTO(), company_id) == [out]
         assert await repo.create_service(create) == out
         assert await repo.get_service(service_id, company_id) == out
         assert (

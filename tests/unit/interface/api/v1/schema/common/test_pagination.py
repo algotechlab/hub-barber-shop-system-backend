@@ -28,6 +28,12 @@ def test_pagination_params_base_schema_default():
         ('name', 'João Silva'),
         ('document', '12345678900'),
         ('description', 'algum texto'),
+        ('email', 'john@example.com'),
+        ('phone', '11999999999'),
+        ('category', 'barba'),
+        ('slug', 'minha-barbearia'),
+        ('last_name', 'Silva'),
+        ('role', 'admin'),
     ],
 )
 def test_pagination_params_valid(filter_by, filter_value):
@@ -39,7 +45,18 @@ def test_pagination_params_valid(filter_by, filter_value):
 
 @pytest.mark.parametrize(
     'allowed_field',
-    ['username', 'name', 'document', 'description'],
+    [
+        'username',
+        'name',
+        'document',
+        'description',
+        'category',
+        'phone',
+        'email',
+        'slug',
+        'last_name',
+        'role',
+    ],
 )
 def test_pagination_params_all_allowed_filter_by(allowed_field):
     """Todos os campos permitidos em filter_by devem ser aceitos."""
@@ -57,7 +74,7 @@ def test_pagination_params_all_allowed_filter_by(allowed_field):
 
 @pytest.mark.parametrize(
     'invalid_filter_by',
-    ['email', 'id', 'invalid', '', 'USERNAME'],
+    ['id', 'invalid', '', 'USERNAME', 'created_at'],
 )
 def test_pagination_params_invalid_filter_by(invalid_filter_by):
     """filter_by fora da lista permitida deve levantar ValidationError."""

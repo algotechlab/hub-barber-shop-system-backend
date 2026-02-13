@@ -2,6 +2,7 @@ from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
+from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.company import CompanyDTO, CreateCompanyDTO
 from src.domain.execptions.company import (
     CompanyAlreadyExistsException,
@@ -89,10 +90,11 @@ async def test_list_companies_delegates_to_service():
     service.list_companies.return_value = []
     use_case = CompanyUseCase(service)
 
-    result = await use_case.list_companies()
+    pagination = PaginationParamsDTO()
+    result = await use_case.list_companies(pagination)
 
     assert result == []
-    service.list_companies.assert_awaited_once()
+    service.list_companies.assert_awaited_once_with(pagination)
 
 
 @pytest.mark.asyncio

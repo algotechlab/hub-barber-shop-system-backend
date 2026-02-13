@@ -1,9 +1,9 @@
 from typing import List, Optional
 from uuid import UUID
 
+from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.users import UpdateUserDTO, UserBaseDTO
 from src.domain.use_case.users import UsersUseCase
-from src.interface.api.v1.schema.common.pagination import PaginationParamsBaseSchema
 from src.interface.api.v1.schema.users import (
     CreateUserSchema,
     UpdateUserSchema,
@@ -16,9 +16,7 @@ class UsersController:
     def __init__(self, users_use_case: UsersUseCase):
         self.users_use_case = users_use_case
 
-    async def list_users(
-        self, pagination: PaginationParamsBaseSchema
-    ) -> List[UserSchema]:
+    async def list_users(self, pagination: PaginationParamsDTO) -> List[UserSchema]:
         users = await self.users_use_case.list_users(pagination)
         return [UserSchema(**user.model_dump()) for user in users]
 

@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from fastapi import UploadFile
+from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.product import ProductDTO
 from src.infrastructure.storage.s3 import UploadResult
 from src.interface.api.v1.controller.product import ProductController
@@ -34,10 +35,12 @@ class TestProductController:
         ]
 
         controller = ProductController(use_case, storage)
-        result = await controller.list_products(company_id=company_id)
+        pagination = PaginationParamsDTO()
+        result = await controller.list_products(pagination, company_id=company_id)
 
         assert len(result) == 1
         assert result[0].company_id == company_id
+        use_case.list_products.assert_awaited_once_with(pagination, company_id)
 
     @pytest.mark.asyncio
     async def test_create_product(self):

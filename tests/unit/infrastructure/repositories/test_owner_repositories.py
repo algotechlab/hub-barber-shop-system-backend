@@ -213,6 +213,8 @@ class TestOwnerRepositoryPostgres:
                 self.where_args = []
                 self.filter_args = []
                 self.order_by_args = []
+                self.offset_value = None
+                self.limit_value = None
 
             def where(self, *args):
                 self.where_args.extend(args)
@@ -224,6 +226,14 @@ class TestOwnerRepositoryPostgres:
 
             def order_by(self, *args):
                 self.order_by_args.extend(args)
+                return self
+
+            def offset(self, value):
+                self.offset_value = value
+                return self
+
+            def limit(self, value):
+                self.limit_value = value
                 return self
 
         fake_query = _FakeQuery()
@@ -252,6 +262,8 @@ class TestOwnerRepositoryPostgres:
 
         assert ('ilike', 'name', '%John%') in fake_query.filter_args
         assert ('desc', 'created_at') in fake_query.order_by_args
+        assert fake_query.offset_value == pagination.offset
+        assert fake_query.limit_value == pagination.limit
         mock_session.execute.assert_awaited_once_with(fake_query)
         assert result == expected_dtos
 

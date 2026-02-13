@@ -2,6 +2,7 @@ from uuid import UUID
 
 from fastapi import UploadFile
 
+from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.product import CreateProductDTO, UpdateProductDTO
 from src.domain.use_case.product import ProductUseCase
 from src.infrastructure.storage.s3 import S3Storage
@@ -19,8 +20,10 @@ class ProductController:
         self.product_use_case = product_use_case
         self.storage = storage
 
-    async def list_products(self, company_id: UUID) -> list[ProductSchema]:
-        products = await self.product_use_case.list_products(company_id)
+    async def list_products(
+        self, pagination: PaginationParamsDTO, company_id: UUID
+    ) -> list[ProductSchema]:
+        products = await self.product_use_case.list_products(pagination, company_id)
         return [ProductSchema(**product.model_dump()) for product in products]
 
     async def create_product(

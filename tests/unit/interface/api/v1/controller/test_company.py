@@ -2,6 +2,7 @@ from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
+from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.company import CompanyDTO
 from src.interface.api.v1.controller.company import CompanyController
 from src.interface.api.v1.schema.company import CreateCompanySchema
@@ -76,7 +77,8 @@ async def test_list_companies_returns_schema_list():
     use_case.list_companies.return_value = [company]
     controller = CompanyController(use_case)
 
-    result = await controller.list_companies()
+    pagination = PaginationParamsDTO()
+    result = await controller.list_companies(pagination)
 
     assert len(result) == 1
     assert result[0].id == company.id

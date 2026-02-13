@@ -1,6 +1,7 @@
 from typing import List, Optional
 from uuid import UUID
 
+from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.service import CreateServiceDTO, ServiceDTO, UpdateServiceDTO
 from src.domain.execptions.service import ServiceNotFoundException
 from src.domain.service.service import ServiceService
@@ -19,8 +20,10 @@ class ServiceUseCase:
             raise ServiceNotFoundException('Serviço não encontrado')
         return service
 
-    async def list_services(self, company_id: UUID) -> List[ServiceDTO]:
-        return await self.service_service.list_services(company_id)
+    async def list_services(
+        self, pagination: PaginationParamsDTO, company_id: UUID
+    ) -> List[ServiceDTO]:
+        return await self.service_service.list_services(pagination, company_id)
 
     async def update_service(
         self, id: UUID, service: UpdateServiceDTO, company_id: UUID

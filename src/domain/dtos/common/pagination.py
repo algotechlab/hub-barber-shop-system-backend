@@ -4,6 +4,23 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class PaginationParamsDTO(BaseModel):
+    page: Optional[int] = Field(
+        default=None,
+        ge=1,
+    )
+
+    offset: int = Field(
+        default=0,
+        ge=0,
+    )
+
+    limit: int = Field(
+        default=10,
+        ge=1,
+        le=100,
+        description='Limite de registros por página',
+    )
+
     filter_by: Optional[str] = Field(
         default=None, description='Campo utilizado para filtrar resultados'
     )
@@ -17,7 +34,18 @@ class PaginationParamsDTO(BaseModel):
     def validate_filter_fields(cls, value: Optional[str]) -> Optional[str]:
         if value is None:
             return value
-        allowed_fields = ['username', 'name', 'document', 'description']
+        allowed_fields = [
+            'username',
+            'name',
+            'document',
+            'description',
+            'category',
+            'phone',
+            'email',
+            'slug',
+            'last_name',
+            'role',
+        ]
         if value not in allowed_fields:
             raise ValueError(
                 f'O campo filter_by deve ser um dos  '

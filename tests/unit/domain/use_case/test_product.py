@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
+from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.product import CreateProductDTO, ProductDTO, UpdateProductDTO
 from src.domain.execptions.product import ProductNotFoundException
 from src.domain.use_case.product import ProductUseCase
@@ -80,9 +81,10 @@ async def test_list_products_delegates_to_service():
     use_case = ProductUseCase(service)
     company_id = uuid4()
 
-    result = await use_case.list_products(company_id)
+    pagination = PaginationParamsDTO()
+    result = await use_case.list_products(pagination, company_id)
 
-    service.list_products.assert_awaited_once_with(company_id)
+    service.list_products.assert_awaited_once_with(pagination, company_id)
     assert result == []
 
 

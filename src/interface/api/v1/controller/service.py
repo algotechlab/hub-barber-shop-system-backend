@@ -3,6 +3,7 @@ from uuid import UUID
 
 from fastapi import UploadFile
 
+from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.service import CreateServiceDTO, ServiceDTO, UpdateServiceDTO
 from src.domain.use_case.service import ServiceUseCase
 from src.infrastructure.storage.s3 import S3Storage
@@ -26,8 +27,10 @@ class ServiceController:
         created_service = await self.service_use_case.create_service(service_dto)
         return ServiceSchema(**created_service.model_dump())
 
-    async def list_services(self, company_id: UUID) -> List[ServiceSchema]:
-        services = await self.service_use_case.list_services(company_id)
+    async def list_services(
+        self, pagination: PaginationParamsDTO, company_id: UUID
+    ) -> List[ServiceSchema]:
+        services = await self.service_use_case.list_services(pagination, company_id)
         return [ServiceSchema(**service.model_dump()) for service in services]
 
     async def get_service(self, id: UUID, company_id: UUID) -> ServiceDTO:

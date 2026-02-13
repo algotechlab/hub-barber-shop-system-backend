@@ -1,6 +1,7 @@
 from typing import List, Optional
 from uuid import UUID
 
+from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.product import CreateProductDTO, ProductDTO, UpdateProductDTO
 from src.domain.repositories.product import ProductRepository
 
@@ -12,8 +13,10 @@ class ProductService:
     async def create_product(self, product: CreateProductDTO) -> ProductDTO:
         return await self.product_repository.create_product(product)
 
-    async def list_products(self, company_id: UUID) -> List[ProductDTO]:
-        return await self.product_repository.list_products(company_id)
+    async def list_products(
+        self, pagination: PaginationParamsDTO, company_id: UUID
+    ) -> List[ProductDTO]:
+        return await self.product_repository.list_products(pagination, company_id)
 
     async def get_product(self, id: UUID, company_id: UUID) -> Optional[ProductDTO]:
         return await self.product_repository.get_product(id, company_id)

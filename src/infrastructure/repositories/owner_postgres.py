@@ -84,6 +84,7 @@ class OwnerRepositoryPostgres(OwnerRepository):
                     )
                 )
 
+            query = query.offset(pagination.offset).limit(pagination.limit)
             result = await self.session.execute(query)
             owners = result.scalars().all()
             return [OwnerOutDTO.model_validate(owner) for owner in owners]

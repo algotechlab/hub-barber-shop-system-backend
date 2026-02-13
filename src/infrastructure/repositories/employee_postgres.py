@@ -69,18 +69,20 @@ class EmployeeRepositoryPostgres(EmployeeRepository):
         self, pagination: PaginationParamsDTO, company_id: UUID
     ) -> list[EmployeeOutDTO]:
         try:
-            query = select(Employee).where(
-                Employee.is_deleted.__eq__(False),
-                Employee.company_id.__eq__(company_id),
+            query = (
+                select(Employee)
+                .where(
+                    Employee.is_deleted.__eq__(False),
+                    Employee.company_id.__eq__(company_id),
+                )
+                .order_by(Employee.created_at.desc())
             )
 
             if pagination.filter_by and pagination.filter_value:
-                query = query.filter(
-                    getattr(Employee, pagination.filter_by).__eq__(
-                        pagination.filter_value
-                    )
-                )
+                column = getattr(Employee, pagination.filter_by)
+                query = query.where(column.ilike(f'%{pagination.filter_value}%'))
 
+            query = query.offset(pagination.offset).limit(pagination.limit)
             result = await self.session.execute(query)
             employees = result.scalars().all()
             return [EmployeeOutDTO.model_validate(employee) for employee in employees]

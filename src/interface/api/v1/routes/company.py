@@ -4,6 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Request, status
 
 from src.interface.api.v1.dependencies.common.auth import require_current_owner
+from src.interface.api.v1.dependencies.common.pagination import PaginationParamsDep
 from src.interface.api.v1.dependencies.company import CompanyRepositoryDep
 from src.interface.api.v1.schema.company import CompanyOutSchema, CreateCompanySchema
 
@@ -60,8 +61,10 @@ async def get_company(
         },
     },
 )
-async def list_companies(controller: CompanyRepositoryDep) -> List[CompanyOutSchema]:
-    return await controller.list_companies()
+async def list_companies(
+    controller: CompanyRepositoryDep, pagination: PaginationParamsDep
+) -> List[CompanyOutSchema]:
+    return await controller.list_companies(pagination)
 
 
 @router.delete(

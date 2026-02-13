@@ -1,6 +1,7 @@
 from typing import List
 from uuid import UUID
 
+from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.company import CreateCompanyDTO
 from src.domain.use_case.company import CompanyUseCase
 from src.interface.api.v1.schema.company import (
@@ -26,8 +27,10 @@ class CompanyController:
             return None
         return CompanyOutSchema(**company.model_dump())
 
-    async def list_companies(self) -> List[CompanyOutSchema]:
-        companies = await self.company_use_case.list_companies()
+    async def list_companies(
+        self, pagination: PaginationParamsDTO
+    ) -> List[CompanyOutSchema]:
+        companies = await self.company_use_case.list_companies(pagination)
         return [CompanyOutSchema(**company.model_dump()) for company in companies]
 
     async def delete_company(self, id: UUID) -> bool:

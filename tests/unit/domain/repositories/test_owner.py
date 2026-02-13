@@ -99,4 +99,4 @@ class TestOwnerRepositoryContract:
 
     def test_filters_are_validated_by_pagination_dto(self):
         with pytest.raises(ValidationError):
-            PaginationParamsDTO(filter_by='email', filter_value='x')
+            PaginationParamsDTO(filter_by='invalid_field', filter_value='x')

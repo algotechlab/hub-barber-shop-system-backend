@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from fastapi import UploadFile
+from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.service import ServiceDTO
 from src.infrastructure.storage.s3 import UploadResult
 from src.interface.api.v1.controller.service import ServiceController
@@ -33,10 +34,12 @@ class TestServiceController:
         ]
 
         controller = ServiceController(use_case, storage)
-        result = await controller.list_services(company_id=company_id)
+        pagination = PaginationParamsDTO()
+        result = await controller.list_services(pagination, company_id=company_id)
 
         assert len(result) == 1
         assert result[0].name == 'Corte'
+        use_case.list_services.assert_awaited_once_with(pagination, company_id)
 
     @pytest.mark.asyncio
     async def test_create_service(self):

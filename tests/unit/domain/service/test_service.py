@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
+from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.service import CreateServiceDTO, ServiceDTO, UpdateServiceDTO
 from src.domain.service.service import ServiceService
 
@@ -63,9 +64,10 @@ async def test_list_services_delegates_to_repository():
     company_id = uuid4()
     repo.list_services.return_value = []
 
-    result = await service.list_services(company_id)
+    pagination = PaginationParamsDTO()
+    result = await service.list_services(pagination, company_id)
 
-    repo.list_services.assert_awaited_once_with(company_id)
+    repo.list_services.assert_awaited_once_with(pagination, company_id)
     assert result == []
 
 

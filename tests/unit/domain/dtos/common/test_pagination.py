@@ -12,6 +12,7 @@ pytestmark = pytest.mark.unit
         (None, None, True),  # Sem filtro
         ('username', 'john', True),  # Filtro válido
         ('username', '123', True),  # Filtro com valor numérico como str
+        ('email', 'john', True),  # Campo agora permitido
     ],
 )
 def test_pagination_params_valid(filter_by, filter_value, should_pass):
@@ -29,8 +30,11 @@ def test_pagination_params_valid(filter_by, filter_value, should_pass):
     ('filter_by', 'filter_value', 'expected_msg'),
     [
         # filter_by inválido (nota o espaço extra no schema: "dos  seguintes")
-        ('email', 'john', 'O campo filter_by deve ser um dos  seguintes: username'),
-        ('invalid', None, 'O campo filter_by deve ser um dos  seguintes: username'),
+        (
+            'invalid',
+            None,
+            'O campo filter_by deve ser um dos  seguintes:',
+        ),
         # Par inválido: filter_by sem filter_value
         ('username', None, 'Se você definiu filter_by, precisa enviar o filter_value.'),
         # Par inválido: filter_value sem filter_by
@@ -51,3 +55,20 @@ def test_pagination_params_invalid(filter_by, filter_value, expected_msg):
 
     errors = exc_info.value.errors()
     assert any(expected_msg in error['msg'] for error in errors)
+
+
+@pytest.mark.parametrize(
+    ('kwargs', 'expected_error_type'),
+    [
+        ({'offset': -1}, 'greater_than_equal'),
+        ({'limit': 0}, 'greater_than_equal'),
+        ({'limit': 101}, 'less_than_equal'),
+        ({'page': 0}, 'greater_than_equal'),
+    ],
+)
+def test_pagination_params_invalid_paging_fields(kwargs, expected_error_type):
+    with pytest.raises(ValidationError) as exc_info:
+        PaginationParamsDTO(**kwargs)
+
+    errors = exc_info.value.errors()
+    assert any(expected_error_type == error['type'] for error in errors)

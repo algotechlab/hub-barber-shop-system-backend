@@ -1,6 +1,7 @@
 from typing import List
 from uuid import UUID
 
+from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.company import CompanyDTO, CreateCompanyDTO
 from src.domain.repositories.company import CompanyRepository
 
@@ -18,8 +19,8 @@ class CompanyService:
     async def get_company(self, id: UUID) -> CompanyDTO:
         return await self.company_repository.get_company(id)
 
-    async def list_companies(self) -> List[CompanyDTO]:
-        return await self.company_repository.list_companies()
+    async def list_companies(self, pagination: PaginationParamsDTO) -> List[CompanyDTO]:
+        return await self.company_repository.list_companies(pagination)
 
     async def delete_company(self, id: UUID) -> bool:
         return await self.company_repository.delete_company(id)
