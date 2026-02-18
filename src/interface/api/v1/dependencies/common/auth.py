@@ -193,6 +193,52 @@ async def require_current_user(
     return user_id
 
 
+async def require_current_employee_or_user(
+    request: Request,
+    session: VerifiedSessionDep,
+    authorization: AuthorizationHeaderDep,
+) -> UUID:
+    """
+    Valida o Bearer token e aceita typ:
+    - employee: salva employee_id + company_id
+    - user: salva user_id + company_id
+
+    Útil para proteger um router inteiro quando
+    a rota pode ser acessada por employee OU user.
+    """
+    token = _parse_bearer_token(authorization)
+    payload = _decode_token(token)
+
+    token_type = payload.get('typ')
+    if token_type == TOKEN_TYPE_EMPLOYEE:
+        employee_id = _get_uuid_claim(payload, 'sub')
+        company_id = _get_uuid_claim(payload, 'company_id')
+
+        employee_repo = EmployeeRepositoryPostgres(session)
+        employee = await employee_repo.get_employee(employee_id, company_id=company_id)
+        if employee is None:
+            raise UnauthorizedException('Employee inválido')
+
+        request.state.employee_id = employee_id
+        request.state.company_id = company_id
+        return employee_id
+
+    if token_type == TOKEN_TYPE_USER:
+        user_id = _get_uuid_claim(payload, 'sub')
+        company_id = _get_uuid_claim(payload, 'company_id')
+
+        users_repo = UsersRepositoryPostgres(session)
+        user = await users_repo.get_user(user_id)
+        if user is None or user.company_id != company_id:
+            raise UnauthorizedException('User inválido')
+
+        request.state.user_id = user_id
+        request.state.company_id = company_id
+        return user_id
+
+    raise UnauthorizedException('Token inválido')
+
+
 CurrentOwnerIdDep = Annotated[UUID, Depends(get_current_owner_id)]
 CurrentEmployeeIdDep = Annotated[UUID, Depends(get_current_employee_id)]
 CurrentUserIdDep = Annotated[UUID, Depends(get_current_user_id)]

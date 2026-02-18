@@ -26,7 +26,7 @@ class Schedule(BaseModel):
     time_register: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, index=True
     )
-    time_start: Mapped[datetime] = mapped_column(DateTime, nullable=False, index=True)
-    time_end: Mapped[datetime] = mapped_column(DateTime, nullable=False, index=True)
+    time_start: Mapped[datetime] = mapped_column(DateTime, nullable=True, index=True)
+    time_end: Mapped[datetime] = mapped_column(DateTime, nullable=True, index=True)
     status: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     is_canceled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
