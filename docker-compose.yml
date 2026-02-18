@@ -1,48 +1,53 @@
-version: '3.8'
-
 services:
-  flask_db:
+
+  barbersystem_database:
     image: postgres:15
-    container_name: flask_db
+    container_name: barbersystem_database
     restart: always
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=barbershop_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: barbersystem
     volumes:
-      - flask_db_data:/var/lib/postgresql/data
+      - fastapi_database_data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d
     ports:
       - "5477:5432"
-    command: 
-      - "postgres"
-      - "-c"
-      - "listen_addresses=*"
-      - "-c"
-      - "max_connections=200"
-      - "-c"
-      - "shared_buffers=256MB"
-      - "-c"
-      - "work_mem=8MB"
-      - "-c"
-      - "log_min_messages=WARNING"
+    networks:
+      - barbersystem-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d barbersystem"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
 
-  flask_app:
+  fast_api-barber-shop-system-backend:
+    container_name: fast_api_barber_shop_system_backend
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: flask_app
-    depends_on:
-      - flask_db
     restart: always
+    depends_on:
+      barbersystem_database:
+        condition: service_healthy
     ports:
       - "8000:8000"
     environment:
-      - SQLALCHEMY_DATABASE_URI=postgresql://postgres:postgres@flask_db:5432/barbershop_db
-      - DEBUG=True
-      - ALLOWED_HOSTS=localhost,127.0.0.1,flask_app
+      SQLALCHEMY_DATABASE_URI: postgresql+asyncpg://postgres:postgres@barbersystem_database:5432/barbersystem
+      DEBUG: "True"
+      ALLOWED_HOSTS: localhost,127.0.0.1,barbersystem-api
     volumes:
       - .:/app
-    command: gunicorn --config gunicorn.conf.py -b 0.0.0.0:8000 manage:app
+    networks:
+      - barbersystem-net
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000
+
 
 volumes:
-  flask_db_data:
+  postgres_data:
+  fastapi_database_data:
+
+networks:
+  barbersystem-net:
+    driver: bridge
