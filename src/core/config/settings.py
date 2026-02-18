@@ -2,7 +2,7 @@ import os
 from functools import lru_cache
 from typing import Any, ClassVar, List, Union
 
-from pydantic import AnyHttpUrl, field_validator
+from pydantic import AnyHttpUrl, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -29,10 +29,15 @@ class Settings(BaseSettings):
 
     DEBUG: bool = False
 
-    # Banco de dados com placeholder para o docker
-    SQLALCHEMY_DATABASE_URI: str = (
-        'postgresql+asyncpg://postgres:postgres@localhost:5477/barbersystem'
-    )
+    # Banco de dados
+    # Preferencialmente defina `SQLALCHEMY_DATABASE_URI`. Se não for definido,
+    # a URI é montada a partir das variáveis abaixo.
+    DATABASE_HOST: str = 'localhost'
+    DATABASE_PORT: int = 5432
+    DATABASE_USER: str = 'postgres'
+    DATABASE_PASSWORD: str = 'postgres'
+    DATABASE_NAME: str = 'barbersystem'
+    SQLALCHEMY_DATABASE_URI: str | None = None
     DATABASE_POOL_SIZE: int = 5
     DATABASE_MAX_OVERFLOW: int = 10
     DATABASE_TIMEOUT: int = 30
@@ -76,6 +81,15 @@ class Settings(BaseSettings):
         if isinstance(value, str):
             return [origin.strip() for origin in value.split(',')]
         return value or []
+
+    @model_validator(mode='after')
+    def build_sqlalchemy_database_uri(self) -> 'Settings':
+        if not self.SQLALCHEMY_DATABASE_URI:
+            self.SQLALCHEMY_DATABASE_URI = (
+                f'postgresql+asyncpg://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}'
+                f'@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}'
+            )
+        return self
 
 
 @lru_cache()

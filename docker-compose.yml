@@ -12,7 +12,7 @@ services:
       - fastapi_database_data:/var/lib/postgresql/data
       - ./docker/postgres/init:/docker-entrypoint-initdb.d
     ports:
-      - "5477:5432"
+      - "${DATABASE_PORT}:5432"
     networks:
       - barbersystem-net
     healthcheck:
@@ -32,16 +32,18 @@ services:
       barbersystem_database:
         condition: service_healthy
     ports:
-      - "8000:8000"
+      - "${API_PORT}:${API_PORT}"
     environment:
+      # Dentro da rede do Docker, o Postgres escuta em 5432 (porta interna do container),
+      # independente da porta exposta no host via ${DATABASE_PORT}.
       SQLALCHEMY_DATABASE_URI: postgresql+asyncpg://postgres:postgres@barbersystem_database:5432/barbersystem
-      DEBUG: "True"
-      ALLOWED_HOSTS: localhost,127.0.0.1,barbersystem-api
+      DEBUG: "${DEBUG}"
+      ALLOWED_HOSTS: "${ALLOWED_HOSTS}"
     volumes:
       - .:/app
     networks:
       - barbersystem-net
-    command: uvicorn src.main:app --host 0.0.0.0 --port 8000
+    command: uvicorn src.main:app --host 0.0.0.0 --port ${API_PORT}
 
 
 volumes:
