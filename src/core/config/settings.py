@@ -59,11 +59,11 @@ class Settings(BaseSettings):
     JWT_EXPIRE_MINUTES: int = 36000
 
     # AWS S3 (Upload de imagens)
-    AWS_REGION: str = 'us-east-1'
-    AWS_S3_BUCKET_NAME: str = ''
-    AWS_S3_PUBLIC_BASE_URL: str = ''
+    AWS_REGION: str = 'us-east-2'
+    AWS_S3_BUCKET_NAME: str = 'algo-tech-barber'
+    AWS_S3_PUBLIC_BASE_URL: str = 'https://algo-tech-barber.s3.us-east-2.amazonaws.com'
     AWS_S3_ENDPOINT_URL: str = ''
-    AWS_S3_PUBLIC_READ: bool = True
+    AWS_S3_PUBLIC_READ: bool = False
 
     AWS_ACCESS_KEY_ID: str = ''
     AWS_SECRET_ACCESS_KEY: str = ''
