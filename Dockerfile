@@ -6,6 +6,7 @@ ENV PYTHONPATH=/src
 
 # Dependências do Postgres + compilação
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
     libpq-dev \
     build-essential \
     gcc \
