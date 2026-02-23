@@ -28,6 +28,8 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: always
+    env_file:
+      - .env
     depends_on:
       barbersystem_database:
         condition: service_healthy

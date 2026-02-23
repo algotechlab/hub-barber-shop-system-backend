@@ -1,11 +1,19 @@
 from __future__ import annotations
 
+import logging
 import mimetypes
 from dataclasses import dataclass
 from uuid import UUID, uuid4
 
 import boto3
 from botocore.client import BaseClient
+from botocore.exceptions import (
+    BotoCoreError,
+    ClientError,
+    EndpointConnectionError,
+    NoCredentialsError,
+    PartialCredentialsError,
+)
 from fastapi import UploadFile
 from starlette.concurrency import run_in_threadpool
 
@@ -17,6 +25,8 @@ from src.domain.execptions.upload import (
 )
 
 MAX_EXTENSION_LEN = 10
+
+logger = logging.getLogger(__name__)
 
 
 def _split_csv(value: str) -> set[str]:
@@ -71,11 +81,12 @@ class S3Storage:
         client = boto3.client('s3', **kwargs)
         return S3Storage(client=client)
 
-    async def upload_product_image(
+    async def _upload_company_image(
         self,
         *,
         file: UploadFile,
         company_id: UUID,
+        folder: str,
     ) -> UploadResult:
         settings = get_settings()
 
@@ -94,7 +105,7 @@ class S3Storage:
             raise UploadFailedException('Bucket não configurado')
 
         ext = _guess_extension(file.filename, content_type)
-        key = f'companies/{company_id}/products/{uuid4().hex}{ext}'
+        key = f'companies/{company_id}/{folder}/{uuid4().hex}{ext}'
 
         extra_args: dict[str, str] = {'ContentType': content_type}
         if settings.AWS_S3_PUBLIC_READ:
@@ -108,8 +119,68 @@ class S3Storage:
                 Body=data,
                 **extra_args,
             )
+        except (NoCredentialsError, PartialCredentialsError) as error:
+            logger.exception(
+                'S3 upload failed: missing credentials',
+                extra={
+                    'bucket': settings.AWS_S3_BUCKET_NAME,
+                    'region': settings.AWS_REGION,
+                    'endpoint_url': settings.AWS_S3_ENDPOINT_URL,
+                },
+            )
+            raise UploadFailedException('Credenciais AWS não configuradas') from error
+        except EndpointConnectionError as error:
+            logger.exception(
+                'S3 upload failed: endpoint connection error',
+                extra={
+                    'bucket': settings.AWS_S3_BUCKET_NAME,
+                    'region': settings.AWS_REGION,
+                    'endpoint_url': settings.AWS_S3_ENDPOINT_URL,
+                },
+            )
+            raise UploadFailedException('Falha ao conectar ao S3') from error
+        except ClientError as error:
+            logger.exception(
+                'S3 upload failed: client error',
+                extra={
+                    'bucket': settings.AWS_S3_BUCKET_NAME,
+                    'region': settings.AWS_REGION,
+                    'endpoint_url': settings.AWS_S3_ENDPOINT_URL,
+                    'error_code': (error.response or {}).get('Error', {}).get('Code'),
+                },
+            )
+            message = 'Erro ao enviar arquivo'
+            if settings.DEBUG:
+                err_code = (error.response or {}).get('Error', {}).get('Code')
+                err_msg = (error.response or {}).get('Error', {}).get('Message')
+                message = f'{message}: {err_code or "ClientError"} - {err_msg or str(error)}'
+            raise UploadFailedException(message) from error
+        except BotoCoreError as error:
+            logger.exception(
+                'S3 upload failed: botocore error',
+                extra={
+                    'bucket': settings.AWS_S3_BUCKET_NAME,
+                    'region': settings.AWS_REGION,
+                    'endpoint_url': settings.AWS_S3_ENDPOINT_URL,
+                },
+            )
+            message = 'Erro ao enviar arquivo'
+            if settings.DEBUG:
+                message = f'{message}: {type(error).__name__} - {error}'
+            raise UploadFailedException(message) from error
         except Exception as error:  # pragma: no cover (driver-specific)
-            raise UploadFailedException('Erro ao enviar arquivo') from error
+            logger.exception(
+                'S3 upload failed: unexpected error',
+                extra={
+                    'bucket': settings.AWS_S3_BUCKET_NAME,
+                    'region': settings.AWS_REGION,
+                    'endpoint_url': settings.AWS_S3_ENDPOINT_URL,
+                },
+            )
+            message = 'Erro ao enviar arquivo'
+            if settings.DEBUG:
+                message = f'{message}: {type(error).__name__} - {error}'
+            raise UploadFailedException(message) from error
 
         url = _build_public_url(
             bucket=settings.AWS_S3_BUCKET_NAME,
@@ -118,7 +189,22 @@ class S3Storage:
             base_url=settings.AWS_S3_PUBLIC_BASE_URL,
         )
         return UploadResult(
-            url=url, key=key, content_type=content_type, size_bytes=size_bytes
+            url=url,
+            key=key,
+            content_type=content_type,
+            size_bytes=size_bytes,
+        )
+
+    async def upload_product_image(
+        self,
+        *,
+        file: UploadFile,
+        company_id: UUID,
+    ) -> UploadResult:
+        return await self._upload_company_image(
+            file=file,
+            company_id=company_id,
+            folder='products',
         )
 
     async def upload_service_image(
@@ -127,46 +213,8 @@ class S3Storage:
         file: UploadFile,
         company_id: UUID,
     ) -> UploadResult:
-        settings = get_settings()
-
-        allowed = _split_csv(settings.S3_ALLOWED_IMAGE_CONTENT_TYPES)
-        content_type = (file.content_type or '').lower()
-        if not content_type or content_type not in allowed:
-            raise InvalidFileTypeException('Tipo de arquivo inválido')
-
-        data = await file.read()
-        size_bytes = len(data)
-        max_bytes = settings.S3_UPLOAD_MAX_SIZE_MB * 1024 * 1024
-        if size_bytes > max_bytes:
-            raise FileTooLargeException('Arquivo muito grande')
-
-        if not settings.AWS_S3_BUCKET_NAME:
-            raise UploadFailedException('Bucket não configurado')
-
-        ext = _guess_extension(file.filename, content_type)
-        key = f'companies/{company_id}/services/{uuid4().hex}{ext}'
-
-        extra_args: dict[str, str] = {'ContentType': content_type}
-        if settings.AWS_S3_PUBLIC_READ:
-            extra_args['ACL'] = 'public-read'
-
-        try:
-            await run_in_threadpool(
-                self._client.put_object,
-                Bucket=settings.AWS_S3_BUCKET_NAME,
-                Key=key,
-                Body=data,
-                **extra_args,
-            )
-        except Exception as error:  # pragma: no cover (driver-specific)
-            raise UploadFailedException('Erro ao enviar arquivo') from error
-
-        url = _build_public_url(
-            bucket=settings.AWS_S3_BUCKET_NAME,
-            region=settings.AWS_REGION,
-            key=key,
-            base_url=settings.AWS_S3_PUBLIC_BASE_URL,
-        )
-        return UploadResult(
-            url=url, key=key, content_type=content_type, size_bytes=size_bytes
+        return await self._upload_company_image(
+            file=file,
+            company_id=company_id,
+            folder='services',
         )
