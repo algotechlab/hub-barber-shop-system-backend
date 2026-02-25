@@ -7,7 +7,7 @@ from src.domain.dtos.auth import (
     TokenWithCompanyDTO,
     UserLoginDTO,
 )
-from src.domain.execptions.auth import InvalidCredentialsException
+from src.domain.exceptions.auth import InvalidCredentialsException
 from src.domain.service.employee import EmployeeService
 from src.domain.service.owner import OwnerService
 from src.domain.service.users import UsersService

@@ -6,7 +6,7 @@ from uuid import uuid4
 import pytest
 from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.product import CreateProductDTO, ProductDTO, UpdateProductDTO
-from src.domain.execptions.product import ProductNotFoundException
+from src.domain.exceptions.product import ProductNotFoundException
 from src.domain.use_case.product import ProductUseCase
 
 pytestmark = pytest.mark.unit

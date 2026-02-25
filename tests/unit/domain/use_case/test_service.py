@@ -5,7 +5,7 @@ from uuid import uuid4
 import pytest
 from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.service import CreateServiceDTO, ServiceDTO, UpdateServiceDTO
-from src.domain.execptions.service import ServiceNotFoundException
+from src.domain.exceptions.service import ServiceNotFoundException
 from src.domain.use_case.service import ServiceUseCase
 
 pytestmark = pytest.mark.unit

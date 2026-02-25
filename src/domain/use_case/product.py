@@ -3,7 +3,7 @@ from uuid import UUID
 
 from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.product import CreateProductDTO, ProductDTO, UpdateProductDTO
-from src.domain.execptions.product import ProductNotFoundException
+from src.domain.exceptions.product import ProductNotFoundException
 from src.domain.service.product import ProductService
 
 

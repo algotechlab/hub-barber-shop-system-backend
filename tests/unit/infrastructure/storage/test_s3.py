@@ -3,7 +3,13 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock
 
 import pytest
-from src.domain.execptions.upload import (
+from botocore.exceptions import (
+    BotoCoreError,
+    ClientError,
+    EndpointConnectionError,
+    NoCredentialsError,
+)
+from src.domain.exceptions.upload import (
     FileTooLargeException,
     InvalidFileTypeException,
     UploadFailedException,
@@ -310,3 +316,146 @@ class TestS3StorageUpload:
 
         with pytest.raises(UploadFailedException):
             await storage.upload_service_image(file=file, company_id=uuid.uuid4())
+
+    @pytest.mark.asyncio
+    async def test_upload_product_image_handles_missing_credentials(self, monkeypatch):
+        settings = SimpleNamespace(
+            AWS_REGION='us-east-1',
+            AWS_S3_BUCKET_NAME='bucket',
+            AWS_S3_PUBLIC_BASE_URL='',
+            AWS_S3_ENDPOINT_URL='',
+            AWS_S3_PUBLIC_READ=True,
+            AWS_ACCESS_KEY_ID='',
+            AWS_SECRET_ACCESS_KEY='',
+            S3_UPLOAD_MAX_SIZE_MB=5,
+            S3_ALLOWED_IMAGE_CONTENT_TYPES='image/png',
+            DEBUG=False,
+        )
+        monkeypatch.setattr(
+            'src.infrastructure.storage.s3.get_settings', lambda: settings
+        )
+
+        async def fail(*_args, **_kwargs):
+            raise NoCredentialsError()
+
+        monkeypatch.setattr('src.infrastructure.storage.s3.run_in_threadpool', fail)
+
+        storage = S3Storage(client=Mock())
+        file = AsyncMock()
+        file.filename = 'a.png'
+        file.content_type = 'image/png'
+        file.read.return_value = b'123'
+
+        with pytest.raises(
+            UploadFailedException, match='Credenciais AWS não configuradas'
+        ):
+            await storage.upload_product_image(file=file, company_id=uuid.uuid4())
+
+    @pytest.mark.asyncio
+    async def test_upload_product_image_handles_endpoint_connection_error(
+        self, monkeypatch
+    ):
+        settings = SimpleNamespace(
+            AWS_REGION='us-east-1',
+            AWS_S3_BUCKET_NAME='bucket',
+            AWS_S3_PUBLIC_BASE_URL='',
+            AWS_S3_ENDPOINT_URL='http://localhost:4566',
+            AWS_S3_PUBLIC_READ=True,
+            AWS_ACCESS_KEY_ID='',
+            AWS_SECRET_ACCESS_KEY='',
+            S3_UPLOAD_MAX_SIZE_MB=5,
+            S3_ALLOWED_IMAGE_CONTENT_TYPES='image/png',
+            DEBUG=False,
+        )
+        monkeypatch.setattr(
+            'src.infrastructure.storage.s3.get_settings', lambda: settings
+        )
+
+        async def fail(*_args, **_kwargs):
+            raise EndpointConnectionError(endpoint_url='http://localhost:4566')
+
+        monkeypatch.setattr('src.infrastructure.storage.s3.run_in_threadpool', fail)
+
+        storage = S3Storage(client=Mock())
+        file = AsyncMock()
+        file.filename = 'a.png'
+        file.content_type = 'image/png'
+        file.read.return_value = b'123'
+
+        with pytest.raises(UploadFailedException, match='Falha ao conectar ao S3'):
+            await storage.upload_product_image(file=file, company_id=uuid.uuid4())
+
+    @pytest.mark.asyncio
+    async def test_upload_product_image_handles_client_error_with_debug_message(
+        self, monkeypatch
+    ):
+        settings = SimpleNamespace(
+            AWS_REGION='us-east-1',
+            AWS_S3_BUCKET_NAME='bucket',
+            AWS_S3_PUBLIC_BASE_URL='',
+            AWS_S3_ENDPOINT_URL='',
+            AWS_S3_PUBLIC_READ=True,
+            AWS_ACCESS_KEY_ID='',
+            AWS_SECRET_ACCESS_KEY='',
+            S3_UPLOAD_MAX_SIZE_MB=5,
+            S3_ALLOWED_IMAGE_CONTENT_TYPES='image/png',
+            DEBUG=True,
+        )
+        monkeypatch.setattr(
+            'src.infrastructure.storage.s3.get_settings', lambda: settings
+        )
+
+        async def fail(*_args, **_kwargs):
+            raise ClientError(
+                {'Error': {'Code': 'AccessDenied', 'Message': 'Denied'}}, 'PutObject'
+            )
+
+        monkeypatch.setattr('src.infrastructure.storage.s3.run_in_threadpool', fail)
+
+        storage = S3Storage(client=Mock())
+        file = AsyncMock()
+        file.filename = 'a.png'
+        file.content_type = 'image/png'
+        file.read.return_value = b'123'
+
+        with pytest.raises(
+            UploadFailedException,
+            match='Erro ao enviar arquivo: AccessDenied - Denied',
+        ):
+            await storage.upload_product_image(file=file, company_id=uuid.uuid4())
+
+    @pytest.mark.asyncio
+    async def test_upload_product_image_handles_botocore_error_with_debug_message(
+        self, monkeypatch
+    ):
+        settings = SimpleNamespace(
+            AWS_REGION='us-east-1',
+            AWS_S3_BUCKET_NAME='bucket',
+            AWS_S3_PUBLIC_BASE_URL='',
+            AWS_S3_ENDPOINT_URL='',
+            AWS_S3_PUBLIC_READ=True,
+            AWS_ACCESS_KEY_ID='',
+            AWS_SECRET_ACCESS_KEY='',
+            S3_UPLOAD_MAX_SIZE_MB=5,
+            S3_ALLOWED_IMAGE_CONTENT_TYPES='image/png',
+            DEBUG=True,
+        )
+        monkeypatch.setattr(
+            'src.infrastructure.storage.s3.get_settings', lambda: settings
+        )
+
+        async def fail(*_args, **_kwargs):
+            raise BotoCoreError(error_msg='boom')
+
+        monkeypatch.setattr('src.infrastructure.storage.s3.run_in_threadpool', fail)
+
+        storage = S3Storage(client=Mock())
+        file = AsyncMock()
+        file.filename = 'a.png'
+        file.content_type = 'image/png'
+        file.read.return_value = b'123'
+        message = (
+            'Erro ao enviar arquivo: BotoCoreError - An unspecified error occurred'
+        )
+        with pytest.raises(UploadFailedException, match=message):
+            await storage.upload_product_image(file=file, company_id=uuid.uuid4())

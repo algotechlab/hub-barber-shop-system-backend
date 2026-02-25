@@ -154,3 +154,19 @@ def test_get_settings_has_expected_attributes():
     assert isinstance(settings.BACKEND_CORS_ORIGINS, list)
     assert isinstance(settings.SQLALCHEMY_DATABASE_URI, str)
     assert 'postgresql' in settings.SQLALCHEMY_DATABASE_URI
+
+
+def test_build_sqlalchemy_database_uri_when_missing():
+    """Monta SQLALCHEMY_DATABASE_URI quando o valor não é informado."""
+    settings = Settings(
+        SQLALCHEMY_DATABASE_URI=None,
+        DATABASE_USER='user',
+        DATABASE_PASSWORD='pass',
+        DATABASE_HOST='db-host',
+        DATABASE_PORT=5433,
+        DATABASE_NAME='db_name',
+    )
+
+    assert settings.SQLALCHEMY_DATABASE_URI == (
+        'postgresql+asyncpg://user:pass@db-host:5433/db_name'
+    )
