@@ -4,7 +4,7 @@ from uuid import UUID
 from src.core.utils.get_argon import hash_password
 from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.owner import CreateOwnerDTO, OwnerOutDTO, UpdateOwnerDTO
-from src.domain.execptions.owner import (
+from src.domain.exceptions.owner import (
     OwnerAlreadyExistsException,
     OwnerNotFoundException,
 )

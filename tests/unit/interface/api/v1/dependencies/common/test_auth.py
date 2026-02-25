@@ -3,12 +3,13 @@ from uuid import uuid4
 
 import jwt
 import pytest
-from src.domain.execptions.auth import UnauthorizedException
+from src.domain.exceptions.auth import UnauthorizedException
 from src.interface.api.v1.dependencies.common.auth import (
     get_current_employee_id,
     get_current_owner_id,
     get_current_user_id,
     require_current_employee,
+    require_current_employee_or_owner,
     require_current_employee_or_user,
     require_current_owner,
     require_current_user,
@@ -812,6 +813,113 @@ async def test_require_current_employee_or_user_raises_when_user_invalid():
     ):
         with pytest.raises(UnauthorizedException, match='User inválido'):
             await require_current_employee_or_user(
+                request=request,
+                session=AsyncMock(),
+                authorization='Bearer token',
+            )
+
+
+@pytest.mark.asyncio
+async def test_require_current_employee_or_owner_routes_to_employee_dependency():
+    request = Request({
+        'type': 'http',
+        'headers': [],
+        'method': 'GET',
+        'path': '/',
+        'query_string': b'',
+        'scheme': 'http',
+        'server': ('test', 80),
+        'client': ('test', 1234),
+    })
+    employee_id = uuid4()
+
+    with (
+        patch(
+            'src.interface.api.v1.dependencies.common.auth._parse_bearer_token',
+            return_value='token',
+        ),
+        patch(
+            'src.interface.api.v1.dependencies.common.auth._decode_token',
+            return_value={'typ': 'employee'},
+        ),
+        patch(
+            'src.interface.api.v1.dependencies.common.auth.require_current_employee',
+            new=AsyncMock(return_value=employee_id),
+        ) as require_employee_mock,
+    ):
+        result = await require_current_employee_or_owner(
+            request=request,
+            session=AsyncMock(),
+            authorization='Bearer token',
+        )
+
+    assert result == employee_id
+    require_employee_mock.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_require_current_employee_or_owner_routes_to_owner_dependency():
+    request = Request({
+        'type': 'http',
+        'headers': [],
+        'method': 'GET',
+        'path': '/',
+        'query_string': b'',
+        'scheme': 'http',
+        'server': ('test', 80),
+        'client': ('test', 1234),
+    })
+    owner_id = uuid4()
+
+    with (
+        patch(
+            'src.interface.api.v1.dependencies.common.auth._parse_bearer_token',
+            return_value='token',
+        ),
+        patch(
+            'src.interface.api.v1.dependencies.common.auth._decode_token',
+            return_value={'typ': 'owner'},
+        ),
+        patch(
+            'src.interface.api.v1.dependencies.common.auth.require_current_owner',
+            new=AsyncMock(return_value=owner_id),
+        ) as require_owner_mock,
+    ):
+        result = await require_current_employee_or_owner(
+            request=request,
+            session=AsyncMock(),
+            authorization='Bearer token',
+        )
+
+    assert result == owner_id
+    require_owner_mock.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_require_current_employee_or_owner_raises_for_invalid_token_type():
+    request = Request({
+        'type': 'http',
+        'headers': [],
+        'method': 'GET',
+        'path': '/',
+        'query_string': b'',
+        'scheme': 'http',
+        'server': ('test', 80),
+        'client': ('test', 1234),
+    })
+
+    with (
+        patch(
+            'src.interface.api.v1.dependencies.common.auth._parse_bearer_token',
+            return_value='token',
+        ),
+        patch(
+            'src.interface.api.v1.dependencies.common.auth._decode_token',
+            return_value={'typ': 'user'},
+        ),
+    ):
+        with pytest.raises(UnauthorizedException, match='Token inválido'):
+            await require_current_employee_or_owner(
                 request=request,
                 session=AsyncMock(),
                 authorization='Bearer token',

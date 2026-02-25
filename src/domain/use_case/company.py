@@ -3,7 +3,7 @@ from uuid import UUID
 
 from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.company import CompanyDTO, CreateCompanyDTO
-from src.domain.execptions.company import (
+from src.domain.exceptions.company import (
     CompanyAlreadyExistsException,
     CompanyNotFoundException,
 )

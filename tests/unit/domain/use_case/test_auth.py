@@ -10,7 +10,7 @@ from src.domain.dtos.auth import (
     UserAuthDTO,
     UserLoginDTO,
 )
-from src.domain.execptions.auth import InvalidCredentialsException
+from src.domain.exceptions.auth import InvalidCredentialsException
 from src.domain.use_case.auth import AuthUseCase
 
 pytestmark = pytest.mark.unit

@@ -3,7 +3,7 @@ from uuid import UUID
 
 from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.service import CreateServiceDTO, ServiceDTO, UpdateServiceDTO
-from src.domain.execptions.service import ServiceNotFoundException
+from src.domain.exceptions.service import ServiceNotFoundException
 from src.domain.service.service import ServiceService
 
 

@@ -5,7 +5,7 @@ import jwt
 from fastapi import Depends, Header, Request
 
 from src.core.config.settings import get_settings
-from src.domain.execptions.auth import UnauthorizedException
+from src.domain.exceptions.auth import UnauthorizedException
 from src.infrastructure.repositories.employee_postgres import EmployeeRepositoryPostgres
 from src.infrastructure.repositories.owner_postgres import OwnerRepositoryPostgres
 from src.infrastructure.repositories.users_postgres import UsersRepositoryPostgres
@@ -239,6 +239,34 @@ async def require_current_employee_or_user(
     raise UnauthorizedException('Token inválido')
 
 
+async def require_current_employee_or_owner(
+    request: Request,
+    session: VerifiedSessionDep,
+    authorization: AuthorizationHeaderDep,
+) -> UUID:
+    """
+    Valida o Bearer token e aceita typ:
+    - employee: salva employee_id + company_id
+    - owner: salva owner_id
+    """
+    token = _parse_bearer_token(authorization)
+    payload = _decode_token(token)
+
+    token_type = payload.get('typ')
+    if token_type == TOKEN_TYPE_EMPLOYEE:
+        return await require_current_employee(
+            request=request, session=session, authorization=authorization
+        )
+    if token_type == TOKEN_TYPE_OWNER:
+        return await require_current_owner(
+            request=request, session=session, authorization=authorization
+        )
+    raise UnauthorizedException('Token inválido')
+
+
 CurrentOwnerIdDep = Annotated[UUID, Depends(get_current_owner_id)]
 CurrentEmployeeIdDep = Annotated[UUID, Depends(get_current_employee_id)]
 CurrentUserIdDep = Annotated[UUID, Depends(get_current_user_id)]
+CurrentEmployeeOrOwnerIdDep = Annotated[
+    UUID, Depends(require_current_employee_or_owner)
+]

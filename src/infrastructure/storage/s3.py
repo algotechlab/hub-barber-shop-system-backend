@@ -18,7 +18,7 @@ from fastapi import UploadFile
 from starlette.concurrency import run_in_threadpool
 
 from src.core.config.settings import get_settings
-from src.domain.execptions.upload import (
+from src.domain.exceptions.upload import (
     FileTooLargeException,
     InvalidFileTypeException,
     UploadFailedException,
@@ -153,7 +153,9 @@ class S3Storage:
             if settings.DEBUG:
                 err_code = (error.response or {}).get('Error', {}).get('Code')
                 err_msg = (error.response or {}).get('Error', {}).get('Message')
-                message = f'{message}: {err_code or "ClientError"} - {err_msg or str(error)}'
+                message = (
+                    f'{message}: {err_code or "ClientError"} - {err_msg or str(error)}'
+                )
             raise UploadFailedException(message) from error
         except BotoCoreError as error:
             logger.exception(

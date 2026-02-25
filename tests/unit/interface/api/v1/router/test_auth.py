@@ -1,7 +1,7 @@
 from unittest.mock import AsyncMock
 
 import pytest
-from src.domain.execptions.auth import InvalidCredentialsException
+from src.domain.exceptions.auth import InvalidCredentialsException
 from src.interface.api.v1.controller.auth import AuthController
 from src.interface.api.v1.dependencies.auth import get_auth_controller
 from src.interface.api.v1.dependencies.common.session import get_verified_session

@@ -8,7 +8,7 @@ from src.domain.dtos.schedule import (
     ScheduleOutDTO,
     ScheduleUpdateDTO,
 )
-from src.domain.execptions.schedule import ScheduleNotFoundException
+from src.domain.exceptions.schedule import ScheduleNotFoundException
 from src.domain.use_case.schedule import ScheduleUseCase
 
 pytestmark = pytest.mark.unit
