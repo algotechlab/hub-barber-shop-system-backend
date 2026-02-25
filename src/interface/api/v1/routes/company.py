@@ -5,7 +5,6 @@ from fastapi import APIRouter, Depends, Request, status
 
 from src.interface.api.v1.dependencies.common.auth import (
     require_current_employee_or_owner,
-    require_current_owner,
 )
 from src.interface.api.v1.dependencies.common.pagination import PaginationParamsDep
 from src.interface.api.v1.dependencies.company import CompanyRepositoryDep
@@ -27,7 +26,7 @@ router = APIRouter(
     '',
     status_code=status.HTTP_201_CREATED,
     response_model=CompanyOutSchema,
-    dependencies=[Depends(require_current_owner)],
+    dependencies=[Depends(require_current_employee_or_owner)],
     responses={
         status.HTTP_201_CREATED: {
             'description': 'Compania criada com sucesso',
@@ -77,7 +76,7 @@ async def list_companies(
 @router.delete(
     '/{company_id}',
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(require_current_owner)],
+    dependencies=[Depends(require_current_employee_or_owner)],
     responses={
         status.HTTP_204_NO_CONTENT: {
             'description': 'Compania deletada com sucesso',
