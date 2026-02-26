@@ -280,3 +280,31 @@ async def test_delete_company_rollback_on_error(repo, mock_session):
         await repo.delete_company(uuid4())
 
     mock_session.rollback.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_list_companies_slug_success(repo, mock_session):
+    mock_orm_companies = [MagicMock(), MagicMock()]
+    mock_scalar_result = MagicMock()
+    mock_scalar_result.all.return_value = mock_orm_companies
+    mock_result = MagicMock()
+    mock_result.scalars.return_value = mock_scalar_result
+    mock_session.execute = AsyncMock(return_value=mock_result)
+
+    expected_dtos = [MagicMock(), MagicMock()]
+    with patch.object(CompanyDTO, 'model_validate', side_effect=expected_dtos) as mv:
+        result = await repo.list_companies_slug('slug-x')
+
+    assert result == expected_dtos
+    assert mv.call_count == len(mock_orm_companies)
+
+
+@pytest.mark.asyncio
+async def test_list_companies_slug_rollback_on_error(repo, mock_session):
+    mock_session.execute = AsyncMock(side_effect=ValueError('DB error'))
+    mock_session.rollback = AsyncMock()
+
+    with pytest.raises(DatabaseException, match='DB error'):
+        await repo.list_companies_slug('slug-x')
+
+    mock_session.rollback.assert_awaited_once()

@@ -36,3 +36,9 @@ class CompanyUseCase:
         if not deleted:
             raise CompanyNotFoundException(f'Compania com id {id} não encontrada')
         return deleted
+
+    async def list_companies_slug(self, slug: str) -> List[CompanyDTO]:
+        companies = await self.company_service.list_companies_slug(slug)
+        if not companies:
+            raise CompanyNotFoundException(f'Companias com slug {slug} não encontradas')
+        return companies

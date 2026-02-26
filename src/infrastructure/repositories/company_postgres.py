@@ -86,3 +86,13 @@ class CompanyRepositoryPostgres(CompanyRepository):
         except Exception as error:
             await self.session.rollback()
             raise DatabaseException(str(error))
+
+    async def list_companies_slug(self, slug: str) -> List[CompanyDTO]:
+        try:
+            query = select(Company).where(Company.slug.__eq__(slug))
+            result = await self.session.execute(query)
+            companies = result.scalars().all()
+            return [CompanyDTO.model_validate(company) for company in companies]
+        except Exception as error:
+            await self.session.rollback()
+            raise DatabaseException(str(error))

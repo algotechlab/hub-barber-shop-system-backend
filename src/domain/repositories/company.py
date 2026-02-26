@@ -23,3 +23,6 @@ class CompanyRepository:
 
     @abstractmethod
     async def delete_company(self, id: UUID) -> bool: ...
+
+    @abstractmethod
+    async def list_companies_slug(self, slug: str) -> List[CompanyDTO]: ...

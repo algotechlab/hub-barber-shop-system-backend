@@ -75,3 +75,15 @@ async def test_delete_company_delegates_to_repository():
 
     repo.delete_company.assert_awaited_once_with(company_id)
     assert result is True
+
+
+@pytest.mark.asyncio
+async def test_list_companies_slug_delegates_to_repository():
+    repo = AsyncMock()
+    service = CompanyService(repo)
+    repo.list_companies_slug.return_value = []
+
+    result = await service.list_companies_slug('slug-x')
+
+    repo.list_companies_slug.assert_awaited_once_with('slug-x')
+    assert result == []

@@ -95,3 +95,23 @@ async def test_delete_company_delegates_to_use_case():
 
     use_case.delete_company.assert_awaited_once_with(company_id)
     assert result is True
+
+
+@pytest.mark.asyncio
+async def test_list_companies_slug_returns_schema_list():
+    use_case = AsyncMock()
+    company = CompanyDTO(
+        id=uuid4(),
+        name='N',
+        slug='slug-x',
+        is_active=True,
+        owner_id=uuid4(),
+    )
+    use_case.list_companies_slug.return_value = [company]
+    controller = CompanyController(use_case)
+
+    result = await controller.list_companies_slug('slug-x')
+
+    assert len(result) == 1
+    assert result[0].slug == 'slug-x'
+    use_case.list_companies_slug.assert_awaited_once_with('slug-x')
