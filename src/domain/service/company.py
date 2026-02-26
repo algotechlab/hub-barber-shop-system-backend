@@ -24,3 +24,6 @@ class CompanyService:
 
     async def delete_company(self, id: UUID) -> bool:
         return await self.company_repository.delete_company(id)
+
+    async def list_companies_slug(self, slug: str) -> List[CompanyDTO]:
+        return await self.company_repository.list_companies_slug(slug)

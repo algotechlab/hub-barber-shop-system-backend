@@ -35,3 +35,7 @@ class CompanyController:
 
     async def delete_company(self, id: UUID) -> bool:
         return await self.company_use_case.delete_company(id)
+
+    async def list_companies_slug(self, slug: str) -> List[CompanyOutSchema]:
+        companies = await self.company_use_case.list_companies_slug(slug)
+        return [CompanyOutSchema(**company.model_dump()) for company in companies]

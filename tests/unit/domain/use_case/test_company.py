@@ -116,3 +116,34 @@ async def test_delete_company_returns_true_when_deleted():
     result = await use_case.delete_company(uuid4())
 
     assert result is True
+
+
+@pytest.mark.asyncio
+async def test_list_companies_slug_returns_companies_when_found():
+    service = AsyncMock()
+    companies = [
+        CompanyDTO(
+            id=uuid4(),
+            name='N',
+            slug='slug-x',
+            is_active=True,
+            owner_id=uuid4(),
+        )
+    ]
+    service.list_companies_slug.return_value = companies
+    use_case = CompanyUseCase(service)
+
+    result = await use_case.list_companies_slug('slug-x')
+
+    assert result == companies
+    service.list_companies_slug.assert_awaited_once_with('slug-x')
+
+
+@pytest.mark.asyncio
+async def test_list_companies_slug_raises_when_not_found():
+    service = AsyncMock()
+    service.list_companies_slug.return_value = []
+    use_case = CompanyUseCase(service)
+
+    with pytest.raises(CompanyNotFoundException):
+        await use_case.list_companies_slug('slug-inexistente')
