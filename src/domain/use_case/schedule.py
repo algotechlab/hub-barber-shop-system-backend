@@ -6,6 +6,8 @@ from src.domain.dtos.schedule import (
     ScheduleCreateDTO,
     ScheduleOutDTO,
     ScheduleUpdateDTO,
+    SlotOutDTO,
+    SlotsInDTO,
 )
 from src.domain.exceptions.schedule import ScheduleNotFoundException
 from src.domain.service.schedule import ScheduleService
@@ -19,9 +21,17 @@ class ScheduleUseCase:
         return await self.schedule_service.create_schedule(schedule)
 
     async def list_schedules(
-        self, pagination: PaginationParamsDTO, company_id: UUID
+        self,
+        pagination: PaginationParamsDTO,
+        company_id: UUID,
+        employee_id: UUID | None = None,
     ) -> List[ScheduleOutDTO]:
-        return await self.schedule_service.list_schedules(pagination, company_id)
+        return await self.schedule_service.list_schedules(
+            pagination, company_id, employee_id
+        )
+
+    async def get_slots(self, slots: SlotsInDTO) -> List[SlotOutDTO]:
+        return await self.schedule_service.get_slots(slots)
 
     async def get_schedule(self, id: UUID, company_id: UUID) -> ScheduleOutDTO:
         schedule = await self.schedule_service.get_schedule(id, company_id)
@@ -38,6 +48,9 @@ class ScheduleUseCase:
         if updated_schedule is None:
             raise ScheduleNotFoundException('Agendamento não encontrado')
         return updated_schedule
+
+    async def block_schedule(self, employee_id: UUID, company_id: UUID) -> None:
+        return await self.schedule_service.block_schedule(employee_id, company_id)
 
     async def delete_schedule(self, id: UUID, company_id: UUID) -> bool:
         deleted = await self.schedule_service.delete_schedule(id, company_id)

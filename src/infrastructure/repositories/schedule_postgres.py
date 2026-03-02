@@ -1,5 +1,6 @@
+from datetime import timedelta
 from typing import List, Optional
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,9 +11,12 @@ from src.domain.dtos.schedule import (
     ScheduleCreateDTO,
     ScheduleOutDTO,
     ScheduleUpdateDTO,
+    SlotOutDTO,
+    SlotsInDTO,
 )
 from src.domain.repositories.schedule import ScheduleRepository
 from src.infrastructure.database.models.schedule import Schedule
+from src.infrastructure.database.models.schedule_block import ScheduleBlock
 
 
 class ScheduleRepositoryPostgres(ScheduleRepository):
@@ -31,16 +35,68 @@ class ScheduleRepositoryPostgres(ScheduleRepository):
             raise DatabaseException(str(error))
 
     async def list_schedules(
-        self, pagination: PaginationParamsDTO, company_id: UUID
+        self,
+        pagination: PaginationParamsDTO,
+        company_id: UUID,
+        employee_id: Optional[UUID] = None,
     ) -> List[ScheduleOutDTO]:
         try:
-            query = select(Schedule).where(
-                Schedule.is_deleted.__eq__(False),
-                Schedule.company_id.__eq__(company_id),
+            query = (
+                select(Schedule)
+                .where(
+                    Schedule.is_deleted.__eq__(False),
+                    Schedule.status.__eq__(False),
+                    Schedule.company_id.__eq__(company_id),
+                )
+                .order_by(Schedule.created_at.desc())
             )
+
+            if employee_id is not None:
+                query = query.where(Schedule.employee_id.__eq__(employee_id))
+
+            query = query.offset(pagination.offset).limit(pagination.limit)
             result = await self.session.execute(query)
             schedules = result.scalars().all()
             return [ScheduleOutDTO.model_validate(schedule) for schedule in schedules]
+        except Exception as error:
+            await self.session.rollback()
+            raise DatabaseException(str(error))
+
+    async def get_slots(self, slots: SlotsInDTO) -> List[SlotOutDTO]:
+        try:
+            query = select(Schedule).where(
+                Schedule.company_id.__eq__(slots.company_id),
+                Schedule.employee_id.__eq__(slots.employee_id),
+                Schedule.is_deleted.__eq__(False),
+                Schedule.is_canceled.__eq__(False),
+                Schedule.time_start.__lt__(slots.work_end),
+                Schedule.time_end.__gt__(slots.work_start),
+            )
+            result = await self.session.execute(query)
+            booked_schedules = result.scalars().all()
+
+            slot_delta = timedelta(minutes=slots.slot_minutes)
+            current = slots.work_start
+            generated_slots: List[SlotOutDTO] = []
+
+            while current + slot_delta <= slots.work_end:
+                slot_end = current + slot_delta
+                is_blocked = any(
+                    schedule.time_start < slot_end and schedule.time_end > current
+                    for schedule in booked_schedules
+                )
+                generated_slots.append(
+                    SlotOutDTO(
+                        id=uuid4(),
+                        time_start=current,
+                        time_end=slot_end,
+                        is_available=not is_blocked,
+                        is_blocked=is_blocked,
+                    )
+                )
+                current = slot_end
+
+            return generated_slots
         except Exception as error:
             await self.session.rollback()
             raise DatabaseException(str(error))
@@ -59,6 +115,23 @@ class ScheduleRepositoryPostgres(ScheduleRepository):
             if schedule is None:
                 return None
             return ScheduleOutDTO.model_validate(schedule)
+        except Exception as error:
+            await self.session.rollback()
+            raise DatabaseException(str(error))
+
+    async def block_schedule(self, employee_id: UUID, company_id: UUID) -> None:
+        try:
+            query = select(ScheduleBlock).where(
+                ScheduleBlock.employee_id.__eq__(employee_id),
+                ScheduleBlock.company_id.__eq__(company_id),
+                ScheduleBlock.is_deleted.__eq__(False),
+                ScheduleBlock.is_block.__eq__(True),
+            )
+            result = await self.session.execute(query)
+            block = result.scalar_one_or_none()
+            if block is None:
+                return None
+            return True
         except Exception as error:
             await self.session.rollback()
             raise DatabaseException(str(error))

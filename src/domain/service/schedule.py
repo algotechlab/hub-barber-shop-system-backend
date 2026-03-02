@@ -6,6 +6,8 @@ from src.domain.dtos.schedule import (
     ScheduleCreateDTO,
     ScheduleOutDTO,
     ScheduleUpdateDTO,
+    SlotOutDTO,
+    SlotsInDTO,
 )
 from src.domain.repositories.schedule import ScheduleRepository
 
@@ -18,9 +20,17 @@ class ScheduleService:
         return await self.schedule_repository.create_schedule(schedule)
 
     async def list_schedules(
-        self, pagination: PaginationParamsDTO, company_id: UUID
+        self,
+        pagination: PaginationParamsDTO,
+        company_id: UUID,
+        employee_id: Optional[UUID] = None,
     ) -> List[ScheduleOutDTO]:
-        return await self.schedule_repository.list_schedules(pagination, company_id)
+        return await self.schedule_repository.list_schedules(
+            pagination, company_id, employee_id
+        )
+
+    async def get_slots(self, slots: SlotsInDTO) -> List[SlotOutDTO]:
+        return await self.schedule_repository.get_slots(slots)
 
     async def get_schedule(
         self, id: UUID, company_id: UUID
@@ -31,6 +41,9 @@ class ScheduleService:
         self, id: UUID, schedule: ScheduleUpdateDTO, company_id: UUID
     ) -> Optional[ScheduleOutDTO]:
         return await self.schedule_repository.update_schedule(id, schedule, company_id)
+
+    async def block_schedule(self, employee_id: UUID, company_id: UUID) -> None:
+        return await self.schedule_repository.block_schedule(employee_id, company_id)
 
     async def delete_schedule(self, id: UUID, company_id: UUID) -> Optional[bool]:
         return await self.schedule_repository.delete_schedule(id, company_id)

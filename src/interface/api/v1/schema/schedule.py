@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Optional
 from uuid import UUID
 
@@ -32,3 +32,31 @@ class UpdateScheduleSchema(BaseModel):
 class ScheduleOutSchema(BaseModel):
     id: UUID
     user_id: UUID
+    service_id: UUID
+    product_id: UUID
+    employee_id: UUID
+    company_id: UUID
+    time_register: datetime
+    time_start: Optional[datetime] = None
+    time_end: Optional[datetime] = None
+    status: bool
+    is_canceled: bool
+    created_at: datetime
+    updated_at: datetime
+    is_deleted: bool
+
+
+class SlotsInSchema(BaseModel):
+    employee_id: UUID
+    work_start: datetime
+    work_end: datetime
+    slot_minutes: int = 30
+    target_date: Optional[date] = None
+
+
+class SlotOutSchema(BaseModel):
+    id: UUID
+    time_start: datetime
+    time_end: datetime
+    is_available: bool
+    is_blocked: bool

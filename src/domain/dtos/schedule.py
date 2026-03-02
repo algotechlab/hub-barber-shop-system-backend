@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Optional
 from uuid import UUID
 
@@ -67,3 +67,20 @@ class ScheduleUpdateDTO(ScheduleBaseDTO):
     time_end: Optional[datetime] = None
     status: Optional[bool] = None
     is_canceled: Optional[bool] = None
+
+
+class SlotsInDTO(BaseModel):
+    company_id: UUID
+    employee_id: UUID
+    work_start: datetime
+    work_end: datetime
+    slot_minutes: int = 30
+    target_date: Optional[date] = None
+
+
+class SlotOutDTO(BaseModel):
+    id: UUID
+    time_start: datetime
+    time_end: datetime
+    is_available: bool
+    is_blocked: bool

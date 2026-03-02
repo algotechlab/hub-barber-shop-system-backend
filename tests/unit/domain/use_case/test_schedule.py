@@ -1,3 +1,4 @@
+from datetime import datetime
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
@@ -7,6 +8,8 @@ from src.domain.dtos.schedule import (
     ScheduleCreateDTO,
     ScheduleOutDTO,
     ScheduleUpdateDTO,
+    SlotOutDTO,
+    SlotsInDTO,
 )
 from src.domain.exceptions.schedule import ScheduleNotFoundException
 from src.domain.use_case.schedule import ScheduleUseCase
@@ -69,8 +72,37 @@ async def test_list_schedules_delegates_to_service_layer():
 
     result = await use_case.list_schedules(pagination, company_id)
 
-    service.list_schedules.assert_awaited_once_with(pagination, company_id)
+    service.list_schedules.assert_awaited_once_with(pagination, company_id, None)
     assert result == []
+
+
+@pytest.mark.asyncio
+async def test_get_slots_delegates_to_service_layer():
+    service = AsyncMock()
+    use_case = ScheduleUseCase(service)
+    slots = SlotsInDTO(
+        company_id=uuid4(),
+        employee_id=uuid4(),
+        work_start=datetime(2026, 2, 14, 9, 0, 0),
+        work_end=datetime(2026, 2, 14, 10, 0, 0),
+        slot_minutes=30,
+        target_date=None,
+    )
+    expected = [
+        SlotOutDTO(
+            id=uuid4(),
+            time_start=datetime(2026, 2, 14, 9, 0, 0),
+            time_end=datetime(2026, 2, 14, 9, 30, 0),
+            is_available=True,
+            is_blocked=False,
+        )
+    ]
+    service.get_slots.return_value = expected
+
+    result = await use_case.get_slots(slots)
+
+    service.get_slots.assert_awaited_once_with(slots)
+    assert result == expected
 
 
 @pytest.mark.asyncio
@@ -141,4 +173,18 @@ async def test_delete_schedule_returns_true_when_deleted():
 
     result = await use_case.delete_schedule(uuid4(), uuid4())
 
+    assert result is True
+
+
+@pytest.mark.asyncio
+async def test_block_schedule_delegates_to_service_layer():
+    service = AsyncMock()
+    service.block_schedule.return_value = True
+    use_case = ScheduleUseCase(service)
+    employee_id = uuid4()
+    company_id = uuid4()
+
+    result = await use_case.block_schedule(employee_id, company_id)
+
+    service.block_schedule.assert_awaited_once_with(employee_id, company_id)
     assert result is True

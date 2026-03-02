@@ -1,12 +1,14 @@
 import uuid
+from datetime import datetime
 from unittest.mock import AsyncMock
 
 import pytest
 from src.domain.dtos.common.pagination import PaginationParamsDTO
-from src.domain.dtos.schedule import ScheduleOutDTO
+from src.domain.dtos.schedule import ScheduleOutDTO, SlotOutDTO
 from src.interface.api.v1.controller.schedule import ScheduleController
 from src.interface.api.v1.schema.schedule import (
     CreateScheduleSchema,
+    SlotsInSchema,
     UpdateScheduleSchema,
 )
 
@@ -42,7 +44,7 @@ class TestScheduleController:
 
         assert len(result) == 1
         assert result[0].id is not None
-        use_case.list_schedules.assert_awaited_once_with(pagination, company_id)
+        use_case.list_schedules.assert_awaited_once_with(pagination, company_id, None)
 
     @pytest.mark.asyncio
     async def test_create_schedule(self):
@@ -111,6 +113,33 @@ class TestScheduleController:
         assert result.id == schedule.id
 
     @pytest.mark.asyncio
+    async def test_get_slots(self):
+        company_id = uuid.uuid4()
+        use_case = AsyncMock()
+        use_case.get_slots.return_value = [
+            SlotOutDTO(
+                id=uuid.uuid4(),
+                time_start=datetime(2026, 2, 14, 9, 0, 0),
+                time_end=datetime(2026, 2, 14, 9, 30, 0),
+                is_available=True,
+                is_blocked=False,
+            )
+        ]
+        controller = ScheduleController(use_case)
+        slots = SlotsInSchema(
+            employee_id=uuid.uuid4(),
+            work_start=datetime(2026, 2, 14, 9, 0, 0),
+            work_end=datetime(2026, 2, 14, 10, 0, 0),
+            slot_minutes=30,
+            target_date=None,
+        )
+
+        result = await controller.get_slots(slots, company_id=company_id)
+
+        assert len(result) == 1
+        assert result[0].is_available is True
+
+    @pytest.mark.asyncio
     async def test_update_schedule(self):
         company_id = uuid.uuid4()
         use_case = AsyncMock()
@@ -150,3 +179,13 @@ class TestScheduleController:
         await controller.delete_schedule(uuid.uuid4(), company_id=uuid.uuid4())
 
         use_case.delete_schedule.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_block_schedule(self):
+        use_case = AsyncMock()
+        use_case.block_schedule.return_value = True
+        controller = ScheduleController(use_case)
+
+        await controller.block_schedule(uuid.uuid4(), company_id=uuid.uuid4())
+
+        use_case.block_schedule.assert_awaited_once()

@@ -7,6 +7,8 @@ from src.domain.dtos.schedule import (
     ScheduleCreateDTO,
     ScheduleOutDTO,
     ScheduleUpdateDTO,
+    SlotOutDTO,
+    SlotsInDTO,
 )
 
 
@@ -16,8 +18,14 @@ class ScheduleRepository(ABC):
 
     @abstractmethod
     async def list_schedules(
-        self, pagination: PaginationParamsDTO, company_id: UUID
+        self,
+        pagination: PaginationParamsDTO,
+        company_id: UUID,
+        employee_id: Optional[UUID] = None,
     ) -> List[ScheduleOutDTO]: ...
+
+    @abstractmethod
+    async def get_slots(self, slots: SlotsInDTO) -> List[SlotOutDTO]: ...
 
     @abstractmethod
     async def get_schedule(
@@ -28,6 +36,9 @@ class ScheduleRepository(ABC):
     async def update_schedule(
         self, id: UUID, schedule: ScheduleUpdateDTO, company_id: UUID
     ) -> Optional[ScheduleOutDTO]: ...
+
+    @abstractmethod
+    async def block_schedule(self, employee_id: UUID, company_id: UUID) -> None: ...
 
     @abstractmethod
     async def delete_schedule(self, id: UUID, company_id: UUID) -> Optional[bool]: ...
