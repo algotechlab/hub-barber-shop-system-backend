@@ -1,3 +1,4 @@
+from datetime import datetime
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
@@ -7,6 +8,8 @@ from src.domain.dtos.schedule import (
     ScheduleCreateDTO,
     ScheduleOutDTO,
     ScheduleUpdateDTO,
+    SlotOutDTO,
+    SlotsInDTO,
 )
 from src.domain.service.schedule import ScheduleService
 
@@ -68,8 +71,37 @@ async def test_schedule_service_list_delegates_to_repository():
 
     result = await service.list_schedules(pagination, company_id)
 
-    repo.list_schedules.assert_awaited_once_with(pagination, company_id)
+    repo.list_schedules.assert_awaited_once_with(pagination, company_id, None)
     assert result == []
+
+
+@pytest.mark.asyncio
+async def test_schedule_service_get_slots_delegates_to_repository():
+    repo = AsyncMock()
+    service = ScheduleService(repo)
+    slots = SlotsInDTO(
+        company_id=uuid4(),
+        employee_id=uuid4(),
+        work_start=datetime(2026, 2, 14, 9, 0, 0),
+        work_end=datetime(2026, 2, 14, 10, 0, 0),
+        slot_minutes=30,
+        target_date=None,
+    )
+    expected = [
+        SlotOutDTO(
+            id=uuid4(),
+            time_start=datetime(2026, 2, 14, 9, 0, 0),
+            time_end=datetime(2026, 2, 14, 9, 30, 0),
+            is_available=True,
+            is_blocked=False,
+        )
+    ]
+    repo.get_slots.return_value = expected
+
+    result = await service.get_slots(slots)
+
+    repo.get_slots.assert_awaited_once_with(slots)
+    assert result == expected
 
 
 @pytest.mark.asyncio
@@ -111,4 +143,18 @@ async def test_schedule_service_delete_delegates_to_repository():
     result = await service.delete_schedule(uuid4(), uuid4())
 
     repo.delete_schedule.assert_awaited_once()
+    assert result is True
+
+
+@pytest.mark.asyncio
+async def test_schedule_service_block_delegates_to_repository():
+    repo = AsyncMock()
+    service = ScheduleService(repo)
+    repo.block_schedule.return_value = True
+    employee_id = uuid4()
+    company_id = uuid4()
+
+    result = await service.block_schedule(employee_id, company_id)
+
+    repo.block_schedule.assert_awaited_once_with(employee_id, company_id)
     assert result is True

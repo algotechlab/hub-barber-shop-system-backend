@@ -10,6 +10,7 @@ from src.domain.dtos.schedule import (
     ScheduleCreateDTO,
     ScheduleOutDTO,
     ScheduleUpdateDTO,
+    SlotsInDTO,
 )
 from src.infrastructure.repositories.schedule_postgres import ScheduleRepositoryPostgres
 
@@ -102,6 +103,67 @@ class TestScheduleRepositoryPostgres:
 
         mock_session.rollback.assert_awaited_once()
 
+    async def test_list_schedules_success_with_employee_filter(
+        self, repo, mock_session
+    ):
+        employee_id = uuid4()
+        mock_orm_schedules = [MagicMock()]
+        mock_scalar_result = MagicMock()
+        mock_scalar_result.all.return_value = mock_orm_schedules
+        mock_result = MagicMock()
+        mock_result.scalars.return_value = mock_scalar_result
+        mock_session.execute = AsyncMock(return_value=mock_result)
+
+        expected = [MagicMock()]
+        with patch.object(ScheduleOutDTO, 'model_validate', side_effect=expected):
+            result = await repo.list_schedules(
+                PaginationParamsDTO(), uuid4(), employee_id=employee_id
+            )
+
+        mock_session.execute.assert_awaited_once()
+        assert result == expected
+
+    async def test_get_slots_success(self, repo, mock_session):
+        booked_schedule = MagicMock()
+        booked_schedule.time_start = datetime(2026, 2, 14, 9, 15, 0)
+        booked_schedule.time_end = datetime(2026, 2, 14, 9, 45, 0)
+        mock_scalar_result = MagicMock()
+        mock_scalar_result.all.return_value = [booked_schedule]
+        mock_result = MagicMock()
+        mock_result.scalars.return_value = mock_scalar_result
+        mock_session.execute = AsyncMock(return_value=mock_result)
+
+        slots = SlotsInDTO(
+            company_id=uuid4(),
+            employee_id=uuid4(),
+            work_start=datetime(2026, 2, 14, 9, 0, 0),
+            work_end=datetime(2026, 2, 14, 10, 0, 0),
+            slot_minutes=30,
+            target_date=None,
+        )
+        result = await repo.get_slots(slots)
+        result_range = 2
+        assert len(result) == result_range
+        assert result[0].is_blocked is True
+        assert result[1].is_blocked is True
+
+    async def test_get_slots_rollback_on_error(self, repo, mock_session):
+        mock_session.execute = AsyncMock(side_effect=ValueError('DB error'))
+        mock_session.rollback = AsyncMock()
+        slots = SlotsInDTO(
+            company_id=uuid4(),
+            employee_id=uuid4(),
+            work_start=datetime(2026, 2, 14, 9, 0, 0),
+            work_end=datetime(2026, 2, 14, 10, 0, 0),
+            slot_minutes=30,
+            target_date=None,
+        )
+
+        with pytest.raises(DatabaseException, match='DB error'):
+            await repo.get_slots(slots)
+
+        mock_session.rollback.assert_awaited_once()
+
     async def test_get_schedule_returns_none_when_not_found(self, repo, mock_session):
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = None
@@ -132,6 +194,33 @@ class TestScheduleRepositoryPostgres:
 
         with pytest.raises(DatabaseException, match='DB error'):
             await repo.get_schedule(uuid4(), uuid4())
+
+        mock_session.rollback.assert_awaited_once()
+
+    async def test_block_schedule_returns_none_when_not_found(self, repo, mock_session):
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = None
+        mock_session.execute = AsyncMock(return_value=mock_result)
+
+        result = await repo.block_schedule(uuid4(), uuid4())
+
+        assert result is None
+
+    async def test_block_schedule_returns_true_when_found(self, repo, mock_session):
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = MagicMock()
+        mock_session.execute = AsyncMock(return_value=mock_result)
+
+        result = await repo.block_schedule(uuid4(), uuid4())
+
+        assert result is True
+
+    async def test_block_schedule_rollback_on_error(self, repo, mock_session):
+        mock_session.execute = AsyncMock(side_effect=ValueError('DB error'))
+        mock_session.rollback = AsyncMock()
+
+        with pytest.raises(DatabaseException, match='DB error'):
+            await repo.block_schedule(uuid4(), uuid4())
 
         mock_session.rollback.assert_awaited_once()
 

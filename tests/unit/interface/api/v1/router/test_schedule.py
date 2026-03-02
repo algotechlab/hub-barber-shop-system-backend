@@ -12,6 +12,7 @@ from src.interface.api.v1.dependencies.schedule import get_schedule_controller
 from src.interface.api.v1.schema.schedule import (
     CreateScheduleSchema,
     ScheduleOutSchema,
+    SlotOutSchema,
     UpdateScheduleSchema,
 )
 from src.main import app
@@ -20,6 +21,25 @@ URL_SCHEDULES = '/api/v1/schedule'
 STATUS_CODE_200 = 200
 STATUS_CODE_201 = 201
 STATUS_CODE_204 = 204
+
+
+def _build_schedule_out() -> ScheduleOutSchema:
+    return ScheduleOutSchema(
+        id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        service_id=uuid.uuid4(),
+        product_id=uuid.uuid4(),
+        employee_id=uuid.uuid4(),
+        company_id=uuid.uuid4(),
+        time_register=datetime(2026, 2, 14, 20, 6, 18),
+        time_start=None,
+        time_end=None,
+        status=True,
+        is_canceled=False,
+        created_at=datetime(2026, 2, 14, 20, 6, 18),
+        updated_at=datetime(2026, 2, 14, 20, 6, 18),
+        is_deleted=False,
+    )
 
 
 def _install_overrides() -> AsyncMock:
@@ -51,7 +71,7 @@ def override_dependency_schedules():
 @pytest.mark.unit
 class TestScheduleRoutes:
     def test_list_schedules_returns_200(self, client, override_dependency_schedules):
-        schedule = ScheduleOutSchema(id=uuid.uuid4(), user_id=uuid.uuid4())
+        schedule = _build_schedule_out()
         override_dependency_schedules.list_schedules.return_value = [schedule]
 
         response = client.get(URL_SCHEDULES)
@@ -60,7 +80,7 @@ class TestScheduleRoutes:
         assert len(response.json()) == 1
 
     def test_create_schedule_returns_201(self, client, override_dependency_schedules):
-        schedule = ScheduleOutSchema(id=uuid.uuid4(), user_id=uuid.uuid4())
+        schedule = _build_schedule_out()
         override_dependency_schedules.create_schedule.return_value = schedule
 
         payload = CreateScheduleSchema(
@@ -80,8 +100,32 @@ class TestScheduleRoutes:
         assert response.status_code == STATUS_CODE_201, response.json()
         assert response.json()['id'] == str(schedule.id)
 
+    def test_get_slots_returns_200(self, client, override_dependency_schedules):
+        slot = SlotOutSchema(
+            id=uuid.uuid4(),
+            time_start=datetime(2026, 2, 14, 9, 0, 0),
+            time_end=datetime(2026, 2, 14, 9, 30, 0),
+            is_available=True,
+            is_blocked=False,
+        )
+        override_dependency_schedules.get_slots.return_value = [slot]
+
+        response = client.get(
+            f'{URL_SCHEDULES}/slots',
+            params={
+                'employee_id': str(uuid.uuid4()),
+                'work_start': datetime(2026, 2, 14, 9, 0, 0).isoformat(),
+                'work_end': datetime(2026, 2, 14, 10, 0, 0).isoformat(),
+                'slot_minutes': 30,
+            },
+        )
+
+        assert response.status_code == STATUS_CODE_200, response.json()
+        assert len(response.json()) == 1
+        assert response.json()[0]['id'] == str(slot.id)
+
     def test_get_schedule_returns_200(self, client, override_dependency_schedules):
-        schedule = ScheduleOutSchema(id=uuid.uuid4(), user_id=uuid.uuid4())
+        schedule = _build_schedule_out()
         override_dependency_schedules.get_schedule.return_value = schedule
 
         response = client.get(f'{URL_SCHEDULES}/{uuid.uuid4()}')
@@ -90,7 +134,7 @@ class TestScheduleRoutes:
         assert response.json()['id'] == str(schedule.id)
 
     def test_update_schedule_returns_200(self, client, override_dependency_schedules):
-        schedule = ScheduleOutSchema(id=uuid.uuid4(), user_id=uuid.uuid4())
+        schedule = _build_schedule_out()
         override_dependency_schedules.update_schedule.return_value = schedule
 
         payload = UpdateScheduleSchema(status=False).model_dump(
@@ -107,3 +151,10 @@ class TestScheduleRoutes:
         response = client.delete(f'{URL_SCHEDULES}/{uuid.uuid4()}')
 
         assert response.status_code == STATUS_CODE_204, response.text
+
+    def test_block_schedule_returns_200(self, client, override_dependency_schedules):
+        override_dependency_schedules.block_schedule.return_value = None
+
+        response = client.patch(f'{URL_SCHEDULES}/{uuid.uuid4()}/block')
+
+        assert response.status_code == STATUS_CODE_200, response.text

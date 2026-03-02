@@ -5,11 +5,15 @@ from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.schedule import (
     ScheduleCreateDTO,
     ScheduleUpdateDTO,
+    SlotOutDTO,
+    SlotsInDTO,
 )
 from src.domain.use_case.schedule import ScheduleUseCase
 from src.interface.api.v1.schema.schedule import (
     CreateScheduleSchema,
     ScheduleOutSchema,
+    SlotOutSchema,
+    SlotsInSchema,
     UpdateScheduleSchema,
 )
 
@@ -28,10 +32,22 @@ class ScheduleController:
         return ScheduleOutSchema(**created_schedule.model_dump())
 
     async def list_schedules(
-        self, pagination: PaginationParamsDTO, company_id: UUID
+        self,
+        pagination: PaginationParamsDTO,
+        company_id: UUID,
+        employee_id: UUID | None = None,
     ) -> List[ScheduleOutSchema]:
-        schedules = await self.schedule_use_case.list_schedules(pagination, company_id)
+        schedules = await self.schedule_use_case.list_schedules(
+            pagination, company_id, employee_id
+        )
         return [ScheduleOutSchema(**schedule.model_dump()) for schedule in schedules]
+
+    async def get_slots(
+        self, slots: SlotsInSchema, company_id: UUID
+    ) -> List[SlotOutSchema]:
+        slots_dto = SlotsInDTO(**slots.model_dump(), company_id=company_id)
+        slot_list: List[SlotOutDTO] = await self.schedule_use_case.get_slots(slots_dto)
+        return [SlotOutSchema(**slot.model_dump()) for slot in slot_list]
 
     async def get_schedule(self, id: UUID, company_id: UUID) -> ScheduleOutSchema:
         schedule = await self.schedule_use_case.get_schedule(id, company_id)
@@ -47,6 +63,9 @@ class ScheduleController:
             id, schedule_dto, company_id
         )
         return ScheduleOutSchema(**updated_schedule.model_dump())
+
+    async def block_schedule(self, employee_id: UUID, company_id: UUID) -> None:
+        await self.schedule_use_case.block_schedule(employee_id, company_id)
 
     async def delete_schedule(self, id: UUID, company_id: UUID) -> None:
         await self.schedule_use_case.delete_schedule(id, company_id)

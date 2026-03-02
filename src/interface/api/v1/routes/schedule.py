@@ -11,6 +11,8 @@ from src.interface.api.v1.dependencies.schedule import ScheduleRepositoryDep
 from src.interface.api.v1.schema.schedule import (
     CreateScheduleSchema,
     ScheduleOutSchema,
+    SlotOutSchema,
+    SlotsInSchema,
     UpdateScheduleSchema,
 )
 
@@ -33,11 +35,28 @@ router = APIRouter(
     response_model=List[ScheduleOutSchema],
 )
 async def list_schedules(
-    controller: ScheduleRepositoryDep, pagination: PaginationParamsDep, request: Request
+    controller: ScheduleRepositoryDep,
+    pagination: PaginationParamsDep,
+    request: Request,
+    employee_id: UUID | None = None,
 ) -> List[ScheduleOutSchema]:
     return await controller.list_schedules(
-        pagination, company_id=request.state.company_id
+        pagination, company_id=request.state.company_id, employee_id=employee_id
     )
+
+
+@router.get(
+    '/slots',
+    description='Rota para listar slots de agendamento',
+    status_code=status.HTTP_200_OK,
+    response_model=List[SlotOutSchema],
+)
+async def get_slots(
+    controller: ScheduleRepositoryDep,
+    request: Request,
+    slots: SlotsInSchema = Depends(),
+) -> List[SlotOutSchema]:
+    return await controller.get_slots(slots, company_id=request.state.company_id)
 
 
 @router.post(
@@ -83,6 +102,20 @@ async def update_schedule(
     return await controller.update_schedule(
         schedule_id, schedule, company_id=request.state.company_id
     )
+
+
+@router.patch(
+    '/{employee_id}/block',
+    description='Rota para bloquear horário de um funcionário',
+    status_code=status.HTTP_200_OK,
+)
+async def block_schedule(
+    controller: ScheduleRepositoryDep,
+    employee_id: UUID,
+    request: Request,
+) -> Response:
+    await controller.block_schedule(employee_id, company_id=request.state.company_id)
+    return Response(status_code=status.HTTP_200_OK)
 
 
 @router.delete(
