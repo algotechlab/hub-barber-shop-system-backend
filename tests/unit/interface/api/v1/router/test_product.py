@@ -6,7 +6,9 @@ from unittest.mock import AsyncMock
 import pytest
 from fastapi import Request
 from src.interface.api.v1.controller.product import ProductController
-from src.interface.api.v1.dependencies.common.auth import require_current_employee
+from src.interface.api.v1.dependencies.common.auth import (
+    require_current_employee_or_user,
+)
 from src.interface.api.v1.dependencies.product import get_product_controller
 from src.interface.api.v1.schema.product import (
     CreateProductSchema,
@@ -31,13 +33,13 @@ def _install_overrides() -> AsyncMock:
 
     app.dependency_overrides[get_product_controller] = override_product_controller
 
-    async def override_require_current_employee(request: Request):
+    async def override_require_current_employee_or_user(request: Request):
         request.state.company_id = uuid.uuid4()
         request.state.employee_id = uuid.uuid4()
         return request.state.employee_id
 
-    app.dependency_overrides[require_current_employee] = (
-        override_require_current_employee
+    app.dependency_overrides[require_current_employee_or_user] = (
+        override_require_current_employee_or_user
     )
     return mock_controller
 

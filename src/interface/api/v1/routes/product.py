@@ -2,7 +2,9 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Request, UploadFile, status
 
-from src.interface.api.v1.dependencies.common.auth import require_current_employee
+from src.interface.api.v1.dependencies.common.auth import (
+    require_current_employee_or_user,
+)
 from src.interface.api.v1.dependencies.common.pagination import PaginationParamsDep
 from src.interface.api.v1.dependencies.product import ProductRepositoryDep
 from src.interface.api.v1.schema.product import (
@@ -21,7 +23,7 @@ tags_metadata = {
 router = APIRouter(
     prefix='/products',
     tags=[tags_metadata['name']],
-    dependencies=[Depends(require_current_employee)],
+    dependencies=[Depends(require_current_employee_or_user)],
 )
 
 
