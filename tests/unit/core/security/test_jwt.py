@@ -11,7 +11,9 @@ pytestmark = pytest.mark.unit
 def test_create_owner_access_token_contains_expected_claims():
     owner_id = uuid4()
     settings = MagicMock(
-        JWT_EXPIRE_MINUTES=60, JWT_SECRET='secret', JWT_ALGORITHM='HS256'
+        JWT_EXPIRE_MINUTES=60,
+        JWT_SECRET='test-secret-key-with-32-plus-bytes',
+        JWT_ALGORITHM='HS256',
     )
 
     with patch('src.core.security.jwt.get_settings', return_value=settings):
@@ -31,7 +33,9 @@ def test_create_access_token_includes_company_id_when_provided():
     subject_id = uuid4()
     company_id = uuid4()
     settings = MagicMock(
-        JWT_EXPIRE_MINUTES=60, JWT_SECRET='secret', JWT_ALGORITHM='HS256'
+        JWT_EXPIRE_MINUTES=60,
+        JWT_SECRET='test-secret-key-with-32-plus-bytes',
+        JWT_ALGORITHM='HS256',
     )
 
     with patch('src.core.security.jwt.get_settings', return_value=settings):
