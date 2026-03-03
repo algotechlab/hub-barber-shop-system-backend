@@ -164,6 +164,33 @@ class TestScheduleRepositoryPostgres:
 
         mock_session.rollback.assert_awaited_once()
 
+    async def test_get_slots_blocks_using_target_date(self, repo, mock_session):
+        booked_schedule = MagicMock()
+        booked_schedule.time_start = datetime(2026, 3, 3, 13, 0, 0)
+        booked_schedule.time_end = datetime(2026, 3, 3, 13, 30, 0)
+        mock_scalar_result = MagicMock()
+        mock_scalar_result.all.return_value = [booked_schedule]
+        mock_result = MagicMock()
+        mock_result.scalars.return_value = mock_scalar_result
+        mock_session.execute = AsyncMock(return_value=mock_result)
+
+        slots = SlotsInDTO(
+            company_id=uuid4(),
+            employee_id=uuid4(),
+            work_start=datetime(2026, 3, 1, 13, 0, 0),
+            work_end=datetime(2026, 3, 1, 14, 0, 0),
+            slot_minutes=30,
+            target_date=datetime(2026, 3, 3, 0, 0, 0).date(),
+        )
+
+        result = await repo.get_slots(slots)
+        result_range = 2
+        assert len(result) == result_range
+        assert result[0].time_start == datetime(2026, 3, 3, 13, 0, 0)
+        assert result[0].is_blocked is True
+        assert result[0].is_available is False
+        assert result[1].is_blocked is False
+
     async def test_get_schedule_returns_none_when_not_found(self, repo, mock_session):
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = None

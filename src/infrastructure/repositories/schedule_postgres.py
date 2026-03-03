@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import date, datetime, time, timedelta
 from typing import List, Optional
 from uuid import UUID, uuid4
 
@@ -23,6 +23,22 @@ class ScheduleRepositoryPostgres(ScheduleRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
 
+    @staticmethod
+    def _apply_target_date(
+        base_datetime: datetime, target_date: Optional[date]
+    ) -> datetime:
+        if target_date is None:
+            return base_datetime
+
+        tzinfo = base_datetime.tzinfo
+        target_time = time(
+            base_datetime.hour,
+            base_datetime.minute,
+            base_datetime.second,
+            base_datetime.microsecond,
+        )
+        return datetime.combine(target_date, target_time, tzinfo=tzinfo)
+
     async def create_schedule(self, schedule: ScheduleCreateDTO) -> ScheduleOutDTO:
         try:
             schedule = Schedule(**schedule.model_dump())
@@ -41,11 +57,12 @@ class ScheduleRepositoryPostgres(ScheduleRepository):
         employee_id: Optional[UUID] = None,
     ) -> List[ScheduleOutDTO]:
         try:
+            ## TODO: realizar a consulta para listar os agendamentos do funcionário
             query = (
                 select(Schedule)
                 .where(
                     Schedule.is_deleted.__eq__(False),
-                    Schedule.status.__eq__(False),
+                    Schedule.status.__eq__(True),
                     Schedule.company_id.__eq__(company_id),
                 )
                 .order_by(Schedule.created_at.desc())
@@ -64,22 +81,29 @@ class ScheduleRepositoryPostgres(ScheduleRepository):
 
     async def get_slots(self, slots: SlotsInDTO) -> List[SlotOutDTO]:
         try:
+            effective_work_start = self._apply_target_date(
+                slots.work_start, slots.target_date
+            )
+            effective_work_end = self._apply_target_date(
+                slots.work_end, slots.target_date
+            )
+
             query = select(Schedule).where(
                 Schedule.company_id.__eq__(slots.company_id),
                 Schedule.employee_id.__eq__(slots.employee_id),
                 Schedule.is_deleted.__eq__(False),
                 Schedule.is_canceled.__eq__(False),
-                Schedule.time_start.__lt__(slots.work_end),
-                Schedule.time_end.__gt__(slots.work_start),
+                Schedule.time_start.__lt__(effective_work_end),
+                Schedule.time_end.__gt__(effective_work_start),
             )
             result = await self.session.execute(query)
             booked_schedules = result.scalars().all()
 
             slot_delta = timedelta(minutes=slots.slot_minutes)
-            current = slots.work_start
+            current = effective_work_start
             generated_slots: List[SlotOutDTO] = []
 
-            while current + slot_delta <= slots.work_end:
+            while current + slot_delta <= effective_work_end:
                 slot_end = current + slot_delta
                 is_blocked = any(
                     schedule.time_start < slot_end and schedule.time_end > current
