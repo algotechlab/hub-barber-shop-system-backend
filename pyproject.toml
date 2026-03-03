@@ -37,10 +37,8 @@ pytest-asyncio = '^1.0.0'
 pytest-cov = "^6.1.1"
 ruff = '^0.11.12'
 taskipy = "^1.14.1"
-testcontainers = "^4.10.0"
 pytest-dotenv = "^0.5.2"
 bandit = "^1.8.3"
-debugpy = "^1.8.14"
 
 
 [tool.pytest.ini_options]
@@ -60,8 +58,6 @@ testpaths = ['tests']
 markers = [
     'need_dot_env: tests that consult data in a dot env file.',
     'unit: unit tests.',
-    'integration: integration tests.',
-    'e2e: end-to-end tests.'
 ]
 pythonpath = '.'
 env_files = [".env.test"]
@@ -75,7 +71,7 @@ omit = [
 
 [tool.ruff]
 target-version = "py313"
-exclude = ['.git', '__pycache__', '.mypy_cache', '.pytest_cache', 'migrations', 'fake.py']
+exclude = ['.git', '__pycache__', '.mypy_cache', '.pytest_cache', 'migrations']
 fix = true
 src = ["src", "tests"]
 
@@ -113,14 +109,11 @@ targets = ["src"]
 lint = 'ruff check .; ruff check . --diff'
 check = 'ruff check . --fix'
 format = 'ruff format .'
-run = 'python -Om src'
 pre_test = 'task lint'
 test = 'pytest -s -x --cov=src -vv'
 post_test = 'coverage html'
 pre_test_unit = 'task lint'
 test_unit = 'pytest tests -s -x --cov=src -vv'
-pre_test_integration = 'task lint'
-test_integration = 'pytest .\tests\integration\ -s -x --cov=src -vv'
 
 [alembic]
 script_location = "migrations"
