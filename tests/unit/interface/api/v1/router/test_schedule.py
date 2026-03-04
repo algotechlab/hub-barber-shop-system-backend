@@ -79,6 +79,25 @@ class TestScheduleRoutes:
         assert response.status_code == STATUS_CODE_200, response.json()
         assert len(response.json()) == 1
 
+    def test_list_user_schedules_returns_200(
+        self, client, override_dependency_schedules
+    ):
+        schedule = _build_schedule_out()
+        override_dependency_schedules.get_schedule_by_user_id.return_value = [schedule]
+
+        async def override_require_current_employee_or_user(request: Request):
+            request.state.company_id = uuid.uuid4()
+            request.state.user_id = uuid.uuid4()
+            return request.state.user_id
+
+        app.dependency_overrides[require_current_employee_or_user] = (
+            override_require_current_employee_or_user
+        )
+        response = client.get(f'{URL_SCHEDULES}/me')
+
+        assert response.status_code == STATUS_CODE_200, response.json()
+        assert len(response.json()) == 1
+
     def test_create_schedule_returns_201(self, client, override_dependency_schedules):
         schedule = _build_schedule_out()
         override_dependency_schedules.create_schedule.return_value = schedule

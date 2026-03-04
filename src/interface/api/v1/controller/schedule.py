@@ -36,9 +36,18 @@ class ScheduleController:
         pagination: PaginationParamsDTO,
         company_id: UUID,
         employee_id: UUID | None = None,
+        user_id: UUID | None = None,
     ) -> List[ScheduleOutSchema]:
         schedules = await self.schedule_use_case.list_schedules(
-            pagination, company_id, employee_id
+            pagination, company_id, employee_id, user_id
+        )
+        return [ScheduleOutSchema(**schedule.model_dump()) for schedule in schedules]
+
+    async def get_schedule_by_user_id(
+        self, pagination: PaginationParamsDTO, company_id: UUID, user_id: UUID
+    ) -> List[ScheduleOutSchema]:
+        schedules = await self.schedule_use_case.get_schedule_by_user_id(
+            pagination, company_id, user_id
         )
         return [ScheduleOutSchema(**schedule.model_dump()) for schedule in schedules]
 

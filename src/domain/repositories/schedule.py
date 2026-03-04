@@ -22,6 +22,12 @@ class ScheduleRepository(ABC):
         pagination: PaginationParamsDTO,
         company_id: UUID,
         employee_id: Optional[UUID] = None,
+        user_id: Optional[UUID] = None,
+    ) -> List[ScheduleOutDTO]: ...
+
+    @abstractmethod
+    async def get_schedule_by_user_id(
+        self, pagination: PaginationParamsDTO, company_id: UUID, user_id: UUID
     ) -> List[ScheduleOutDTO]: ...
 
     @abstractmethod
