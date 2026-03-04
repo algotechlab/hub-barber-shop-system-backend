@@ -44,6 +44,11 @@ class ScheduleOutSchema(BaseModel):
     created_at: datetime
     updated_at: datetime
     is_deleted: bool
+    user_name: Optional[str] = None
+    employee_name: Optional[str] = None
+    service_name: Optional[str] = None
+    product_name: Optional[str] = None
+    schedule_duration_minutes: Optional[int] = None
 
 
 class SlotsInSchema(BaseModel):

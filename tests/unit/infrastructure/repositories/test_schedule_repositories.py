@@ -81,10 +81,25 @@ class TestScheduleRepositoryPostgres:
 
     async def test_list_schedules_success(self, repo, mock_session):
         mock_orm_schedules = [MagicMock(), MagicMock()]
-        mock_scalar_result = MagicMock()
-        mock_scalar_result.all.return_value = mock_orm_schedules
         mock_result = MagicMock()
-        mock_result.scalars.return_value = mock_scalar_result
+        mock_result.all.return_value = [
+            (
+                mock_orm_schedules[0],
+                'User 1',
+                'Employee 1',
+                'Service 1',
+                'Product 1',
+                30,
+            ),
+            (
+                mock_orm_schedules[1],
+                'User 2',
+                'Employee 2',
+                'Service 2',
+                'Product 2',
+                45,
+            ),
+        ]
         mock_session.execute = AsyncMock(return_value=mock_result)
 
         expected = [MagicMock(), MagicMock()]
@@ -108,10 +123,17 @@ class TestScheduleRepositoryPostgres:
     ):
         employee_id = uuid4()
         mock_orm_schedules = [MagicMock()]
-        mock_scalar_result = MagicMock()
-        mock_scalar_result.all.return_value = mock_orm_schedules
         mock_result = MagicMock()
-        mock_result.scalars.return_value = mock_scalar_result
+        mock_result.all.return_value = [
+            (
+                mock_orm_schedules[0],
+                'User 1',
+                'Employee 1',
+                'Service 1',
+                'Product 1',
+                30,
+            )
+        ]
         mock_session.execute = AsyncMock(return_value=mock_result)
 
         expected = [MagicMock()]
@@ -122,6 +144,37 @@ class TestScheduleRepositoryPostgres:
 
         mock_session.execute.assert_awaited_once()
         assert result == expected
+
+    async def test_get_schedule_by_user_id_success(self, repo):
+        pagination = PaginationParamsDTO()
+        company_id = uuid4()
+        user_id = uuid4()
+        expected = [MagicMock()]
+
+        with patch.object(
+            repo, 'list_schedules', AsyncMock(return_value=expected)
+        ) as list_schedules:
+            result = await repo.get_schedule_by_user_id(pagination, company_id, user_id)
+
+        list_schedules.assert_awaited_once_with(
+            pagination=pagination,
+            company_id=company_id,
+            employee_id=None,
+            user_id=user_id,
+        )
+        assert result == expected
+
+    async def test_get_schedule_by_user_id_rollback_on_error(self, repo, mock_session):
+        mock_session.rollback = AsyncMock()
+        pagination = PaginationParamsDTO()
+
+        with patch.object(
+            repo, 'list_schedules', AsyncMock(side_effect=ValueError('DB error'))
+        ):
+            with pytest.raises(DatabaseException, match='DB error'):
+                await repo.get_schedule_by_user_id(pagination, uuid4(), uuid4())
+
+        mock_session.rollback.assert_awaited_once()
 
     async def test_get_slots_success(self, repo, mock_session):
         booked_schedule = MagicMock()

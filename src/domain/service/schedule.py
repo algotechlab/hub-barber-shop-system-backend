@@ -24,9 +24,17 @@ class ScheduleService:
         pagination: PaginationParamsDTO,
         company_id: UUID,
         employee_id: Optional[UUID] = None,
+        user_id: Optional[UUID] = None,
     ) -> List[ScheduleOutDTO]:
         return await self.schedule_repository.list_schedules(
-            pagination, company_id, employee_id
+            pagination, company_id, employee_id, user_id
+        )
+
+    async def get_schedule_by_user_id(
+        self, pagination: PaginationParamsDTO, company_id: UUID, user_id: UUID
+    ) -> List[ScheduleOutDTO]:
+        return await self.schedule_repository.get_schedule_by_user_id(
+            pagination, company_id, user_id
         )
 
     async def get_slots(self, slots: SlotsInDTO) -> List[SlotOutDTO]:

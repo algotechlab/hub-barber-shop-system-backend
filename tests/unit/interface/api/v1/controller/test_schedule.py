@@ -44,7 +44,45 @@ class TestScheduleController:
 
         assert len(result) == 1
         assert result[0].id is not None
-        use_case.list_schedules.assert_awaited_once_with(pagination, company_id, None)
+        use_case.list_schedules.assert_awaited_once_with(
+            pagination, company_id, None, None
+        )
+
+    @pytest.mark.asyncio
+    async def test_get_schedule_by_user_id(self):
+        company_id = uuid.uuid4()
+        user_id = uuid.uuid4()
+        use_case = AsyncMock()
+        use_case.get_schedule_by_user_id.return_value = [
+            ScheduleOutDTO(
+                id=uuid.uuid4(),
+                user_id=user_id,
+                service_id=uuid.uuid4(),
+                product_id=uuid.uuid4(),
+                employee_id=uuid.uuid4(),
+                company_id=company_id,
+                time_register='2026-02-14T20:06:18',
+                time_start=None,
+                time_end=None,
+                status=True,
+                is_canceled=False,
+                created_at='2026-02-14T20:06:18',
+                updated_at='2026-02-14T20:06:18',
+                is_deleted=False,
+            )
+        ]
+        controller = ScheduleController(use_case)
+        pagination = PaginationParamsDTO()
+
+        result = await controller.get_schedule_by_user_id(
+            pagination, company_id=company_id, user_id=user_id
+        )
+
+        assert len(result) == 1
+        assert result[0].user_id == user_id
+        use_case.get_schedule_by_user_id.assert_awaited_once_with(
+            pagination, company_id, user_id
+        )
 
     @pytest.mark.asyncio
     async def test_create_schedule(self):

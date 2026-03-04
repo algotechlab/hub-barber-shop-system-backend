@@ -3,6 +3,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request, Response, status
 
+from src.domain.exceptions.auth import UnauthorizedException
 from src.interface.api.v1.dependencies.common.auth import (
     require_current_employee_or_user,
 )
@@ -40,8 +41,32 @@ async def list_schedules(
     request: Request,
     employee_id: UUID | None = None,
 ) -> List[ScheduleOutSchema]:
+    user_id = getattr(request.state, 'user_id', None)
     return await controller.list_schedules(
-        pagination, company_id=request.state.company_id, employee_id=employee_id
+        pagination,
+        company_id=request.state.company_id,
+        employee_id=employee_id,
+        user_id=user_id,
+    )
+
+
+@router.get(
+    '/me',
+    description='Rota para listar a agenda do usuário autenticado',
+    status_code=status.HTTP_200_OK,
+    response_model=List[ScheduleOutSchema],
+)
+async def list_user_schedules(
+    controller: ScheduleRepositoryDep,
+    pagination: PaginationParamsDep,
+    request: Request,
+) -> List[ScheduleOutSchema]:
+    user_id = getattr(request.state, 'user_id', None)
+    if user_id is None:
+        raise UnauthorizedException('Apenas usuário pode consultar a própria agenda')
+
+    return await controller.get_schedule_by_user_id(
+        pagination, company_id=request.state.company_id, user_id=user_id
     )
 
 

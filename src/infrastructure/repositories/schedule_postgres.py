@@ -1,3 +1,4 @@
+import math
 from datetime import date, datetime, time, timedelta
 from typing import List, Optional
 from uuid import UUID, uuid4
@@ -15,8 +16,12 @@ from src.domain.dtos.schedule import (
     SlotsInDTO,
 )
 from src.domain.repositories.schedule import ScheduleRepository
+from src.infrastructure.database.models.employees import Employee
+from src.infrastructure.database.models.product import Product
 from src.infrastructure.database.models.schedule import Schedule
 from src.infrastructure.database.models.schedule_block import ScheduleBlock
+from src.infrastructure.database.models.service import Service
+from src.infrastructure.database.models.users import User
 
 
 class ScheduleRepositoryPostgres(ScheduleRepository):
@@ -55,26 +60,115 @@ class ScheduleRepositoryPostgres(ScheduleRepository):
         pagination: PaginationParamsDTO,
         company_id: UUID,
         employee_id: Optional[UUID] = None,
+        user_id: Optional[UUID] = None,
     ) -> List[ScheduleOutDTO]:
         try:
-            ## TODO: realizar a consulta para listar os agendamentos do funcionário
-            query = (
-                select(Schedule)
+            schedule_ids_query = (
+                select(Schedule.id)
                 .where(
                     Schedule.is_deleted.__eq__(False),
-                    Schedule.status.__eq__(True),
                     Schedule.company_id.__eq__(company_id),
                 )
                 .order_by(Schedule.created_at.desc())
             )
 
             if employee_id is not None:
-                query = query.where(Schedule.employee_id.__eq__(employee_id))
+                schedule_ids_query = schedule_ids_query.where(
+                    Schedule.employee_id.__eq__(employee_id)
+                )
 
-            query = query.offset(pagination.offset).limit(pagination.limit)
+            if user_id is not None:
+                schedule_ids_query = schedule_ids_query.where(
+                    Schedule.user_id.__eq__(user_id)
+                )
+
+            schedule_ids_query = schedule_ids_query.offset(pagination.offset).limit(
+                pagination.limit
+            )
+            paginated_schedule_ids = schedule_ids_query.subquery()
+
+            query = (
+                select(
+                    Schedule,
+                    User.name.label('user_name'),
+                    Employee.name.label('employee_name'),
+                    Service.name.label('service_name'),
+                    Product.name.label('product_name'),
+                    Service.duration.label('service_duration_minutes'),
+                )
+                .outerjoin(
+                    User,
+                    Schedule.user_id.__eq__(User.id),
+                )
+                .outerjoin(
+                    Employee,
+                    Schedule.employee_id.__eq__(Employee.id),
+                )
+                .outerjoin(
+                    Service,
+                    Schedule.service_id.__eq__(Service.id),
+                )
+                .outerjoin(
+                    Product,
+                    Schedule.product_id.__eq__(Product.id),
+                )
+                .where(
+                    Schedule.id.in_(select(paginated_schedule_ids.c.id)),
+                )
+                .order_by(Schedule.created_at.desc())
+            )
             result = await self.session.execute(query)
-            schedules = result.scalars().all()
-            return [ScheduleOutDTO.model_validate(schedule) for schedule in schedules]
+            rows = result.all()
+
+            enriched_schedules: List[ScheduleOutDTO] = []
+            for (
+                schedule,
+                user_name,
+                employee_name,
+                service_name,
+                product_name,
+                service_duration_minutes,
+            ) in rows:
+                schedule_out = ScheduleOutDTO.model_validate(schedule)
+                schedule_out.user_name = user_name
+                schedule_out.employee_name = employee_name
+                schedule_out.service_name = service_name
+                schedule_out.product_name = product_name
+                # A duração exibida deve representar a duração do serviço.
+                if (
+                    isinstance(service_duration_minutes, int)
+                    and service_duration_minutes > 0
+                ):
+                    schedule_out.schedule_duration_minutes = service_duration_minutes
+                elif schedule.time_start is not None and schedule.time_end is not None:
+                    duration_seconds = (
+                        schedule.time_end - schedule.time_start
+                    ).total_seconds()
+                    if duration_seconds > 0:
+                        schedule_out.schedule_duration_minutes = math.ceil(
+                            duration_seconds / 60
+                        )
+                    else:
+                        schedule_out.schedule_duration_minutes = None
+                else:
+                    schedule_out.schedule_duration_minutes = None
+                enriched_schedules.append(schedule_out)
+
+            return enriched_schedules
+        except Exception as error:
+            await self.session.rollback()
+            raise DatabaseException(str(error))
+
+    async def get_schedule_by_user_id(
+        self, pagination: PaginationParamsDTO, company_id: UUID, user_id: UUID
+    ) -> List[ScheduleOutDTO]:
+        try:
+            return await self.list_schedules(
+                pagination=pagination,
+                company_id=company_id,
+                employee_id=None,
+                user_id=user_id,
+            )
         except Exception as error:
             await self.session.rollback()
             raise DatabaseException(str(error))

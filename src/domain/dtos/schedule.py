@@ -41,6 +41,13 @@ class ScheduleOutDTO(ScheduleBaseDTO):
     created_at: datetime
     updated_at: datetime
     is_deleted: bool
+    time_start: Optional[datetime] = None
+    time_end: Optional[datetime] = None
+    user_name: Optional[str] = None
+    employee_name: Optional[str] = None
+    service_name: Optional[str] = None
+    product_name: Optional[str] = None
+    schedule_duration_minutes: Optional[int] = None
 
 
 class ScheduleCreateDTO(ScheduleBaseDTO):

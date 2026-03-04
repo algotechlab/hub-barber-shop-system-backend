@@ -71,7 +71,24 @@ async def test_schedule_service_list_delegates_to_repository():
 
     result = await service.list_schedules(pagination, company_id)
 
-    repo.list_schedules.assert_awaited_once_with(pagination, company_id, None)
+    repo.list_schedules.assert_awaited_once_with(pagination, company_id, None, None)
+    assert result == []
+
+
+@pytest.mark.asyncio
+async def test_schedule_service_get_schedule_by_user_id_delegates_to_repository():
+    repo = AsyncMock()
+    service = ScheduleService(repo)
+    pagination = PaginationParamsDTO()
+    company_id = uuid4()
+    user_id = uuid4()
+    repo.get_schedule_by_user_id.return_value = []
+
+    result = await service.get_schedule_by_user_id(pagination, company_id, user_id)
+
+    repo.get_schedule_by_user_id.assert_awaited_once_with(
+        pagination, company_id, user_id
+    )
     assert result == []
 
 
