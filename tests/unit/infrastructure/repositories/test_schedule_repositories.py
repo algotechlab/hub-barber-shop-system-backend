@@ -145,6 +145,79 @@ class TestScheduleRepositoryPostgres:
         mock_session.execute.assert_awaited_once()
         assert result == expected
 
+    async def test_list_schedules_success_with_user_filter(self, repo, mock_session):
+        user_id = uuid4()
+        mock_orm_schedules = [MagicMock()]
+        mock_result = MagicMock()
+        mock_result.all.return_value = [
+            (
+                mock_orm_schedules[0],
+                'User 1',
+                'Employee 1',
+                'Service 1',
+                'Product 1',
+                30,
+            )
+        ]
+        mock_session.execute = AsyncMock(return_value=mock_result)
+
+        expected = [MagicMock()]
+        with patch.object(ScheduleOutDTO, 'model_validate', side_effect=expected):
+            result = await repo.list_schedules(
+                PaginationParamsDTO(), uuid4(), user_id=user_id
+            )
+
+        mock_session.execute.assert_awaited_once()
+        assert result == expected
+
+    async def test_list_schedules_computes_duration_when_service_duration_missing(
+        self, repo, mock_session
+    ):
+        schedule = MagicMock()
+        schedule.time_start = datetime(2026, 2, 14, 10, 0, 0)
+        schedule.time_end = datetime(2026, 2, 14, 10, 31, 0)
+        schedule_out = MagicMock()
+        mock_result = MagicMock()
+        mock_result.all.return_value = [
+            (schedule, 'User', 'Employee', 'Service', 'Product', None)
+        ]
+        mock_session.execute = AsyncMock(return_value=mock_result)
+
+        with patch.object(ScheduleOutDTO, 'model_validate', return_value=schedule_out):
+            result = await repo.list_schedules(PaginationParamsDTO(), uuid4())
+        arrange_result = 31
+        assert result[0].schedule_duration_minutes == arrange_result
+
+    async def test_list_schedules_sets_duration_none_when_missing_or_invalid(
+        self, repo, mock_session
+    ):
+        schedule_without_times = MagicMock()
+        schedule_without_times.time_start = None
+        schedule_without_times.time_end = None
+        out_without_times = MagicMock()
+
+        schedule_negative = MagicMock()
+        schedule_negative.time_start = datetime(2026, 2, 14, 11, 0, 0)
+        schedule_negative.time_end = datetime(2026, 2, 14, 10, 59, 0)
+        out_negative = MagicMock()
+
+        mock_result = MagicMock()
+        mock_result.all.return_value = [
+            (schedule_without_times, 'User', 'Employee', 'Service', 'Product', None),
+            (schedule_negative, 'User', 'Employee', 'Service', 'Product', None),
+        ]
+        mock_session.execute = AsyncMock(return_value=mock_result)
+
+        with patch.object(
+            ScheduleOutDTO,
+            'model_validate',
+            side_effect=[out_without_times, out_negative],
+        ):
+            result = await repo.list_schedules(PaginationParamsDTO(), uuid4())
+
+        assert result[0].schedule_duration_minutes is None
+        assert result[1].schedule_duration_minutes is None
+
     async def test_get_schedule_by_user_id_success(self, repo):
         pagination = PaginationParamsDTO()
         company_id = uuid4()

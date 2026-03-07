@@ -134,7 +134,6 @@ class ScheduleRepositoryPostgres(ScheduleRepository):
                 schedule_out.employee_name = employee_name
                 schedule_out.service_name = service_name
                 schedule_out.product_name = product_name
-                # A duração exibida deve representar a duração do serviço.
                 if (
                     isinstance(service_duration_minutes, int)
                     and service_duration_minutes > 0

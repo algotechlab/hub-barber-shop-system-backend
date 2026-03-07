@@ -1,0 +1,43 @@
+from uuid import UUID
+
+from src.domain.dtos.schedule_block import (
+    ScheduleBlockCreateDTO,
+    ScheduleBlockUpdateDTO,
+)
+from src.domain.use_case.schedule_block import ScheduleBlockUseCase
+from src.interface.api.v1.schema.schedule_block import (
+    CreateScheduleBlockSchema,
+    ScheduleBlockOutSchema,
+    UpdateScheduleBlockSchema,
+)
+
+
+class ScheduleBlockController:
+    def __init__(self, schedule_block_use_case: ScheduleBlockUseCase):
+        self.schedule_block_use_case = schedule_block_use_case
+
+    async def create_schedule_block(
+        self, schedule_block: CreateScheduleBlockSchema, company_id: UUID
+    ) -> ScheduleBlockOutSchema:
+        schedule_block_dto = ScheduleBlockCreateDTO(
+            **schedule_block.model_dump(), company_id=company_id
+        )
+        created_schedule_block = (
+            await self.schedule_block_use_case.create_schedule_block(schedule_block_dto)
+        )
+        return ScheduleBlockOutSchema(**created_schedule_block.model_dump())
+
+    async def get_schedule_block(self, id: UUID) -> ScheduleBlockOutSchema:
+        schedule_block = await self.schedule_block_use_case.get_schedule_block(id)
+        return ScheduleBlockOutSchema(**schedule_block.model_dump())
+
+    async def update_schedule_block(
+        self, id: UUID, schedule_block: UpdateScheduleBlockSchema
+    ) -> ScheduleBlockOutSchema:
+        schedule_block_dto = ScheduleBlockUpdateDTO(**schedule_block.model_dump())
+        return await self.schedule_block_use_case.update_schedule_block(
+            id, schedule_block_dto
+        )
+
+    async def delete_schedule_block(self, id: UUID) -> bool:
+        return await self.schedule_block_use_case.delete_schedule_block(id)

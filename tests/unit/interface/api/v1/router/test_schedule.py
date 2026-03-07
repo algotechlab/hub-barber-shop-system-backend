@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from fastapi import Request
+from src.domain.exceptions.auth import UnauthorizedException
 from src.interface.api.v1.controller.schedule import ScheduleController
 from src.interface.api.v1.dependencies.common.auth import (
     require_current_employee_or_user,
@@ -21,6 +22,7 @@ URL_SCHEDULES = '/api/v1/schedule'
 STATUS_CODE_200 = 200
 STATUS_CODE_201 = 201
 STATUS_CODE_204 = 204
+STATUS_CODE_401 = 401
 
 
 def _build_schedule_out() -> ScheduleOutSchema:
@@ -97,6 +99,18 @@ class TestScheduleRoutes:
 
         assert response.status_code == STATUS_CODE_200, response.json()
         assert len(response.json()) == 1
+
+    def test_list_user_schedules_returns_401_when_not_user(
+        self, client, override_dependency_schedules
+    ):
+        override_dependency_schedules.get_schedule_by_user_id.side_effect = (
+            UnauthorizedException('Apenas usuário pode consultar a própria agenda')
+        )
+
+        response = client.get(f'{URL_SCHEDULES}/me')
+
+        assert response.status_code == STATUS_CODE_401, response.json()
+        assert response.json()['code'] == 'UNAUTHORIZED'
 
     def test_create_schedule_returns_201(self, client, override_dependency_schedules):
         schedule = _build_schedule_out()

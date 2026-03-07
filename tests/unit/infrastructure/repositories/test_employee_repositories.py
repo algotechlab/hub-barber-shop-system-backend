@@ -154,11 +154,9 @@ class TestEmployeeRepositoryPostgres:
         pagination = PaginationParamsDTO()
         company_id = uuid4()
         mock_orm_employees = [MagicMock(), MagicMock()]
-        mock_scalar_result = MagicMock()
-        mock_scalar_result.all.return_value = mock_orm_employees
-
+        mock_rows = [(mock_orm_employees[0], True), (mock_orm_employees[1], False)]
         mock_result = MagicMock()
-        mock_result.scalars.return_value = mock_scalar_result
+        mock_result.all.return_value = mock_rows
         mock_session.execute = AsyncMock(return_value=mock_result)
 
         expected_dtos = [MagicMock(), MagicMock()]
@@ -187,6 +185,7 @@ class TestEmployeeRepositoryPostgres:
                 return ('desc', self.name)
 
         class _DummyEmployee:
+            id = _DummyCol('id')
             is_deleted = _DummyCol('is_deleted')
             name = _DummyCol('name')
             company_id = _DummyCol('company_id')
@@ -215,19 +214,24 @@ class TestEmployeeRepositoryPostgres:
                 self.limit_value = value
                 return self
 
+            def exists(self):
+                return self
+
+            def label(self, _name):
+                return self
+
         fake_query = _FakeQuery()
 
-        def _fake_select(_model):
+        def _fake_select(*_args):
             return fake_query
 
         pagination = PaginationParamsDTO(filter_by='name', filter_value='John')
         company_id = uuid4()
 
         mock_orm_employees = [MagicMock()]
-        mock_scalar_result = MagicMock()
-        mock_scalar_result.all.return_value = mock_orm_employees
+        mock_rows = [(mock_orm_employees[0], False)]
         mock_result = MagicMock()
-        mock_result.scalars.return_value = mock_scalar_result
+        mock_result.all.return_value = mock_rows
         mock_session.execute = AsyncMock(return_value=mock_result)
 
         expected_dtos = [MagicMock()]
