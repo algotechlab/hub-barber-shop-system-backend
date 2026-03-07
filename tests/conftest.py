@@ -7,6 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 from src.domain.dtos.employee import EmployeeBaseDTO, EmployeeOutDTO
 from src.domain.dtos.owner import CreateOwnerDTO, OwnerOutDTO
+from src.domain.dtos.schedule_block import ScheduleBlockCreateDTO, ScheduleBlockOutDTO
 from src.domain.dtos.users import UserBaseDTO, UserOutDTO
 from src.infrastructure.database.models.employees import Employee
 from src.infrastructure.database.models.users import User
@@ -170,4 +171,28 @@ def owner_out_dto(owner_create_dto):
         email=owner_create_dto.email,
         phone=owner_create_dto.phone,
         created_at=datetime.now(timezone.utc),
+    )
+
+
+@pytest.fixture
+def generate_schedule_block_create_dto():
+    return ScheduleBlockCreateDTO(
+        employee_id=uuid4(),
+        company_id=uuid4(),
+        start_time=datetime.now(timezone.utc),
+        end_time=datetime.now(timezone.utc),
+    )
+
+
+@pytest.fixture
+def generate_schedule_block_out_dto():
+    return ScheduleBlockOutDTO(
+        id=uuid4(),
+        employee_id=uuid4(),
+        company_id=uuid4(),
+        start_time=datetime.now(timezone.utc),
+        end_time=datetime.now(timezone.utc),
+        is_block=False,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
     )
