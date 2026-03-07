@@ -13,6 +13,7 @@ class EmployeeSchema(BaseModel):
     is_active: bool
     role: str
     company_id: UUID
+    is_block: bool = False
 
 
 class EmployeeOutSchema(BaseModel):

@@ -23,6 +23,7 @@ class EmployeeOutDTO(BaseModel):
     is_active: bool
     role: str
     company_id: UUID
+    is_block: bool = False
     created_at: datetime
     updated_at: datetime
 
