@@ -33,7 +33,7 @@ class ScheduleBlockRepositoryPostgres(ScheduleBlockRepository):
             payload['start_time'] = self._to_db_naive_utc(payload['start_time'])
             payload['end_time'] = self._to_db_naive_utc(payload['end_time'])
 
-            schedule_block = ScheduleBlock(**payload)
+            schedule_block = ScheduleBlock(**payload, is_block=True)
             self.session.add(schedule_block)
             await self.session.commit()
             await self.session.refresh(schedule_block)
