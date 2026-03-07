@@ -14,6 +14,7 @@ from src.domain.dtos.employee import (
 )
 from src.domain.repositories.employee import EmployeeRepository
 from src.infrastructure.database.models.employees import Employee
+from src.infrastructure.database.models.schedule_block import ScheduleBlock
 
 
 class EmployeeRepositoryPostgres(EmployeeRepository):
@@ -69,8 +70,22 @@ class EmployeeRepositoryPostgres(EmployeeRepository):
         self, pagination: PaginationParamsDTO, company_id: UUID
     ) -> list[EmployeeOutDTO]:
         try:
+            has_active_block = (
+                select(ScheduleBlock.id)
+                .where(
+                    ScheduleBlock.employee_id.__eq__(Employee.id),
+                    ScheduleBlock.company_id.__eq__(company_id),
+                    ScheduleBlock.is_deleted.__eq__(False),
+                    ScheduleBlock.is_block.__eq__(True),
+                )
+                .exists()
+            )
+
             query = (
-                select(Employee)
+                select(
+                    Employee,
+                    has_active_block.label('is_block'),
+                )
                 .where(
                     Employee.is_deleted.__eq__(False),
                     Employee.company_id.__eq__(company_id),
@@ -84,8 +99,15 @@ class EmployeeRepositoryPostgres(EmployeeRepository):
 
             query = query.offset(pagination.offset).limit(pagination.limit)
             result = await self.session.execute(query)
-            employees = result.scalars().all()
-            return [EmployeeOutDTO.model_validate(employee) for employee in employees]
+            rows = result.all()
+
+            employees: list[EmployeeOutDTO] = []
+            for employee, is_block in rows:
+                employee_dto = EmployeeOutDTO.model_validate(employee)
+                employee_dto.is_block = bool(is_block)
+                employees.append(employee_dto)
+
+            return employees
         except Exception as error:
             await self.session.rollback()
             raise DatabaseException(str(error))
