@@ -49,12 +49,10 @@ class Settings(BaseSettings):
     # OBS: essas configs não devem impedir boot/migrations. A integração valida
     # a presença do token quando for realmente usada.
     MARKET_PAID_BASE_URL: str = 'https://api.mercadopago.com'
-    MARKET_PAID_ACCESS_TOKEN: str = (
-        'APP_USR-8460062634622735-011612-8d722fea2036739252f1f96b7015a251-1930594081'
-    )
+    MARKET_PAID_ACCESS_TOKEN: str = ''
 
     # Auth (JWT)
-    JWT_SECRET: str = 'algobarbersystem'
+    JWT_SECRET: str = ''
     JWT_ALGORITHM: str = 'HS256'
     JWT_EXPIRE_MINUTES: int = 36000
 
