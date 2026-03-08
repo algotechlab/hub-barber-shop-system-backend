@@ -9,11 +9,321 @@
   "item": [
     {
       "name": "Serviços",
-      "item": []
+      "item": [
+        {
+          "name": "Listagem de serviços",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NjcwZmJlZC02M2NhLTQwNDYtYWFmOC02ZWI0OGRjZjE4MGUiLCJ0eXAiOiJlbXBsb3llZSIsImlhdCI6MTc3MTg4Njk4NCwiZXhwIjoxNzc0MDQ2OTg0LCJjb21wYW55X2lkIjoiMTI5ZDhkMmQtMDgyOC00N2E5LWI1ODYtODA4OGMzM2VhZThmIn0.WZ71uM-XOnRRyVn87WYGuNE_dEdMhJW0WpaVMDbqjtY",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{URL_PROD}}/api/v1/services?filter_by=name&filter_value=Ant",
+              "host": [
+                "{{URL_PROD}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "services"
+              ],
+              "query": [
+                {
+                  "key": "filter_by",
+                  "value": "name"
+                },
+                {
+                  "key": "filter_value",
+                  "value": "Ant"
+                },
+                {
+                  "key": null,
+                  "value": "",
+                  "type": "text",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Criar um serviço",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NjcwZmJlZC02M2NhLTQwNDYtYWFmOC02ZWI0OGRjZjE4MGUiLCJ0eXAiOiJlbXBsb3llZSIsImlhdCI6MTc3MTg2NzU0MCwiZXhwIjoxNzc0MDI3NTQwLCJjb21wYW55X2lkIjoiMTI5ZDhkMmQtMDgyOC00N2E5LWI1ODYtODA4OGMzM2VhZThmIn0.uSqIsydf4uPNc9PItzsJVVJvF6qJn8lxOZX1UhvNp9Y",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Corte americano\",\n  \"description\": \"Corte americano\",\n  \"price\": 50,\n  \"duration\": 30,\n  \"category\": \"Cabelo\",\n  \"time_to_spend\": 30,\n  \"status\": true,\n  \"url_image\": \"https://algo-tech-barber.s3.us-east-2.amazonaws.com/companies/5b0d61bf-aaee-444c-bb0c-777fd379c089/services/a0e30cac695f4521ba167661c0a5ece1.png\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{URL_PROD}}/api/v1/services",
+              "host": [
+                "{{URL_PROD}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "services"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Deletar um serviço",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{URL_BASE}}/api/v1/services/:service_id",
+              "host": [
+                "{{URL_BASE}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "services",
+                ":service_id"
+              ],
+              "variable": [
+                {
+                  "key": "service_id",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Atualizar o serviço",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkOWIwZDk4ZC03MDhhLTQ0NTEtYjFiMC04NTIxNjZlYjU3OWIiLCJ0eXAiOiJlbXBsb3llZSIsImlhdCI6MTc3MDkxNjA5MiwiZXhwIjoxNzczMDc2MDkyLCJjb21wYW55X2lkIjoiNWIwZDYxYmYtYWFlZS00NDRjLWJiMGMtNzc3ZmQzNzljMDg5In0.-7vb6Qa_dJL8nxfX5BWwyJSqJrTd2wBzcZMQfNsfdvo",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Corte americano 2\",\n  \"url_image\": \"https://algo-tech-barber.s3.us-east-2.amazonaws.com/companies/5b0d61bf-aaee-444c-bb0c-777fd379c089/services/4f4f980147a14cf1a292749e2bebc0bd.jpeg\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{URL_BASE}}/api/v1/services/:service_id",
+              "host": [
+                "{{URL_BASE}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "services",
+                ":service_id"
+              ],
+              "variable": [
+                {
+                  "key": "service_id",
+                  "value": "2f2e36c3-17a0-41b9-9fbb-ca3784cc585e"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload da imagem do serviço",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NjcwZmJlZC02M2NhLTQwNDYtYWFmOC02ZWI0OGRjZjE4MGUiLCJ0eXAiOiJlbXBsb3llZSIsImlhdCI6MTc3MTg4NTU0NCwiZXhwIjoxNzc0MDQ1NTQ0LCJjb21wYW55X2lkIjoiMTI5ZDhkMmQtMDgyOC00N2E5LWI1ODYtODA4OGMzM2VhZThmIn0.zCSl2LFJ1U7nNxXItsejlQBLLzRfZpScx-PYrM1Wijs",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "uuid": "5e70efef-4bb5-4610-b115-917072dd5303",
+                  "src": "postman-cloud:///1efa9bfc-abff-4480-a3c6-777703de1c9b"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{URL_PROD}}/api/v1/services/upload-image",
+              "host": [
+                "{{URL_PROD}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "services",
+                "upload-image"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
     },
     {
       "name": "Usuários",
-      "item": []
+      "item": [
+        {
+          "name": "Listar Usuários",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{URL_BASE}}/api/v1/users",
+              "host": [
+                "{{URL_BASE}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cadastrar Usuários",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Fabin\",\n  \"email\": \"fabinstr@gmail.com\",\n  \"password\": \"Binfae@45\",\n  \"phone\": \"5561991731201\",\n  \"company_id\": \"5b0d61bf-aaee-444c-bb0c-777fd379c089\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{URL_BASE}}/api/v1/users",
+              "host": [
+                "{{URL_BASE}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Atualizar Usuário",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Fabin\",\n  \"email\": \"fabinstr@gmail.com\",\n  \"password\": \"Binfae@45\",\n  \"phone\": \"5561991731201\",\n  \"company_id\": \"5b0d61bf-aaee-444c-bb0c-777fd379c089\"\n}"
+            },
+            "url": {
+              "raw": "{{URL_BASE}}/api/v1/users/:user_id",
+              "host": [
+                "{{URL_BASE}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                ":user_id"
+              ],
+              "variable": [
+                {
+                  "key": "user_id",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Deletar usuário",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{URL_BASE}}/api/v1/users/:user_id",
+              "host": [
+                "{{URL_BASE}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                ":user_id"
+              ],
+              "variable": [
+                {
+                  "key": "user_id",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar Usuário por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{URL_BASE}}/api/v1/users/:user_id",
+              "host": [
+                "{{URL_BASE}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                ":user_id"
+              ],
+              "variable": [
+                {
+                  "key": "user_id",
+                  "value": "c759b3f1-0d98-4b27-8786-f3bdd7d26204"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
     },
     {
       "name": "Funcionários",
@@ -25,7 +335,7 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkOWIwZDk4ZC03MDhhLTQ0NTEtYjFiMC04NTIxNjZlYjU3OWIiLCJ0eXAiOiJlbXBsb3llZSIsImlhdCI6MTc3MDc3NTUxMiwiZXhwIjoxNzcyOTM1NTEyLCJjb21wYW55X2lkIjoiNWIwZDYxYmYtYWFlZS00NDRjLWJiMGMtNzc3ZmQzNzljMDg5In0.iSEFiBd8uYNY24nwCH8u1kWtOgcuaenXhdGclX2YmaI",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NjcwZmJlZC02M2NhLTQwNDYtYWFmOC02ZWI0OGRjZjE4MGUiLCJ0eXAiOiJlbXBsb3llZSIsImlhdCI6MTc3MjQxNTI3OSwiZXhwIjoxNzc0NTc1Mjc5LCJjb21wYW55X2lkIjoiMTI5ZDhkMmQtMDgyOC00N2E5LWI1ODYtODA4OGMzM2VhZThmIn0.xeVmtNEgS--PXxdMItHy7dxi8cspyeJPp_nSCI_T39c",
                 "type": "text"
               }
             ],
@@ -38,6 +348,28 @@
                 "api",
                 "v1",
                 "employees"
+              ],
+              "query": [
+                {
+                  "key": "offset",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "100",
+                  "disabled": true
+                },
+                {
+                  "key": "filter_by",
+                  "value": "name",
+                  "disabled": true
+                },
+                {
+                  "key": "filter_value",
+                  "value": "Hedris",
+                  "disabled": true
+                }
               ]
             }
           },
@@ -82,7 +414,7 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5NzZlZTJkYS0xNzc5LTRhZmItODhiYy02ZWJhMWQ5MDk2NzMiLCJ0eXAiOiJvd25lciIsImlhdCI6MTc3MDc3NTMyOCwiZXhwIjoxNzcyOTM1MzI4fQ.flgAahd1rSXA7MyjiREPL1DHZigoSySVm-kHlC4IZVU",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NjcwZmJlZC02M2NhLTQwNDYtYWFmOC02ZWI0OGRjZjE4MGUiLCJ0eXAiOiJlbXBsb3llZSIsImlhdCI6MTc3MTk3NzgyMCwiZXhwIjoxNzc0MTM3ODIwLCJjb21wYW55X2lkIjoiMTI5ZDhkMmQtMDgyOC00N2E5LWI1ODYtODA4OGMzM2VhZThmIn0.kK7mzcgzyUfvKv38_9VfGuSsawC6sNk1PMPQqXP2IGQ",
                 "type": "text"
               },
               {
@@ -101,9 +433,9 @@
               }
             },
             "url": {
-              "raw": "{{URL_BASE}}/api/v1/employees",
+              "raw": "{{URL_PROD}}/api/v1/employees",
               "host": [
-                "{{URL_BASE}}"
+                "{{URL_PROD}}"
               ],
               "path": [
                 "api",
@@ -207,9 +539,9 @@
               }
             },
             "url": {
-              "raw": "{{URL_BASE}}/api/v1/auth/login",
+              "raw": "{{URL_PROD}}/api/v1/auth/login",
               "host": [
-                "{{URL_BASE}}"
+                "{{URL_PROD}}"
               ],
               "path": [
                 "api",
@@ -258,7 +590,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"phone\": \"556199462145\"\n}",
+              "raw": "{\n  \"phone\": \"5561994261245\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -266,9 +598,9 @@
               }
             },
             "url": {
-              "raw": "{{URL_BASE}}/api/v1/auth/login/user",
+              "raw": "{{URL_PROD}}/api/v1/auth/login/user",
               "host": [
-                "{{URL_BASE}}"
+                "{{URL_PROD}}"
               ],
               "path": [
                 "api",
@@ -296,7 +628,7 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5NzZlZTJkYS0xNzc5LTRhZmItODhiYy02ZWJhMWQ5MDk2NzMiLCJ0eXAiOiJvd25lciIsImlhdCI6MTc3MDc3NTIwMiwiZXhwIjoxNzcyOTM1MjAyfQ.jVICIYe6hAC5NzC7C0QMSLBFLd_JwL6eid_Hnibz2X4",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyOGNiNjJiYy02M2EyLTQzYmQtYTYwZi1hOTE0YjViY2ZkOGEiLCJ0eXAiOiJvd25lciIsImlhdCI6MTc3MTUzNDY0MCwiZXhwIjoxNzczNjk0NjQwfQ.E0POXTGP7g1tADw4P7ZG-sTcB03vioQ610EbCMc2J6I",
                 "type": "text"
               },
               {
@@ -310,9 +642,9 @@
               "raw": "{\n  \"name\": \"dgbarbershop\",\n  \"slug\": \"dgbarbershop\",\n  \"is_active\": true\n}"
             },
             "url": {
-              "raw": "{{URL_BASE}}/api/v1/company",
+              "raw": "{{URL_PROD}}/api/v1/company",
               "host": [
-                "{{URL_BASE}}"
+                "{{URL_PROD}}"
               ],
               "path": [
                 "api",
@@ -330,14 +662,14 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0ODk2MjgxMS1kZDg3LTQ2NjMtOGU1My0wMzMwNTQ4ZmYzZTUiLCJpYXQiOjE3NzA2ODE3MTAsImV4cCI6MTc3Mjg0MTcxMH0.4dnMwobUXPUGhX42J-HhL3RV6cpHoNUGH7RpIbqo7T4",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NjcwZmJlZC02M2NhLTQwNDYtYWFmOC02ZWI0OGRjZjE4MGUiLCJ0eXAiOiJlbXBsb3llZSIsImlhdCI6MTc3MTk3NzgyMCwiZXhwIjoxNzc0MTM3ODIwLCJjb21wYW55X2lkIjoiMTI5ZDhkMmQtMDgyOC00N2E5LWI1ODYtODA4OGMzM2VhZThmIn0.kK7mzcgzyUfvKv38_9VfGuSsawC6sNk1PMPQqXP2IGQ",
                 "type": "text"
               }
             ],
             "url": {
-              "raw": "{{URL_BASE}}/api/v1/company",
+              "raw": "{{URL_PROD}}/api/v1/company",
               "host": [
-                "{{URL_BASE}}"
+                "{{URL_PROD}}"
               ],
               "path": [
                 "api",
@@ -411,6 +743,32 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Get por slug (Rota pública para pesquisa de barbearias)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{URL_PROD}}/api/v1/slug-companies/:slug",
+              "host": [
+                "{{URL_PROD}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "slug-companies",
+                ":slug"
+              ],
+              "variable": [
+                {
+                  "key": "slug",
+                  "value": "dgbarbershop"
+                }
+              ]
+            }
+          },
+          "response": []
         }
       ]
     },
@@ -424,14 +782,14 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkOWIwZDk4ZC03MDhhLTQ0NTEtYjFiMC04NTIxNjZlYjU3OWIiLCJ0eXAiOiJlbXBsb3llZSIsImlhdCI6MTc3MDc3NTUxMiwiZXhwIjoxNzcyOTM1NTEyLCJjb21wYW55X2lkIjoiNWIwZDYxYmYtYWFlZS00NDRjLWJiMGMtNzc3ZmQzNzljMDg5In0.iSEFiBd8uYNY24nwCH8u1kWtOgcuaenXhdGclX2YmaI",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NjcwZmJlZC02M2NhLTQwNDYtYWFmOC02ZWI0OGRjZjE4MGUiLCJ0eXAiOiJlbXBsb3llZSIsImlhdCI6MTc3MTg4OTI1MiwiZXhwIjoxNzc0MDQ5MjUyLCJjb21wYW55X2lkIjoiMTI5ZDhkMmQtMDgyOC00N2E5LWI1ODYtODA4OGMzM2VhZThmIn0.at7A1U8axxTTqhnigUH9_ZxczUHwMyhS_Xb_LRkRXR4",
                 "type": "text"
               }
             ],
             "url": {
-              "raw": "{{URL_BASE}}/api/v1/products",
+              "raw": "{{URL_PROD}}/api/v1/products",
               "host": [
-                "{{URL_BASE}}"
+                "{{URL_PROD}}"
               ],
               "path": [
                 "api",
@@ -449,7 +807,7 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkOWIwZDk4ZC03MDhhLTQ0NTEtYjFiMC04NTIxNjZlYjU3OWIiLCJ0eXAiOiJlbXBsb3llZSIsImlhdCI6MTc3MDc3NTUxMiwiZXhwIjoxNzcyOTM1NTEyLCJjb21wYW55X2lkIjoiNWIwZDYxYmYtYWFlZS00NDRjLWJiMGMtNzc3ZmQzNzljMDg5In0.iSEFiBd8uYNY24nwCH8u1kWtOgcuaenXhdGclX2YmaI",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NjcwZmJlZC02M2NhLTQwNDYtYWFmOC02ZWI0OGRjZjE4MGUiLCJ0eXAiOiJlbXBsb3llZSIsImlhdCI6MTc3MTg4OTI1MiwiZXhwIjoxNzc0MDQ5MjUyLCJjb21wYW55X2lkIjoiMTI5ZDhkMmQtMDgyOC00N2E5LWI1ODYtODA4OGMzM2VhZThmIn0.at7A1U8axxTTqhnigUH9_ZxczUHwMyhS_Xb_LRkRXR4",
                 "type": "text"
               },
               {
@@ -460,12 +818,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Exemplo\",\n  \"description\": \"Exemplo 02\",\n  \"price\": 10,\n  \"category\": \"cabelo\",\n  \"status\": true,\n  \"url_image\": \"https://algo-tech-barber.s3.us-east-2.amazonaws.com/companies/5b0d61bf-aaee-444c-bb0c-777fd379c089/products/c34d6b9b6b3c4529bbea5c8955202735.jpeg\"\n}"
+              "raw": "{\n  \"name\": \"Pomada para barba\",\n  \"description\": \"Pomada para barba\",\n  \"price\": 25.50,\n  \"category\": \"barba\",\n  \"status\": true,\n  \"url_image\": \"https://algo-tech-barber.s3.us-east-2.amazonaws.com/companies/129d8d2d-0828-47a9-b586-8088c33eae8f/products/e58146b2bb49401ea9c306e2f26b78a8.jpeg\"\n}"
             },
             "url": {
-              "raw": "{{URL_BASE}}/api/v1/products",
+              "raw": "{{URL_PROD}}/api/v1/products",
               "host": [
-                "{{URL_BASE}}"
+                "{{URL_PROD}}"
               ],
               "path": [
                 "api",
@@ -483,7 +841,7 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkOWIwZDk4ZC03MDhhLTQ0NTEtYjFiMC04NTIxNjZlYjU3OWIiLCJ0eXAiOiJlbXBsb3llZSIsImlhdCI6MTc3MDc3NTUxMiwiZXhwIjoxNzcyOTM1NTEyLCJjb21wYW55X2lkIjoiNWIwZDYxYmYtYWFlZS00NDRjLWJiMGMtNzc3ZmQzNzljMDg5In0.iSEFiBd8uYNY24nwCH8u1kWtOgcuaenXhdGclX2YmaI",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NjcwZmJlZC02M2NhLTQwNDYtYWFmOC02ZWI0OGRjZjE4MGUiLCJ0eXAiOiJlbXBsb3llZSIsImlhdCI6MTc3MTg4OTI1MiwiZXhwIjoxNzc0MDQ5MjUyLCJjb21wYW55X2lkIjoiMTI5ZDhkMmQtMDgyOC00N2E5LWI1ODYtODA4OGMzM2VhZThmIn0.at7A1U8axxTTqhnigUH9_ZxczUHwMyhS_Xb_LRkRXR4",
                 "type": "text"
               }
             ],
@@ -494,14 +852,14 @@
                   "key": "file",
                   "type": "file",
                   "uuid": "1a54e8b5-221e-46c6-ad25-baf5f42e4518",
-                  "src": "/Users/hedrispereira/Downloads/WhatsApp Image 2026-01-08 at 14.59.48.jpeg"
+                  "src": "/Users/hedrispereira/Downloads/barba-pomada.jpeg"
                 }
               ]
             },
             "url": {
-              "raw": "{{URL_BASE}}/api/v1/products/upload-image",
+              "raw": "{{URL_PROD}}/api/v1/products/upload-image",
               "host": [
-                "{{URL_BASE}}"
+                "{{URL_PROD}}"
               ],
               "path": [
                 "api",
@@ -725,6 +1083,400 @@
                 {
                   "key": "owner_id",
                   "value": ""
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Agendamentos",
+      "item": [
+        {
+          "name": "Listagem de agendamentos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NjcwZmJlZC02M2NhLTQwNDYtYWFmOC02ZWI0OGRjZjE4MGUiLCJ0eXAiOiJlbXBsb3llZSIsImlhdCI6MTc3MjU3MTE5MCwiZXhwIjoxNzc0NzMxMTkwLCJjb21wYW55X2lkIjoiMTI5ZDhkMmQtMDgyOC00N2E5LWI1ODYtODA4OGMzM2VhZThmIn0.7LY_2jqBLqdzj2ifjU5jSSBsE-DTBUZMUWuSTLh-jE0",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{URL_BASE}}/api/v1/schedule?offset=0&limit=100",
+              "host": [
+                "{{URL_BASE}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "schedule"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                },
+                {
+                  "key": "limit",
+                  "value": "100"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cria Agendamento",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NjcwZmJlZC02M2NhLTQwNDYtYWFmOC02ZWI0OGRjZjE4MGUiLCJ0eXAiOiJlbXBsb3llZSIsImlhdCI6MTc3MjU3MTE5MCwiZXhwIjoxNzc0NzMxMTkwLCJjb21wYW55X2lkIjoiMTI5ZDhkMmQtMDgyOC00N2E5LWI1ODYtODA4OGMzM2VhZThmIn0.7LY_2jqBLqdzj2ifjU5jSSBsE-DTBUZMUWuSTLh-jE0",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"80f5e5d6-620d-4170-8743-c605b6fecf35\",\n  \"service_id\": \"4fd9e24c-7734-494a-9c22-112b03b1908d\",\n  \"product_id\": \"1e584a48-7fb6-4260-bd06-77e778c9f9dd\",\n  \"employee_id\": \"89a46fed-d9fc-4dd8-bea6-f20aa9dff25f\",\n  \"company_id\": \"129d8d2d-0828-47a9-b586-8088c33eae8f\",\n  \"time_register\": \"2026-03-04T20:06:18.224Z\",\n  \"time_start\": \"2026-03-04T20:10:30.224Z\",\n  \"time_end\": \"2026-03-04T20:11:00.224Z\",\n  \"status\": true,\n  \"is_canceled\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{URL_BASE}}/api/v1/schedule",
+              "host": [
+                "{{URL_BASE}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "schedule"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar Agendamento por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkOWIwZDk4ZC03MDhhLTQ0NTEtYjFiMC04NTIxNjZlYjU3OWIiLCJ0eXAiOiJlbXBsb3llZSIsImlhdCI6MTc3MTA5OTQzOCwiZXhwIjoxNzczMjU5NDM4LCJjb21wYW55X2lkIjoiNWIwZDYxYmYtYWFlZS00NDRjLWJiMGMtNzc3ZmQzNzljMDg5In0.42yd1BaO3n7clh40tSdkKlZqcAZgOjCUHjg3sOpLMt4",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{URL_PROD}}/api/v1/schedule/:schedule_id",
+              "host": [
+                "{{URL_PROD}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "schedule",
+                ":schedule_id"
+              ],
+              "variable": [
+                {
+                  "key": "schedule_id",
+                  "value": "412ab786-fb82-47ff-87db-21d0f011a239"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Deletar um Agendamento",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkOWIwZDk4ZC03MDhhLTQ0NTEtYjFiMC04NTIxNjZlYjU3OWIiLCJ0eXAiOiJlbXBsb3llZSIsImlhdCI6MTc3MTA5OTQzOCwiZXhwIjoxNzczMjU5NDM4LCJjb21wYW55X2lkIjoiNWIwZDYxYmYtYWFlZS00NDRjLWJiMGMtNzc3ZmQzNzljMDg5In0.42yd1BaO3n7clh40tSdkKlZqcAZgOjCUHjg3sOpLMt4",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{URL_BASE}}/api/v1/schedule/:schedule_id",
+              "host": [
+                "{{URL_BASE}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "schedule",
+                ":schedule_id"
+              ],
+              "variable": [
+                {
+                  "key": "schedule_id",
+                  "value": "412ab786-fb82-47ff-87db-21d0f011a239"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Slots de agendamento",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NjcwZmJlZC02M2NhLTQwNDYtYWFmOC02ZWI0OGRjZjE4MGUiLCJ0eXAiOiJlbXBsb3llZSIsImlhdCI6MTc3MjM5ODgwMywiZXhwIjoxNzc0NTU4ODAzLCJjb21wYW55X2lkIjoiMTI5ZDhkMmQtMDgyOC00N2E5LWI1ODYtODA4OGMzM2VhZThmIn0.10F5tqU2BkrP_eMH-xYB9mr0h33ttdEYOgZnoDDeRD0",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{URL_PROD}}/api/v1/schedule/slots?employee_id=89a46fed-d9fc-4dd8-bea6-f20aa9dff25f&slot_minutes=30&work_start=2026-03-04T08:00:00&work_end=2026-03-04T18:00:00",
+              "host": [
+                "{{URL_PROD}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "schedule",
+                "slots"
+              ],
+              "query": [
+                {
+                  "key": "employee_id",
+                  "value": "89a46fed-d9fc-4dd8-bea6-f20aa9dff25f"
+                },
+                {
+                  "key": "slot_minutes",
+                  "value": "30"
+                },
+                {
+                  "key": "work_start",
+                  "value": "2026-03-04T08:00:00"
+                },
+                {
+                  "key": "work_end",
+                  "value": "2026-03-04T18:00:00"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Bloqueando o agendamento",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NjcwZmJlZC02M2NhLTQwNDYtYWFmOC02ZWI0OGRjZjE4MGUiLCJ0eXAiOiJlbXBsb3llZSIsImlhdCI6MTc3MTk3NzgyMCwiZXhwIjoxNzc0MTM3ODIwLCJjb21wYW55X2lkIjoiMTI5ZDhkMmQtMDgyOC00N2E5LWI1ODYtODA4OGMzM2VhZThmIn0.kK7mzcgzyUfvKv38_9VfGuSsawC6sNk1PMPQqXP2IGQ",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{URL_PROD}}/api/v1/schedule/:employee_id/block",
+              "host": [
+                "{{URL_PROD}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "schedule",
+                ":employee_id",
+                "block"
+              ],
+              "variable": [
+                {
+                  "key": "employee_id",
+                  "value": "d54667fb-82f3-479a-9324-aae32b6d7ae9"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listagem de agendamentos por Usuário",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1YWM4MzMyNy0wYTIxLTRhYWYtOTJmYi1mNTY0YzNiNjE3YzQiLCJ0eXAiOiJ1c2VyIiwiaWF0IjoxNzcyNTc5OTAyLCJleHAiOjE3NzQ3Mzk5MDIsImNvbXBhbnlfaWQiOiIxMjlkOGQyZC0wODI4LTQ3YTktYjU4Ni04MDg4YzMzZWFlOGYifQ.qqyC6Z29RW0sKG_PjSWqRnqbSzkwJuMHZa5gN-Qh-oE",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{URL_BASE}}/api/v1/schedule/me?offset=0&limit=100",
+              "host": [
+                "{{URL_BASE}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "schedule",
+                "me"
+              ],
+              "query": [
+                {
+                  "key": "offset",
+                  "value": "0"
+                },
+                {
+                  "key": "limit",
+                  "value": "100"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Block de horarios",
+      "item": [
+        {
+          "name": "Registrar um bloqueio na agenda",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NjcwZmJlZC02M2NhLTQwNDYtYWFmOC02ZWI0OGRjZjE4MGUiLCJ0eXAiOiJlbXBsb3llZSIsImlhdCI6MTc3Mjg5OTc4NCwiZXhwIjoxNzc1MDU5Nzg0LCJjb21wYW55X2lkIjoiMTI5ZDhkMmQtMDgyOC00N2E5LWI1ODYtODA4OGMzM2VhZThmIn0.-04uyC9gLx32wFupZjLM32nrgGWYYZ6Z6sEMzSFaf4c",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employee_id\": \"8670fbed-63ca-4046-aaf8-6eb48dcf180e\",\n  \"start_time\": \"2026-03-07T13:30:00.029Z\",\n  \"end_time\": \"2026-03-07T20:30:18.029Z\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{URL_BASE}}/api/v1/schedule-blocks",
+              "host": [
+                "{{URL_BASE}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "schedule-blocks"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar um bloquei por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NjcwZmJlZC02M2NhLTQwNDYtYWFmOC02ZWI0OGRjZjE4MGUiLCJ0eXAiOiJlbXBsb3llZSIsImlhdCI6MTc3Mjg5OTgyNiwiZXhwIjoxNzc1MDU5ODI2LCJjb21wYW55X2lkIjoiMTI5ZDhkMmQtMDgyOC00N2E5LWI1ODYtODA4OGMzM2VhZThmIn0._GZk6yXpRdxz_hrKAZpig7QJpAWb0G1roA2NdIkUhzs",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{URL_BASE}}/api/v1/schedule-blocks/:id",
+              "host": [
+                "{{URL_BASE}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "schedule-blocks",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "8670fbed-63ca-4046-aaf8-6eb48dcf180e"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Atualizar o block do agendamento",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employee_id\": \"8670fbed-63ca-4046-aaf8-6eb48dcf180e\",\n  \"start_time\": \"2026-03-07T13:30:00.029Z\",\n  \"end_time\": \"2026-03-07T20:30:18.029Z\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{URL_BASE}}/api/v1/schedule-blocks/:id",
+              "host": [
+                "{{URL_BASE}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "schedule-blocks",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Deletar o bloqueio do agendamento",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NjcwZmJlZC02M2NhLTQwNDYtYWFmOC02ZWI0OGRjZjE4MGUiLCJ0eXAiOiJlbXBsb3llZSIsImlhdCI6MTc3Mjg5OTc4NCwiZXhwIjoxNzc1MDU5Nzg0LCJjb21wYW55X2lkIjoiMTI5ZDhkMmQtMDgyOC00N2E5LWI1ODYtODA4OGMzM2VhZThmIn0.-04uyC9gLx32wFupZjLM32nrgGWYYZ6Z6sEMzSFaf4c",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{URL_BASE}}/api/v1/schedule-blocks/:id",
+              "host": [
+                "{{URL_BASE}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "schedule-blocks",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "8670fbed-63ca-4046-aaf8-6eb48dcf180e"
                 }
               ]
             }
