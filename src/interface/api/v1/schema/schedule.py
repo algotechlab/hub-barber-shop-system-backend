@@ -8,7 +8,7 @@ from pydantic import BaseModel
 class CreateScheduleSchema(BaseModel):
     user_id: UUID
     service_id: UUID
-    product_id: UUID
+    product_id: Optional[UUID] = None
     employee_id: UUID
     time_register: datetime
     time_start: Optional[datetime] = None

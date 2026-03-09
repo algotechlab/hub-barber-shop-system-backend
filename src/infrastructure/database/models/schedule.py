@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import Boolean, DateTime, ForeignKey
@@ -14,8 +15,8 @@ class Schedule(BaseModel):
     service_id: Mapped[UUID] = mapped_column(
         ForeignKey('service.id'), nullable=False, index=True
     )
-    product_id: Mapped[UUID] = mapped_column(
-        ForeignKey('product.id'), nullable=False, index=True
+    product_id: Mapped[Optional[UUID]] = mapped_column(
+        ForeignKey('product.id'), nullable=True, index=True
     )
     employee_id: Mapped[UUID] = mapped_column(
         ForeignKey('employee.id'), nullable=False, index=True
