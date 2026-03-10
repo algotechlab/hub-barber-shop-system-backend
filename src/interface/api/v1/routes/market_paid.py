@@ -43,7 +43,7 @@ async def search_preapproval_plans(
     )
     if resolved_company_id is None:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail='Informe o company_id via query, header x-company-id ou token',
         )
 
