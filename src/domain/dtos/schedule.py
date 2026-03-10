@@ -2,7 +2,7 @@ from datetime import date, datetime, timezone
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 
 
 class ScheduleBaseDTO(BaseModel):
@@ -16,7 +16,7 @@ class ScheduleBaseDTO(BaseModel):
     time_register: datetime
     time_start: Optional[datetime] = None
     time_end: Optional[datetime] = None
-    status: bool
+    is_confirmed: bool = Field(validation_alias=AliasChoices('is_confirmed', 'status'))
     is_canceled: bool
 
     @field_validator('time_register', 'time_start', 'time_end', mode='after')
@@ -59,8 +59,10 @@ class ScheduleCreateDTO(ScheduleBaseDTO):
     time_register: datetime
     time_start: Optional[datetime] = None
     time_end: Optional[datetime] = None
-    status: bool
-    is_canceled: bool
+    is_confirmed: bool = Field(
+        default=False, validation_alias=AliasChoices('is_confirmed', 'status')
+    )
+    is_canceled: bool = False
 
 
 class ScheduleUpdateDTO(ScheduleBaseDTO):
@@ -72,7 +74,9 @@ class ScheduleUpdateDTO(ScheduleBaseDTO):
     time_register: Optional[datetime] = None
     time_start: Optional[datetime] = None
     time_end: Optional[datetime] = None
-    status: Optional[bool] = None
+    is_confirmed: Optional[bool] = Field(
+        default=None, validation_alias=AliasChoices('is_confirmed', 'status')
+    )
     is_canceled: Optional[bool] = None
 
 

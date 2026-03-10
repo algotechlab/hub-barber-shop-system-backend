@@ -299,3 +299,20 @@ class ScheduleRepositoryPostgres(ScheduleRepository):
         except Exception as error:
             await self.session.rollback()
             raise DatabaseException(str(error))
+
+    async def list_schedule_history(self, company_id: UUID) -> List[ScheduleOutDTO]:
+        try:
+            query = (
+                select(Schedule)
+                .where(
+                    Schedule.company_id.__eq__(company_id),
+                    Schedule.is_deleted.__eq__(False),
+                )
+                .order_by(Schedule.created_at.desc())
+            )
+            result = await self.session.execute(query)
+            schedules = result.scalars().all()
+            return [ScheduleOutDTO.model_validate(schedule) for schedule in schedules]
+        except Exception as error:
+            await self.session.rollback()
+            raise DatabaseException(str(error))

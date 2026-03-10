@@ -13,8 +13,6 @@ class CreateScheduleSchema(BaseModel):
     time_register: datetime
     time_start: Optional[datetime] = None
     time_end: Optional[datetime] = None
-    status: bool
-    is_canceled: bool
 
 
 class UpdateScheduleSchema(BaseModel):
@@ -25,7 +23,7 @@ class UpdateScheduleSchema(BaseModel):
     time_register: Optional[datetime] = None
     time_start: Optional[datetime] = None
     time_end: Optional[datetime] = None
-    status: Optional[bool] = None
+    is_confirmed: Optional[bool] = None
     is_canceled: Optional[bool] = None
 
 
@@ -39,7 +37,6 @@ class ScheduleOutSchema(BaseModel):
     time_register: datetime
     time_start: Optional[datetime] = None
     time_end: Optional[datetime] = None
-    status: bool
     is_canceled: bool
     created_at: datetime
     updated_at: datetime
