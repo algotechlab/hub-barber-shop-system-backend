@@ -7,6 +7,7 @@ pytestmark = pytest.mark.unit
 
 
 async def test_get_market_paid_controller_wires_dependencies():
+    fake_session = object()
     fake_repo = object()
     fake_service = object()
     fake_use_case = object()
@@ -30,10 +31,10 @@ async def test_get_market_paid_controller_wires_dependencies():
             return_value=fake_controller,
         ) as controller_ctor,
     ):
-        controller = await get_market_paid_controller()
+        controller = await get_market_paid_controller(session=fake_session)
 
     assert controller is fake_controller
-    repo_ctor.assert_called_once_with()
+    repo_ctor.assert_called_once_with(fake_session)
     service_ctor.assert_called_once_with(fake_repo)
     use_case_ctor.assert_called_once_with(fake_service)
     controller_ctor.assert_called_once_with(fake_use_case)

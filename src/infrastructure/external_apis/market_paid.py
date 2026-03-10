@@ -13,13 +13,13 @@ class MarketPaidApi(ApiBaseClient):
             name='Mercado Pago',
             base_url=settings.MARKET_PAID_BASE_URL,
             default_headers={
-                'Authorization': f'Bearer {settings.MARKET_PAID_ACCESS_TOKEN}',
                 'Content-Type': 'application/json',
             },
         )
 
     async def search_preapproval_plans(
         self,
+        access_token: str,
         offset: int = 0,
         limit: int = 10,
     ) -> PreapprovalPlanSearchResponseDTO:
@@ -31,6 +31,7 @@ class MarketPaidApi(ApiBaseClient):
         response = await self.request({
             'method': 'GET',
             'url': url,
+            'headers': {'Authorization': f'Bearer {access_token}'},
         })
         data = response.json()
         return PreapprovalPlanSearchResponseDTO.model_validate(data)

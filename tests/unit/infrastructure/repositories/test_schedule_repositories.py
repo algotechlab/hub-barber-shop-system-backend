@@ -454,3 +454,32 @@ class TestScheduleRepositoryPostgres:
             await repo.delete_schedule(uuid4(), uuid4())
 
         mock_session.rollback.assert_awaited_once()
+
+    async def test_list_schedule_history_success(self, repo, mock_session):
+        schedule_orm_1 = MagicMock()
+        schedule_orm_2 = MagicMock()
+        mock_result = MagicMock()
+        mock_scalars = MagicMock()
+        mock_scalars.all.return_value = [schedule_orm_1, schedule_orm_2]
+        mock_result.scalars.return_value = mock_scalars
+        mock_session.execute = AsyncMock(return_value=mock_result)
+
+        expected_1 = MagicMock()
+        expected_2 = MagicMock()
+        with patch.object(
+            ScheduleOutDTO, 'model_validate', side_effect=[expected_1, expected_2]
+        ) as mv:
+            result = await repo.list_schedule_history(uuid4())
+        range_result = 2
+        assert result == [expected_1, expected_2]
+
+        assert mv.call_count == range_result
+
+    async def test_list_schedule_history_rollback_on_error(self, repo, mock_session):
+        mock_session.execute = AsyncMock(side_effect=ValueError('DB error'))
+        mock_session.rollback = AsyncMock()
+
+        with pytest.raises(DatabaseException, match='DB error'):
+            await repo.list_schedule_history(uuid4())
+
+        mock_session.rollback.assert_awaited_once()

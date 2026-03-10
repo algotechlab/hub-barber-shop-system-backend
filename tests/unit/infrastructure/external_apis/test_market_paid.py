@@ -16,7 +16,6 @@ class TestMarketPaidApi:
             ) as base_init,
         ):
             settings.MARKET_PAID_BASE_URL = 'https://example.com'
-            settings.MARKET_PAID_ACCESS_TOKEN = 'token'
             MarketPaidApi()
 
         base_init.assert_called_once()
@@ -30,7 +29,6 @@ class TestMarketPaidApi:
             ),
         ):
             settings.MARKET_PAID_BASE_URL = 'https://example.com'
-            settings.MARKET_PAID_ACCESS_TOKEN = 'token'
             api = MarketPaidApi()
 
         mock_response = MagicMock()
@@ -44,11 +42,14 @@ class TestMarketPaidApi:
             'model_validate',
             return_value=expected,
         ) as mv:
-            result = await api.search_preapproval_plans(offset=1, limit=2)
+            result = await api.search_preapproval_plans(
+                access_token='token', offset=1, limit=2
+            )
 
         api.request.assert_awaited_once_with({
             'method': 'GET',
             'url': '/preapproval_plan/search?offset=1&limit=2',
+            'headers': {'Authorization': 'Bearer token'},
         })
         mv.assert_called_once_with(payload)
         assert result == expected
