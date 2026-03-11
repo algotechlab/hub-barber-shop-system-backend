@@ -5,12 +5,15 @@ from fastapi import APIRouter, Depends, Request, Response, status
 
 from src.domain.exceptions.auth import UnauthorizedException
 from src.interface.api.v1.dependencies.common.auth import (
+    require_current_employee,
     require_current_employee_or_user,
 )
 from src.interface.api.v1.dependencies.common.pagination import PaginationParamsDep
 from src.interface.api.v1.dependencies.schedule import ScheduleRepositoryDep
 from src.interface.api.v1.schema.schedule import (
+    CloseScheduleSchema,
     CreateScheduleSchema,
+    ScheduleFinanceOutSchema,
     ScheduleOutSchema,
     SlotOutSchema,
     SlotsInSchema,
@@ -153,3 +156,24 @@ async def delete_schedule(
 ) -> Response:
     await controller.delete_schedule(schedule_id, company_id=request.state.company_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post(
+    '/{schedule_id}/close',
+    description='Rota para fechamento do agendamento e persistência financeira',
+    status_code=status.HTTP_201_CREATED,
+    response_model=ScheduleFinanceOutSchema,
+    dependencies=[Depends(require_current_employee)],
+)
+async def close_schedule(
+    controller: ScheduleRepositoryDep,
+    schedule_id: UUID,
+    schedule_close: CloseScheduleSchema,
+    request: Request,
+) -> ScheduleFinanceOutSchema:
+    return await controller.close_schedule(
+        schedule_id=schedule_id,
+        schedule_close=schedule_close,
+        company_id=request.state.company_id,
+        created_by=request.state.employee_id,
+    )

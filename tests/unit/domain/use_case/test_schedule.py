@@ -5,14 +5,22 @@ from uuid import uuid4
 import pytest
 from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.schedule import (
+    CloseScheduleDTO,
     ScheduleCreateDTO,
+    ScheduleFinanceOutDTO,
     ScheduleOutDTO,
     ScheduleUpdateDTO,
     SlotOutDTO,
     SlotsInDTO,
 )
-from src.domain.exceptions.schedule import ScheduleNotFoundException
+from src.domain.exceptions.schedule import (
+    ScheduleAlreadyClosedException,
+    ScheduleCanceledException,
+    ScheduleNotFoundException,
+)
 from src.domain.use_case.schedule import ScheduleUseCase
+from src.infrastructure.database.models.commom.payment_method import PaymentMethod
+from src.infrastructure.database.models.commom.payment_status import PaymentStatus
 
 pytestmark = pytest.mark.unit
 
@@ -205,3 +213,116 @@ async def test_block_schedule_delegates_to_service_layer():
 
     service.block_schedule.assert_awaited_once_with(employee_id, company_id)
     assert result is True
+
+
+@pytest.mark.asyncio
+async def test_close_schedule_raises_when_not_found():
+    service = AsyncMock()
+    service.get_schedule.return_value = None
+    use_case = ScheduleUseCase(service)
+    close_dto = CloseScheduleDTO(
+        schedule_id=uuid4(),
+        company_id=uuid4(),
+        created_by=uuid4(),
+        amount_service=10,
+        amount_product=None,
+        amount_discount=None,
+        amount_total=10,
+        payment_method=PaymentMethod.pix,
+        payment_status=PaymentStatus.paid,
+        paid_at=datetime(2026, 2, 14, 10, 0, 0),
+    )
+
+    with pytest.raises(ScheduleNotFoundException):
+        await use_case.close_schedule(close_dto)
+
+
+@pytest.mark.asyncio
+async def test_close_schedule_raises_when_canceled():
+    service = AsyncMock()
+    schedule = _out(uuid4())
+    schedule.is_canceled = True
+    service.get_schedule.return_value = schedule
+    use_case = ScheduleUseCase(service)
+    close_dto = CloseScheduleDTO(
+        schedule_id=schedule.id,
+        company_id=schedule.company_id,
+        created_by=uuid4(),
+        amount_service=10,
+        amount_product=None,
+        amount_discount=None,
+        amount_total=10,
+        payment_method=PaymentMethod.pix,
+        payment_status=PaymentStatus.paid,
+        paid_at=datetime(2026, 2, 14, 10, 0, 0),
+    )
+
+    with pytest.raises(ScheduleCanceledException):
+        await use_case.close_schedule(close_dto)
+
+
+@pytest.mark.asyncio
+async def test_close_schedule_raises_when_already_closed():
+    service = AsyncMock()
+    schedule = _out(uuid4())
+    schedule.is_canceled = False
+    service.get_schedule.return_value = schedule
+    service.close_schedule.return_value = None
+    use_case = ScheduleUseCase(service)
+    close_dto = CloseScheduleDTO(
+        schedule_id=schedule.id,
+        company_id=schedule.company_id,
+        created_by=uuid4(),
+        amount_service=10,
+        amount_product=None,
+        amount_discount=None,
+        amount_total=10,
+        payment_method=PaymentMethod.pix,
+        payment_status=PaymentStatus.paid,
+        paid_at=datetime(2026, 2, 14, 10, 0, 0),
+    )
+
+    with pytest.raises(ScheduleAlreadyClosedException):
+        await use_case.close_schedule(close_dto)
+
+
+@pytest.mark.asyncio
+async def test_close_schedule_returns_finance_when_success():
+    service = AsyncMock()
+    schedule = _out(uuid4())
+    schedule.is_canceled = False
+    service.get_schedule.return_value = schedule
+    finance = ScheduleFinanceOutDTO(
+        id=uuid4(),
+        schedule_id=schedule.id,
+        company_id=schedule.company_id,
+        created_by=uuid4(),
+        amount_service=10,
+        amount_product=None,
+        amount_discount=None,
+        amount_total=10,
+        payment_method=PaymentMethod.pix,
+        payment_status=PaymentStatus.paid,
+        paid_at=datetime(2026, 2, 14, 10, 0, 0),
+        created_at=datetime(2026, 2, 14, 10, 0, 0),
+        updated_at=datetime(2026, 2, 14, 10, 0, 0),
+        is_deleted=False,
+    )
+    service.close_schedule.return_value = finance
+    use_case = ScheduleUseCase(service)
+    close_dto = CloseScheduleDTO(
+        schedule_id=schedule.id,
+        company_id=schedule.company_id,
+        created_by=finance.created_by,
+        amount_service=10,
+        amount_product=None,
+        amount_discount=None,
+        amount_total=10,
+        payment_method=PaymentMethod.pix,
+        payment_status=PaymentStatus.paid,
+        paid_at=datetime(2026, 2, 14, 10, 0, 0),
+    )
+
+    result = await use_case.close_schedule(close_dto)
+
+    assert result == finance

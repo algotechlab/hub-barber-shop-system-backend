@@ -1,8 +1,12 @@
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
+
+from src.infrastructure.database.models.commom.payment_method import PaymentMethod
+from src.infrastructure.database.models.commom.payment_status import PaymentStatus
 
 
 class CreateScheduleSchema(BaseModel):
@@ -62,3 +66,32 @@ class SlotOutSchema(BaseModel):
     time_end: datetime
     is_available: bool
     is_blocked: bool
+
+
+class CloseScheduleSchema(BaseModel):
+    amount_service: Decimal
+    amount_product: Optional[Decimal] = None
+    amount_discount: Optional[Decimal] = None
+    amount_total: Decimal
+    payment_method: PaymentMethod
+    payment_status: PaymentStatus
+    paid_at: Optional[datetime] = None
+
+
+class ScheduleFinanceOutSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    schedule_id: UUID
+    company_id: UUID
+    created_by: UUID
+    amount_service: Decimal
+    amount_product: Optional[Decimal] = None
+    amount_discount: Optional[Decimal] = None
+    amount_total: Decimal
+    payment_method: PaymentMethod
+    payment_status: PaymentStatus
+    paid_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+    is_deleted: bool

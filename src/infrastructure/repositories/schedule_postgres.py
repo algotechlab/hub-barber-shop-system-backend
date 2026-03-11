@@ -9,7 +9,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.exceptions.custom import DatabaseException
 from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.schedule import (
+    CloseScheduleDTO,
     ScheduleCreateDTO,
+    ScheduleFinanceOutDTO,
     ScheduleOutDTO,
     ScheduleUpdateDTO,
     SlotOutDTO,
@@ -20,6 +22,7 @@ from src.infrastructure.database.models.employees import Employee
 from src.infrastructure.database.models.product import Product
 from src.infrastructure.database.models.schedule import Schedule
 from src.infrastructure.database.models.schedule_block import ScheduleBlock
+from src.infrastructure.database.models.schedule_finance import ScheduleFinance
 from src.infrastructure.database.models.service import Service
 from src.infrastructure.database.models.users import User
 
@@ -313,6 +316,29 @@ class ScheduleRepositoryPostgres(ScheduleRepository):
             result = await self.session.execute(query)
             schedules = result.scalars().all()
             return [ScheduleOutDTO.model_validate(schedule) for schedule in schedules]
+        except Exception as error:
+            await self.session.rollback()
+            raise DatabaseException(str(error))
+
+    async def close_schedule(
+        self, close_schedule: CloseScheduleDTO
+    ) -> Optional[ScheduleFinanceOutDTO]:
+        try:
+            existing_query = select(ScheduleFinance).where(
+                ScheduleFinance.schedule_id.__eq__(close_schedule.schedule_id),
+                ScheduleFinance.company_id.__eq__(close_schedule.company_id),
+                ScheduleFinance.is_deleted.__eq__(False),
+            )
+            existing_result = await self.session.execute(existing_query)
+            existing_schedule_finance = existing_result.scalar_one_or_none()
+            if existing_schedule_finance is not None:
+                return None
+
+            schedule_finance = ScheduleFinance(**close_schedule.model_dump())
+            self.session.add(schedule_finance)
+            await self.session.commit()
+            await self.session.refresh(schedule_finance)
+            return ScheduleFinanceOutDTO.model_validate(schedule_finance)
         except Exception as error:
             await self.session.rollback()
             raise DatabaseException(str(error))

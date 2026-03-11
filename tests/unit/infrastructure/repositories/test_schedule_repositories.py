@@ -7,11 +7,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.exceptions.custom import DatabaseException
 from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.schedule import (
+    CloseScheduleDTO,
     ScheduleCreateDTO,
+    ScheduleFinanceOutDTO,
     ScheduleOutDTO,
     ScheduleUpdateDTO,
     SlotsInDTO,
 )
+from src.infrastructure.database.models.commom.payment_method import PaymentMethod
+from src.infrastructure.database.models.commom.payment_status import PaymentStatus
 from src.infrastructure.repositories.schedule_postgres import ScheduleRepositoryPostgres
 
 
@@ -481,5 +485,80 @@ class TestScheduleRepositoryPostgres:
 
         with pytest.raises(DatabaseException, match='DB error'):
             await repo.list_schedule_history(uuid4())
+
+        mock_session.rollback.assert_awaited_once()
+
+    async def test_close_schedule_returns_none_when_already_closed(
+        self, repo, mock_session
+    ):
+        close_dto = CloseScheduleDTO(
+            schedule_id=uuid4(),
+            company_id=uuid4(),
+            created_by=uuid4(),
+            amount_service=10,
+            amount_product=None,
+            amount_discount=None,
+            amount_total=10,
+            payment_method=PaymentMethod.pix,
+            payment_status=PaymentStatus.paid,
+            paid_at=datetime(2026, 2, 14, 10, 0, 0),
+        )
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = MagicMock()
+        mock_session.execute = AsyncMock(return_value=mock_result)
+
+        result = await repo.close_schedule(close_dto)
+
+        assert result is None
+
+    async def test_close_schedule_success(self, repo, mock_session):
+        close_dto = CloseScheduleDTO(
+            schedule_id=uuid4(),
+            company_id=uuid4(),
+            created_by=uuid4(),
+            amount_service=10,
+            amount_product=None,
+            amount_discount=None,
+            amount_total=10,
+            payment_method=PaymentMethod.pix,
+            payment_status=PaymentStatus.paid,
+            paid_at=datetime(2026, 2, 14, 10, 0, 0),
+        )
+        existing_result = MagicMock()
+        existing_result.scalar_one_or_none.return_value = None
+        mock_session.execute = AsyncMock(return_value=existing_result)
+        mock_session.commit = AsyncMock()
+        mock_session.refresh = AsyncMock()
+        expected = MagicMock(spec=ScheduleFinanceOutDTO)
+
+        with patch.object(
+            ScheduleFinanceOutDTO, 'model_validate', return_value=expected
+        ):
+            result = await repo.close_schedule(close_dto)
+
+        mock_session.add.assert_called_once()
+        mock_session.commit.assert_awaited_once()
+        added_instance = mock_session.add.call_args[0][0]
+        mock_session.refresh.assert_awaited_once_with(added_instance)
+        assert result == expected
+
+    async def test_close_schedule_rollback_on_error(self, repo, mock_session):
+        close_dto = CloseScheduleDTO(
+            schedule_id=uuid4(),
+            company_id=uuid4(),
+            created_by=uuid4(),
+            amount_service=10,
+            amount_product=None,
+            amount_discount=None,
+            amount_total=10,
+            payment_method=PaymentMethod.pix,
+            payment_status=PaymentStatus.paid,
+            paid_at=datetime(2026, 2, 14, 10, 0, 0),
+        )
+        mock_session.execute = AsyncMock(side_effect=ValueError('DB error'))
+        mock_session.rollback = AsyncMock()
+
+        with pytest.raises(DatabaseException, match='DB error'):
+            await repo.close_schedule(close_dto)
 
         mock_session.rollback.assert_awaited_once()

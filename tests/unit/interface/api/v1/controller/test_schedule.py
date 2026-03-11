@@ -5,9 +5,13 @@ from unittest.mock import AsyncMock
 import pytest
 from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.schedule import ScheduleOutDTO, SlotOutDTO
+from src.infrastructure.database.models.commom.payment_method import PaymentMethod
+from src.infrastructure.database.models.commom.payment_status import PaymentStatus
 from src.interface.api.v1.controller.schedule import ScheduleController
 from src.interface.api.v1.schema.schedule import (
+    CloseScheduleSchema,
     CreateScheduleSchema,
+    ScheduleFinanceOutSchema,
     SlotsInSchema,
     UpdateScheduleSchema,
 )
@@ -227,3 +231,47 @@ class TestScheduleController:
         await controller.block_schedule(uuid.uuid4(), company_id=uuid.uuid4())
 
         use_case.block_schedule.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_close_schedule(self):
+        company_id = uuid.uuid4()
+        schedule_id = uuid.uuid4()
+        created_by = uuid.uuid4()
+        use_case = AsyncMock()
+        use_case.close_schedule.return_value = ScheduleFinanceOutSchema(
+            id=uuid.uuid4(),
+            schedule_id=schedule_id,
+            company_id=company_id,
+            created_by=created_by,
+            amount_service=10,
+            amount_product=None,
+            amount_discount=None,
+            amount_total=10,
+            payment_method=PaymentMethod.pix,
+            payment_status=PaymentStatus.paid,
+            paid_at=datetime(2026, 2, 14, 10, 0, 0),
+            created_at=datetime(2026, 2, 14, 10, 0, 0),
+            updated_at=datetime(2026, 2, 14, 10, 0, 0),
+            is_deleted=False,
+        )
+        controller = ScheduleController(use_case)
+        payload = CloseScheduleSchema(
+            amount_service=10,
+            amount_product=None,
+            amount_discount=None,
+            amount_total=10,
+            payment_method=PaymentMethod.pix,
+            payment_status=PaymentStatus.paid,
+            paid_at=datetime(2026, 2, 14, 10, 0, 0),
+        )
+
+        result = await controller.close_schedule(
+            schedule_id=schedule_id,
+            schedule_close=payload,
+            company_id=company_id,
+            created_by=created_by,
+        )
+
+        use_case.close_schedule.assert_awaited_once()
+        assert isinstance(result, ScheduleFinanceOutSchema)
+        assert result.schedule_id == schedule_id

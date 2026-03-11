@@ -67,11 +67,11 @@ omit = [
     "src/main.py",
     "src/core/config/logging.py",
     "src/**/__init__.py",
+    "src/infrastructure/seed/*.py",
 ]
 
 [tool.ruff]
 target-version = "py313"
-exclude = ['.git', '__pycache__', '.mypy_cache', '.pytest_cache', 'migrations']
 fix = true
 src = ["src", "tests"]
 

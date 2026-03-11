@@ -1,14 +1,12 @@
 import asyncio
-import os
 from logging.config import fileConfig
 
 from alembic import context
-from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.engine import Connection
-
+from sqlalchemy.ext.asyncio import create_async_engine
 from src.core.config.settings import get_settings
-from src.infrastructure.database.models.base import BaseModel
 from src.infrastructure.database import load_all_models
+from src.infrastructure.database.models.base import BaseModel
 
 settings = get_settings()
 
@@ -25,7 +23,7 @@ def run_migrations_offline():
         url=settings.SQLALCHEMY_DATABASE_URI,
         target_metadata=target_metadata,
         literal_binds=True,
-        dialect_opts={"paramstyle": "named"},
+        dialect_opts={'paramstyle': 'named'},
         include_schemas=True,
     )
     with context.begin_transaction():
