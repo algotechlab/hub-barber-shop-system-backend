@@ -5,6 +5,7 @@ from uuid import UUID
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 
+from src.domain.dtos.common.normalize_datetime import normalize_datetime_to_naive_utc
 from src.infrastructure.database.models.commom.payment_method import PaymentMethod
 from src.infrastructure.database.models.commom.payment_status import PaymentStatus
 
@@ -112,6 +113,11 @@ class CloseScheduleDTO(BaseModel):
     payment_method: PaymentMethod
     payment_status: PaymentStatus
     paid_at: Optional[datetime] = None
+
+    @field_validator('paid_at', mode='after')
+    @classmethod
+    def _normalize_paid_at(cls, value: Optional[datetime]) -> Optional[datetime]:
+        return normalize_datetime_to_naive_utc(value)
 
 
 class ScheduleFinanceOutDTO(BaseModel):
