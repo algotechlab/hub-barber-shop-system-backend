@@ -1,9 +1,10 @@
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 
 from src.domain.dtos.schedule_block import (
     ScheduleBlockCreateDTO,
     ScheduleBlockOutDTO,
+    ScheduleBlockOutListDTO,
     ScheduleBlockUpdateDTO,
 )
 from src.domain.repositories.schedule_block import ScheduleBlockRepository
@@ -19,6 +20,11 @@ class ScheduleBlockService:
         return await self.schedule_block_repository.create_schedule_block(
             schedule_block
         )
+
+    async def list_schedule_blocks(
+        self, company_id: UUID
+    ) -> List[ScheduleBlockOutListDTO]:
+        return await self.schedule_block_repository.list_schedule_blocks(company_id)
 
     async def get_schedule_block(self, id: UUID) -> Optional[ScheduleBlockOutDTO]:
         return await self.schedule_block_repository.get_schedule_block(id)

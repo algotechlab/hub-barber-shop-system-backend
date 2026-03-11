@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 
 from sqlalchemy import select, update
@@ -9,9 +9,11 @@ from src.core.exceptions.custom import DatabaseException
 from src.domain.dtos.schedule_block import (
     ScheduleBlockCreateDTO,
     ScheduleBlockOutDTO,
+    ScheduleBlockOutListDTO,
     ScheduleBlockUpdateDTO,
 )
 from src.domain.repositories.schedule_block import ScheduleBlockRepository
+from src.infrastructure.database.models.employees import Employee
 from src.infrastructure.database.models.schedule_block import ScheduleBlock
 
 
@@ -38,6 +40,45 @@ class ScheduleBlockRepositoryPostgres(ScheduleBlockRepository):
             await self.session.commit()
             await self.session.refresh(schedule_block)
             return ScheduleBlockOutDTO.model_validate(schedule_block)
+        except Exception as error:
+            await self.session.rollback()
+            raise DatabaseException(str(error))
+
+    async def list_schedule_blocks(
+        self, company_id: UUID
+    ) -> List[ScheduleBlockOutListDTO]:
+        try:
+            query = (
+                select(
+                    ScheduleBlock,
+                    Employee.id.label('employee_id'),
+                    Employee.name.label('employee_name'),
+                )
+                .outerjoin(
+                    Employee,
+                    ScheduleBlock.employee_id.__eq__(Employee.id),
+                )
+                .where(
+                    ScheduleBlock.company_id.__eq__(company_id),
+                    ScheduleBlock.is_deleted.__eq__(False),
+                    ScheduleBlock.is_block.__eq__(True),
+                )
+            )
+            result = await self.session.execute(query)
+            schedule_blocks = result.all()
+            return [
+                ScheduleBlockOutListDTO(
+                    id=schedule_block.id,
+                    employee_id=employee_id or None,
+                    employee_name=employee_name or '',
+                    start_time=schedule_block.start_time,
+                    end_time=schedule_block.end_time,
+                    is_block=schedule_block.is_block,
+                    created_at=schedule_block.created_at,
+                    updated_at=schedule_block.updated_at,
+                )
+                for schedule_block, employee_id, employee_name in schedule_blocks
+            ]
         except Exception as error:
             await self.session.rollback()
             raise DatabaseException(str(error))

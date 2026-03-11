@@ -7,7 +7,11 @@ import pytest
 from fastapi.testclient import TestClient
 from src.domain.dtos.employee import EmployeeBaseDTO, EmployeeOutDTO
 from src.domain.dtos.owner import CreateOwnerDTO, OwnerOutDTO
-from src.domain.dtos.schedule_block import ScheduleBlockCreateDTO, ScheduleBlockOutDTO
+from src.domain.dtos.schedule_block import (
+    ScheduleBlockCreateDTO,
+    ScheduleBlockOutDTO,
+    ScheduleBlockOutListDTO,
+)
 from src.domain.dtos.users import UserBaseDTO, UserOutDTO
 from src.infrastructure.database.models.employees import Employee
 from src.infrastructure.database.models.users import User
@@ -196,3 +200,20 @@ def generate_schedule_block_out_dto():
         created_at=datetime.now(timezone.utc),
         updated_at=datetime.now(timezone.utc),
     )
+
+
+@pytest.fixture
+def generate_schedule_block_out_list_dto():
+    """Fixture para gerar um ScheduleBlockOutListDTO"""
+    return [
+        ScheduleBlockOutListDTO(
+            id=uuid4(),
+            employee_id=uuid4(),
+            employee_name='John Doe',
+            start_time=datetime.now(timezone.utc),
+            end_time=datetime.now(timezone.utc),
+            is_block=False,
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+        )
+    ]

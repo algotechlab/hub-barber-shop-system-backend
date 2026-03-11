@@ -117,6 +117,14 @@ class TestScheduleBlockRoutes:
         assert response.status_code == STATUS_CODE_200, response.json()
         assert response.json()['id'] == str(block_id)
 
+    def test_list_schedule_blocks_returns_200(
+        self, client, override_dependency_schedule_blocks
+    ):
+        override_dependency_schedule_blocks.list_schedule_blocks.return_value = []
+        response = client.get(URL_SCHEDULE_BLOCKS)
+        assert response.status_code == STATUS_CODE_200, response.json()
+        assert response.json() == []
+
     def test_delete_schedule_block_returns_204(
         self, client, override_dependency_schedule_blocks
     ):

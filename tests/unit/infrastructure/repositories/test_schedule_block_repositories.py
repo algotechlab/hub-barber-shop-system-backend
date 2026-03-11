@@ -91,6 +91,40 @@ class TestScheduleBlockRepositoryPostgres:
 
         assert result is None
 
+    async def test_list_schedule_blocks_success(self, repo, mock_session):
+        employee_id = uuid4()
+        now = datetime.now(timezone.utc)
+        mock_orm_block = MagicMock()
+        mock_orm_block.id = uuid4()
+        mock_orm_block.start_time = now
+        mock_orm_block.end_time = now
+        mock_orm_block.is_block = True
+        mock_orm_block.created_at = now
+        mock_orm_block.updated_at = now
+
+        mock_result = MagicMock()
+        mock_result.all.return_value = [(mock_orm_block, employee_id, 'John Doe')]
+        mock_session.execute = AsyncMock(return_value=mock_result)
+
+        result = await repo.list_schedule_blocks(uuid4())
+
+        assert len(result) == 1
+        assert result[0].id == mock_orm_block.id
+        assert result[0].employee_id == employee_id
+        assert result[0].employee_name == 'John Doe'
+        assert result[0].start_time == now
+        assert result[0].end_time == now
+        assert result[0].is_block is True
+
+    async def test_list_schedule_blocks_rollback_on_error(self, repo, mock_session):
+        mock_session.execute = AsyncMock(side_effect=ValueError('DB error'))
+        mock_session.rollback = AsyncMock()
+
+        with pytest.raises(DatabaseException, match='DB error'):
+            await repo.list_schedule_blocks(uuid4())
+
+        mock_session.rollback.assert_awaited_once()
+
     async def test_get_schedule_block_success(
         self, repo, mock_session, generate_schedule_block_out_dto
     ):

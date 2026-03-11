@@ -45,6 +45,19 @@ class TestScheduleBlockUseCase:
         with pytest.raises(ScheduleBlockNotFoundException):
             await use_case.get_schedule_block(uuid4())
 
+    async def test_list_schedule_blocks_delegates_to_service(
+        self, use_case, mock_service, generate_schedule_block_out_list_dto
+    ):
+        company_id = uuid4()
+        mock_service.list_schedule_blocks.return_value = (
+            generate_schedule_block_out_list_dto
+        )
+
+        result = await use_case.list_schedule_blocks(company_id)
+
+        mock_service.list_schedule_blocks.assert_awaited_once_with(company_id)
+        assert result == generate_schedule_block_out_list_dto
+
     async def test_get_schedule_block_returns_when_found(
         self, use_case, mock_service, generate_schedule_block_out_dto
     ):

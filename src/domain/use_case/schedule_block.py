@@ -1,9 +1,10 @@
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 
 from src.domain.dtos.schedule_block import (
     ScheduleBlockCreateDTO,
     ScheduleBlockOutDTO,
+    ScheduleBlockOutListDTO,
     ScheduleBlockUpdateDTO,
 )
 from src.domain.exceptions.schedule_block import ScheduleBlockNotFoundException
@@ -18,6 +19,11 @@ class ScheduleBlockUseCase:
         self, schedule_block: ScheduleBlockCreateDTO
     ) -> ScheduleBlockOutDTO:
         return await self.schedule_block_service.create_schedule_block(schedule_block)
+
+    async def list_schedule_blocks(
+        self, company_id: UUID
+    ) -> List[ScheduleBlockOutListDTO]:
+        return await self.schedule_block_service.list_schedule_blocks(company_id)
 
     async def get_schedule_block(self, id: UUID) -> Optional[ScheduleBlockOutDTO]:
         schedule_block = await self.schedule_block_service.get_schedule_block(id)
