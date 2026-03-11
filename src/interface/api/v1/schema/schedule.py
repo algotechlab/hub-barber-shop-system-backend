@@ -35,7 +35,7 @@ class ScheduleOutSchema(BaseModel):
     id: UUID
     user_id: UUID
     service_id: UUID
-    product_id: UUID
+    product_id: Optional[UUID] = None
     employee_id: UUID
     company_id: UUID
     time_register: datetime
