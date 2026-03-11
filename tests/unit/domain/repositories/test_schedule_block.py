@@ -1,10 +1,12 @@
 from datetime import datetime, timezone
+from typing import List
 from uuid import UUID, uuid4
 
 import pytest
 from src.domain.dtos.schedule_block import (
     ScheduleBlockCreateDTO,
     ScheduleBlockOutDTO,
+    ScheduleBlockOutListDTO,
     ScheduleBlockUpdateDTO,
 )
 from src.domain.repositories.schedule_block import ScheduleBlockRepository
@@ -15,6 +17,7 @@ class TestScheduleBlockRepositoryContract:
     def test_schedule_block_repository_exposes_contract_methods(self):
         assert hasattr(ScheduleBlockRepository, 'create_schedule_block')
         assert hasattr(ScheduleBlockRepository, 'get_schedule_block')
+        assert hasattr(ScheduleBlockRepository, 'list_schedule_blocks')
         assert hasattr(ScheduleBlockRepository, 'update_schedule_block')
         assert hasattr(ScheduleBlockRepository, 'delete_schedule_block')
 
@@ -61,6 +64,11 @@ class TestScheduleBlockRepositoryContract:
 
             async def get_schedule_block(self, id: UUID) -> ScheduleBlockOutDTO | None:
                 return out if id == block_id else None
+
+            async def list_schedule_blocks(
+                self, company_id: UUID
+            ) -> List[ScheduleBlockOutListDTO]:
+                return [out]
 
             async def update_schedule_block(
                 self, id: UUID, schedule_block: ScheduleBlockUpdateDTO

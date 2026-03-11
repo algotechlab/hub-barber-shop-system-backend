@@ -47,6 +47,19 @@ class TestScheduleBlockService:
         mock_repository.get_schedule_block.assert_awaited_once_with(block_id)
         assert result == generate_schedule_block_out_dto
 
+    async def test_list_schedule_blocks_delegates_to_repository(
+        self, service, mock_repository, generate_schedule_block_out_list_dto
+    ):
+        company_id = uuid4()
+        mock_repository.list_schedule_blocks.return_value = (
+            generate_schedule_block_out_list_dto
+        )
+
+        result = await service.list_schedule_blocks(company_id)
+
+        mock_repository.list_schedule_blocks.assert_awaited_once_with(company_id)
+        assert result == generate_schedule_block_out_list_dto
+
     async def test_update_schedule_block_delegates_to_repository(
         self, service, mock_repository, generate_schedule_block_out_dto
     ):

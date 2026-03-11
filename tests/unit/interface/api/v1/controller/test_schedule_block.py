@@ -9,6 +9,7 @@ from src.domain.dtos.schedule_block import (
 from src.interface.api.v1.controller.schedule_block import ScheduleBlockController
 from src.interface.api.v1.schema.schedule_block import (
     CreateScheduleBlockSchema,
+    ScheduleBlockOutListSchema,
     ScheduleBlockOutSchema,
     UpdateScheduleBlockSchema,
 )
@@ -58,6 +59,24 @@ class TestScheduleBlockController:
         mock_use_case.get_schedule_block.assert_awaited_once_with(block_id)
         assert isinstance(result, ScheduleBlockOutSchema)
         assert result.id == generate_schedule_block_out_dto.id
+
+    async def test_list_schedule_blocks_returns_schema_list(
+        self, controller, mock_use_case, generate_schedule_block_out_list_dto
+    ):
+        mock_use_case.list_schedule_blocks.return_value = (
+            generate_schedule_block_out_list_dto
+        )
+        company_id = uuid4()
+        result = await controller.list_schedule_blocks(company_id)
+        mock_use_case.list_schedule_blocks.assert_awaited_once_with(company_id)
+        assert isinstance(result, list)
+        assert all(
+            isinstance(schedule_block, ScheduleBlockOutListSchema)
+            for schedule_block in result
+        )
+        assert [item.model_dump() for item in result] == [
+            item.model_dump() for item in generate_schedule_block_out_list_dto
+        ]
 
     async def test_update_schedule_block_converts_schema_to_dto(
         self, controller, mock_use_case
