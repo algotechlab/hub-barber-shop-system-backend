@@ -3,14 +3,18 @@ from uuid import UUID
 
 from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.schedule import (
+    CloseScheduleDTO,
     ScheduleCreateDTO,
+    ScheduleFinanceOutDTO,
     ScheduleUpdateDTO,
     SlotOutDTO,
     SlotsInDTO,
 )
 from src.domain.use_case.schedule import ScheduleUseCase
 from src.interface.api.v1.schema.schedule import (
+    CloseScheduleSchema,
     CreateScheduleSchema,
+    ScheduleFinanceOutSchema,
     ScheduleOutSchema,
     SlotOutSchema,
     SlotsInSchema,
@@ -78,3 +82,21 @@ class ScheduleController:
 
     async def delete_schedule(self, id: UUID, company_id: UUID) -> None:
         await self.schedule_use_case.delete_schedule(id, company_id)
+
+    async def close_schedule(
+        self,
+        schedule_id: UUID,
+        schedule_close: CloseScheduleSchema,
+        company_id: UUID,
+        created_by: UUID,
+    ) -> ScheduleFinanceOutSchema:
+        close_dto = CloseScheduleDTO(
+            schedule_id=schedule_id,
+            company_id=company_id,
+            created_by=created_by,
+            **schedule_close.model_dump(),
+        )
+        closed_schedule: ScheduleFinanceOutDTO = (
+            await self.schedule_use_case.close_schedule(close_dto)
+        )
+        return ScheduleFinanceOutSchema(**closed_schedule.model_dump())

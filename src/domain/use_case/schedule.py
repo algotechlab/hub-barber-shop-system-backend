@@ -3,13 +3,19 @@ from uuid import UUID
 
 from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.schedule import (
+    CloseScheduleDTO,
     ScheduleCreateDTO,
+    ScheduleFinanceOutDTO,
     ScheduleOutDTO,
     ScheduleUpdateDTO,
     SlotOutDTO,
     SlotsInDTO,
 )
-from src.domain.exceptions.schedule import ScheduleNotFoundException
+from src.domain.exceptions.schedule import (
+    ScheduleAlreadyClosedException,
+    ScheduleCanceledException,
+    ScheduleNotFoundException,
+)
 from src.domain.service.schedule import ScheduleService
 
 
@@ -65,3 +71,21 @@ class ScheduleUseCase:
         if deleted is None:
             raise ScheduleNotFoundException('Agendamento não encontrado')
         return deleted
+
+    async def close_schedule(
+        self, close_schedule: CloseScheduleDTO
+    ) -> ScheduleFinanceOutDTO:
+        schedule = await self.schedule_service.get_schedule(
+            close_schedule.schedule_id, close_schedule.company_id
+        )
+        if schedule is None:
+            raise ScheduleNotFoundException('Agendamento não encontrado')
+        if schedule.is_canceled:
+            raise ScheduleCanceledException(
+                'Não é possível fechar um agendamento cancelado'
+            )
+
+        schedule_finance = await self.schedule_service.close_schedule(close_schedule)
+        if schedule_finance is None:
+            raise ScheduleAlreadyClosedException('Agendamento já foi fechado')
+        return schedule_finance

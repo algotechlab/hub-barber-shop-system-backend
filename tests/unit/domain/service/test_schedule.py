@@ -5,13 +5,17 @@ from uuid import uuid4
 import pytest
 from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.schedule import (
+    CloseScheduleDTO,
     ScheduleCreateDTO,
+    ScheduleFinanceOutDTO,
     ScheduleOutDTO,
     ScheduleUpdateDTO,
     SlotOutDTO,
     SlotsInDTO,
 )
 from src.domain.service.schedule import ScheduleService
+from src.infrastructure.database.models.commom.payment_method import PaymentMethod
+from src.infrastructure.database.models.commom.payment_status import PaymentStatus
 
 pytestmark = pytest.mark.unit
 
@@ -175,3 +179,43 @@ async def test_schedule_service_block_delegates_to_repository():
 
     repo.block_schedule.assert_awaited_once_with(employee_id, company_id)
     assert result is True
+
+
+@pytest.mark.asyncio
+async def test_schedule_service_close_delegates_to_repository():
+    repo = AsyncMock()
+    service = ScheduleService(repo)
+    close_dto = CloseScheduleDTO(
+        schedule_id=uuid4(),
+        company_id=uuid4(),
+        created_by=uuid4(),
+        amount_service=10,
+        amount_product=None,
+        amount_discount=None,
+        amount_total=10,
+        payment_method=PaymentMethod.credit_card,
+        payment_status=PaymentStatus.paid,
+        paid_at=datetime(2026, 2, 14, 10, 0, 0),
+    )
+    expected = ScheduleFinanceOutDTO(
+        id=uuid4(),
+        schedule_id=close_dto.schedule_id,
+        company_id=close_dto.company_id,
+        created_by=close_dto.created_by,
+        amount_service=10,
+        amount_product=None,
+        amount_discount=None,
+        amount_total=10,
+        payment_method=PaymentMethod.credit_card,
+        payment_status=PaymentStatus.paid,
+        paid_at=close_dto.paid_at,
+        created_at=datetime(2026, 2, 14, 10, 0, 0),
+        updated_at=datetime(2026, 2, 14, 10, 0, 0),
+        is_deleted=False,
+    )
+    repo.close_schedule.return_value = expected
+
+    result = await service.close_schedule(close_dto)
+
+    repo.close_schedule.assert_awaited_once_with(close_dto)
+    assert result == expected

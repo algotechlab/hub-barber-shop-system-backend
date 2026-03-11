@@ -1,8 +1,12 @@
 from datetime import date, datetime, timezone
+from decimal import Decimal
 from typing import Optional
 from uuid import UUID
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
+
+from src.infrastructure.database.models.commom.payment_method import PaymentMethod
+from src.infrastructure.database.models.commom.payment_status import PaymentStatus
 
 
 class ScheduleBaseDTO(BaseModel):
@@ -95,3 +99,35 @@ class SlotOutDTO(BaseModel):
     time_end: datetime
     is_available: bool
     is_blocked: bool
+
+
+class CloseScheduleDTO(BaseModel):
+    schedule_id: UUID
+    company_id: UUID
+    created_by: UUID
+    amount_service: Decimal
+    amount_product: Optional[Decimal] = None
+    amount_discount: Optional[Decimal] = None
+    amount_total: Decimal
+    payment_method: PaymentMethod
+    payment_status: PaymentStatus
+    paid_at: Optional[datetime] = None
+
+
+class ScheduleFinanceOutDTO(BaseModel):
+    id: UUID
+    schedule_id: UUID
+    company_id: UUID
+    created_by: UUID
+    amount_service: Decimal
+    amount_product: Optional[Decimal] = None
+    amount_discount: Optional[Decimal] = None
+    amount_total: Decimal
+    payment_method: PaymentMethod
+    payment_status: PaymentStatus
+    paid_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+    is_deleted: bool
+
+    model_config = ConfigDict(from_attributes=True)

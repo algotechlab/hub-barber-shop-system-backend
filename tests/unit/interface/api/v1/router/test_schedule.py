@@ -7,6 +7,7 @@ from fastapi import Request
 from src.domain.exceptions.auth import UnauthorizedException
 from src.interface.api.v1.controller.schedule import ScheduleController
 from src.interface.api.v1.dependencies.common.auth import (
+    require_current_employee,
     require_current_employee_or_user,
 )
 from src.interface.api.v1.dependencies.schedule import get_schedule_controller
@@ -44,6 +45,25 @@ def _build_schedule_out() -> ScheduleOutSchema:
     )
 
 
+def _build_schedule_finance_out() -> dict:
+    return {
+        'id': str(uuid.uuid4()),
+        'schedule_id': str(uuid.uuid4()),
+        'company_id': str(uuid.uuid4()),
+        'created_by': str(uuid.uuid4()),
+        'amount_service': '10.00',
+        'amount_product': None,
+        'amount_discount': None,
+        'amount_total': '10.00',
+        'payment_method': 'PIX',
+        'payment_status': 'PAID',
+        'paid_at': datetime(2026, 2, 14, 10, 0, 0).isoformat(),
+        'created_at': datetime(2026, 2, 14, 10, 0, 0).isoformat(),
+        'updated_at': datetime(2026, 2, 14, 10, 0, 0).isoformat(),
+        'is_deleted': False,
+    }
+
+
 def _install_overrides() -> AsyncMock:
     mock_controller = AsyncMock(spec=ScheduleController)
 
@@ -58,6 +78,9 @@ def _install_overrides() -> AsyncMock:
         return request.state.employee_id
 
     app.dependency_overrides[require_current_employee_or_user] = (
+        override_require_current_employee_or_user
+    )
+    app.dependency_overrides[require_current_employee] = (
         override_require_current_employee_or_user
     )
     return mock_controller
@@ -191,3 +214,24 @@ class TestScheduleRoutes:
         response = client.patch(f'{URL_SCHEDULES}/{uuid.uuid4()}/block')
 
         assert response.status_code == STATUS_CODE_200, response.text
+
+    def test_close_schedule_returns_201(self, client, override_dependency_schedules):
+        schedule_id = uuid.uuid4()
+        response_payload = _build_schedule_finance_out()
+        response_payload['schedule_id'] = str(schedule_id)
+        override_dependency_schedules.close_schedule.return_value = response_payload
+
+        payload = {
+            'amount_service': '10.00',
+            'amount_product': None,
+            'amount_discount': None,
+            'amount_total': '10.00',
+            'payment_method': 'PIX',
+            'payment_status': 'PAID',
+            'paid_at': datetime(2026, 2, 14, 10, 0, 0).isoformat(),
+        }
+
+        response = client.post(f'{URL_SCHEDULES}/{schedule_id}/close', json=payload)
+
+        assert response.status_code == STATUS_CODE_201, response.json()
+        assert response.json()['schedule_id'] == str(schedule_id)

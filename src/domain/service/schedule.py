@@ -3,7 +3,9 @@ from uuid import UUID
 
 from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.schedule import (
+    CloseScheduleDTO,
     ScheduleCreateDTO,
+    ScheduleFinanceOutDTO,
     ScheduleOutDTO,
     ScheduleUpdateDTO,
     SlotOutDTO,
@@ -55,3 +57,8 @@ class ScheduleService:
 
     async def delete_schedule(self, id: UUID, company_id: UUID) -> Optional[bool]:
         return await self.schedule_repository.delete_schedule(id, company_id)
+
+    async def close_schedule(
+        self, close_schedule: CloseScheduleDTO
+    ) -> Optional[ScheduleFinanceOutDTO]:
+        return await self.schedule_repository.close_schedule(close_schedule)

@@ -2,7 +2,7 @@ import re
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, text
+from sqlalchemy import DateTime, ForeignKey, text
 from sqlalchemy.orm import Mapped, as_declarative, declared_attr, mapped_column
 from sqlalchemy.schema import MetaData
 
@@ -47,3 +47,11 @@ class BaseModel:
         cls_name = cls.__name__  # type: ignore[attr-defined]
         snake = re.sub(r'(?<!^)(?=[A-Z])', '_', cls_name).lower()
         return snake
+
+
+class BaseModelWithEmployee(BaseModel):
+    __abstract__ = True
+
+    created_by: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey('employee.id'), nullable=False, index=True
+    )
