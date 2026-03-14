@@ -1,6 +1,6 @@
 [project]
 name = "hub-barber-shop-system-backend"
-version = "1.0.0"
+version = "1.1.0"
 description = "Desenvolvimento da API do sistema de barbearia e agendamentos Inteligentes"
 authors = [
     {name = "Software Hedris Pereira",email = "hedrisgts@gmail.com"}
