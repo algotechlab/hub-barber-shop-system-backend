@@ -29,8 +29,10 @@ class ScheduleController:
     async def create_schedule(
         self, schedule: CreateScheduleSchema, company_id: UUID
     ) -> ScheduleOutSchema:
+        payload = schedule.model_dump(exclude={'company_id'})
         schedule_dto = ScheduleCreateDTO(
-            **schedule.model_dump(exclude={'company_id'}), company_id=company_id
+            **payload,
+            company_id=company_id,
         )
         created_schedule = await self.schedule_use_case.create_schedule(schedule_dto)
         return ScheduleOutSchema(**created_schedule.model_dump())
@@ -69,8 +71,10 @@ class ScheduleController:
     async def update_schedule(
         self, id: UUID, schedule: UpdateScheduleSchema, company_id: UUID
     ) -> ScheduleOutSchema:
+        payload = schedule.model_dump(exclude={'company_id'})
         schedule_dto = ScheduleUpdateDTO(
-            **schedule.model_dump(exclude={'company_id'}), company_id=company_id
+            **payload,
+            company_id=company_id,
         )
         updated_schedule = await self.schedule_use_case.update_schedule(
             id, schedule_dto, company_id

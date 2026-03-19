@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
@@ -16,6 +17,8 @@ from src.domain.dtos.schedule import (
 from src.domain.exceptions.schedule import (
     ScheduleAlreadyClosedException,
     ScheduleCanceledException,
+    ScheduleCloseAmountMismatchException,
+    ScheduleCloseServicesException,
     ScheduleNotFoundException,
 )
 from src.domain.use_case.schedule import ScheduleUseCase
@@ -29,7 +32,7 @@ def _out(company_id):
     return ScheduleOutDTO(
         id=uuid4(),
         user_id=uuid4(),
-        service_id=uuid4(),
+        service_id=[uuid4()],
         product_id=uuid4(),
         employee_id=uuid4(),
         company_id=company_id,
@@ -51,7 +54,7 @@ async def test_create_schedule_delegates_to_service_layer():
     company_id = uuid4()
     dto = ScheduleCreateDTO(
         user_id=uuid4(),
-        service_id=uuid4(),
+        service_id=[uuid4()],
         product_id=uuid4(),
         employee_id=uuid4(),
         company_id=company_id,
@@ -267,6 +270,7 @@ async def test_close_schedule_raises_when_already_closed():
     schedule = _out(uuid4())
     schedule.is_canceled = False
     service.get_schedule.return_value = schedule
+    service.sum_sale_for_service_ids.return_value = Decimal('10')
     service.close_schedule.return_value = None
     use_case = ScheduleUseCase(service)
     close_dto = CloseScheduleDTO(
@@ -292,6 +296,7 @@ async def test_close_schedule_returns_finance_when_success():
     schedule = _out(uuid4())
     schedule.is_canceled = False
     service.get_schedule.return_value = schedule
+    service.sum_sale_for_service_ids.return_value = Decimal('10')
     finance = ScheduleFinanceOutDTO(
         id=uuid4(),
         schedule_id=schedule.id,
@@ -326,3 +331,57 @@ async def test_close_schedule_returns_finance_when_success():
     result = await use_case.close_schedule(close_dto)
 
     assert result == finance
+
+
+@pytest.mark.asyncio
+async def test_close_schedule_raises_when_services_invalid_for_sum():
+    service = AsyncMock()
+    schedule = _out(uuid4())
+    schedule.is_canceled = False
+    service.get_schedule.return_value = schedule
+    service.sum_sale_for_service_ids.return_value = None
+    use_case = ScheduleUseCase(service)
+    close_dto = CloseScheduleDTO(
+        schedule_id=schedule.id,
+        company_id=schedule.company_id,
+        created_by=uuid4(),
+        amount_service=10,
+        amount_product=None,
+        amount_discount=None,
+        amount_total=10,
+        payment_method=PaymentMethod.pix,
+        payment_status=PaymentStatus.paid,
+        paid_at=datetime(2026, 2, 14, 10, 0, 0),
+    )
+
+    with pytest.raises(ScheduleCloseServicesException):
+        await use_case.close_schedule(close_dto)
+
+    service.close_schedule.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_close_schedule_raises_when_amount_mismatch_with_services():
+    service = AsyncMock()
+    schedule = _out(uuid4())
+    schedule.is_canceled = False
+    service.get_schedule.return_value = schedule
+    service.sum_sale_for_service_ids.return_value = Decimal('40')
+    use_case = ScheduleUseCase(service)
+    close_dto = CloseScheduleDTO(
+        schedule_id=schedule.id,
+        company_id=schedule.company_id,
+        created_by=uuid4(),
+        amount_service=10,
+        amount_product=None,
+        amount_discount=None,
+        amount_total=10,
+        payment_method=PaymentMethod.pix,
+        payment_status=PaymentStatus.paid,
+        paid_at=datetime(2026, 2, 14, 10, 0, 0),
+    )
+
+    with pytest.raises(ScheduleCloseAmountMismatchException):
+        await use_case.close_schedule(close_dto)
+
+    service.close_schedule.assert_not_awaited()

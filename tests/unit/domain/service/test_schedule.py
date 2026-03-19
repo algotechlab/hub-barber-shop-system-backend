@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
@@ -24,7 +25,7 @@ def _out(company_id):
     return ScheduleOutDTO(
         id=uuid4(),
         user_id=uuid4(),
-        service_id=uuid4(),
+        service_id=[uuid4()],
         product_id=uuid4(),
         employee_id=uuid4(),
         company_id=company_id,
@@ -46,7 +47,7 @@ async def test_schedule_service_create_delegates_to_repository():
     company_id = uuid4()
     dto = ScheduleCreateDTO(
         user_id=uuid4(),
-        service_id=uuid4(),
+        service_id=[uuid4()],
         product_id=uuid4(),
         employee_id=uuid4(),
         company_id=company_id,
@@ -219,3 +220,17 @@ async def test_schedule_service_close_delegates_to_repository():
 
     repo.close_schedule.assert_awaited_once_with(close_dto)
     assert result == expected
+
+
+@pytest.mark.asyncio
+async def test_schedule_service_sum_sale_delegates_to_repository():
+    repo = AsyncMock()
+    service = ScheduleService(repo)
+    s1, s2 = uuid4(), uuid4()
+    company_id = uuid4()
+    repo.sum_sale_for_service_ids.return_value = Decimal('15.50')
+
+    result = await service.sum_sale_for_service_ids([s1, s2], company_id)
+
+    repo.sum_sale_for_service_ids.assert_awaited_once_with([s1, s2], company_id)
+    assert result == Decimal('15.50')

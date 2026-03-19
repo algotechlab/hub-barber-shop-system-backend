@@ -1,17 +1,26 @@
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional
+from typing import Annotated, List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import AliasChoices, BaseModel, BeforeValidator, ConfigDict, Field
 
 from src.infrastructure.database.models.commom.payment_method import PaymentMethod
 from src.infrastructure.database.models.commom.payment_status import PaymentStatus
+from src.interface.api.v1.schema.helpers.service_ids_schedule import (
+    coerce_optional_service_ids,
+    coerce_service_ids,
+)
+
+ServiceIdList = Annotated[list[UUID], BeforeValidator(coerce_service_ids)]
+OptionalServiceIdList = Annotated[
+    Optional[list[UUID]], BeforeValidator(coerce_optional_service_ids)
+]
 
 
 class CreateScheduleSchema(BaseModel):
     user_id: UUID
-    service_id: UUID
+    service_id: ServiceIdList
     product_id: Optional[UUID] = None
     employee_id: UUID
     time_register: datetime
@@ -21,20 +30,23 @@ class CreateScheduleSchema(BaseModel):
 
 class UpdateScheduleSchema(BaseModel):
     user_id: Optional[UUID] = None
-    service_id: Optional[UUID] = None
+    service_id: OptionalServiceIdList = None
     product_id: Optional[UUID] = None
     employee_id: Optional[UUID] = None
     time_register: Optional[datetime] = None
     time_start: Optional[datetime] = None
     time_end: Optional[datetime] = None
-    is_confirmed: Optional[bool] = None
+    is_confirmed: Optional[bool] = Field(
+        default=None,
+        validation_alias=AliasChoices('is_confirmed', 'status'),
+    )
     is_canceled: Optional[bool] = None
 
 
 class ScheduleOutSchema(BaseModel):
     id: UUID
     user_id: UUID
-    service_id: UUID
+    service_id: List[UUID]
     product_id: Optional[UUID] = None
     employee_id: UUID
     company_id: UUID
@@ -47,7 +59,7 @@ class ScheduleOutSchema(BaseModel):
     is_deleted: bool
     user_name: Optional[str] = None
     employee_name: Optional[str] = None
-    service_name: Optional[str] = None
+    service_names: Optional[List[str]] = None
     product_name: Optional[str] = None
     schedule_duration_minutes: Optional[int] = None
 
