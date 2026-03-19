@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import List, Optional
 from uuid import UUID
 
@@ -57,6 +58,13 @@ class ScheduleService:
 
     async def delete_schedule(self, id: UUID, company_id: UUID) -> Optional[bool]:
         return await self.schedule_repository.delete_schedule(id, company_id)
+
+    async def sum_sale_for_service_ids(
+        self, service_ids: List[UUID], company_id: UUID
+    ) -> Optional[Decimal]:
+        return await self.schedule_repository.sum_sale_for_service_ids(
+            service_ids, company_id
+        )
 
     async def close_schedule(
         self, close_schedule: CloseScheduleDTO

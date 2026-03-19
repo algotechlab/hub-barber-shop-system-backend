@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from decimal import Decimal
 from typing import List, Optional
 from uuid import UUID
 
@@ -50,6 +51,11 @@ class ScheduleRepository(ABC):
 
     @abstractmethod
     async def delete_schedule(self, id: UUID, company_id: UUID) -> Optional[bool]: ...
+
+    @abstractmethod
+    async def sum_sale_for_service_ids(
+        self, service_ids: List[UUID], company_id: UUID
+    ) -> Optional[Decimal]: ...
 
     @abstractmethod
     async def close_schedule(

@@ -27,7 +27,7 @@ class TestScheduleController:
             ScheduleOutDTO(
                 id=uuid.uuid4(),
                 user_id=uuid.uuid4(),
-                service_id=uuid.uuid4(),
+                service_id=[uuid.uuid4()],
                 product_id=uuid.uuid4(),
                 employee_id=uuid.uuid4(),
                 company_id=company_id,
@@ -61,7 +61,7 @@ class TestScheduleController:
             ScheduleOutDTO(
                 id=uuid.uuid4(),
                 user_id=user_id,
-                service_id=uuid.uuid4(),
+                service_id=[uuid.uuid4()],
                 product_id=uuid.uuid4(),
                 employee_id=uuid.uuid4(),
                 company_id=company_id,
@@ -95,7 +95,7 @@ class TestScheduleController:
         created = ScheduleOutDTO(
             id=uuid.uuid4(),
             user_id=uuid.uuid4(),
-            service_id=uuid.uuid4(),
+            service_id=[uuid.uuid4()],
             product_id=uuid.uuid4(),
             employee_id=uuid.uuid4(),
             company_id=company_id,
@@ -134,7 +134,7 @@ class TestScheduleController:
         schedule = ScheduleOutDTO(
             id=uuid.uuid4(),
             user_id=uuid.uuid4(),
-            service_id=uuid.uuid4(),
+            service_id=[uuid.uuid4()],
             product_id=uuid.uuid4(),
             employee_id=uuid.uuid4(),
             company_id=company_id,
@@ -188,7 +188,7 @@ class TestScheduleController:
         updated = ScheduleOutDTO(
             id=uuid.uuid4(),
             user_id=uuid.uuid4(),
-            service_id=uuid.uuid4(),
+            service_id=[uuid.uuid4()],
             product_id=uuid.uuid4(),
             employee_id=uuid.uuid4(),
             company_id=company_id,
