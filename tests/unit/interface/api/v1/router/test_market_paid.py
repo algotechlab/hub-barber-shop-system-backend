@@ -5,6 +5,7 @@ from uuid import uuid4
 import pytest
 from src.interface.api.v1.controller.market_paid import MarketPaidController
 from src.interface.api.v1.dependencies.market_paid import get_market_paid_controller
+from src.interface.api.v1.routes.market_paid import require_market_paid_routes_enabled
 from src.interface.api.v1.schema.market_paid import (
     MarketPaidOutSchema,
     PreapprovalPlanSearchResponseSchema,
@@ -13,6 +14,10 @@ from src.main import app
 
 URL_MARKET_PAID = '/api/v1/market-paid/preapproval-plans'
 URL_MARKET_PAID_BASE = '/api/v1/market-paid'
+
+
+async def _noop_market_paid_route_gate():
+    return None
 
 
 @pytest.fixture
@@ -24,6 +29,9 @@ def override_dependency_market_paid():
 
     app.dependency_overrides[get_market_paid_controller] = (
         override_get_market_paid_controller
+    )
+    app.dependency_overrides[require_market_paid_routes_enabled] = (
+        _noop_market_paid_route_gate
     )
     yield mock_controller
     app.dependency_overrides.clear()
@@ -40,6 +48,13 @@ def _assert_status(response, expected: int, msg_prefix: str = ''):
 
 @pytest.mark.unit
 class TestMarketPaidRoutes:
+    def test_routes_return_503_when_temporarily_disabled(self, client):
+        response = client.get(URL_MARKET_PAID)
+
+        _assert_status(response, 503)
+        detail = response.json()['detail']
+        assert 'stakeholders' in detail.lower()
+
     def test_search_preapproval_plans_returns_200(
         self, client, override_dependency_market_paid
     ):
