@@ -261,7 +261,7 @@ async def seed_schedules_and_finances(
 
             schedule = Schedule(
                 user_id=user.id,
-                service_id=service.id,
+                service_id=[service.id],
                 product_id=product.id if product is not None else None,
                 employee_id=employee.id,
                 company_id=COMPANY_ID,

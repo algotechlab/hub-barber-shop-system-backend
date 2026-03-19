@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Header, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, status
 
 from src.interface.api.v1.dependencies.market_paid import MarketPaidControllerDep
 from src.interface.api.v1.schema.market_paid import (
@@ -14,9 +14,25 @@ tags_metadata = {
     'description': 'Modulo de Mercado Pago',
 }
 
+
+_MARKET_PAID_ROUTES_TEMPORARILY_DISABLED = True
+_MARKET_PAID_DISABLED_DETAIL = (
+    'Módulo temporariamente indisponível devido à validação com stakeholders.'
+)
+
+
+async def require_market_paid_routes_enabled() -> None:
+    if _MARKET_PAID_ROUTES_TEMPORARILY_DISABLED:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=_MARKET_PAID_DISABLED_DETAIL,
+        )
+
+
 router = APIRouter(
     prefix='/market-paid',
     tags=[tags_metadata['name']],
+    dependencies=[Depends(require_market_paid_routes_enabled)],
 )
 
 

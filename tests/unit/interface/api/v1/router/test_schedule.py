@@ -30,7 +30,7 @@ def _build_schedule_out() -> ScheduleOutSchema:
     return ScheduleOutSchema(
         id=uuid.uuid4(),
         user_id=uuid.uuid4(),
-        service_id=uuid.uuid4(),
+        service_id=[uuid.uuid4()],
         product_id=uuid.uuid4(),
         employee_id=uuid.uuid4(),
         company_id=uuid.uuid4(),
@@ -141,7 +141,7 @@ class TestScheduleRoutes:
 
         payload = CreateScheduleSchema(
             user_id=schedule.user_id,
-            service_id=uuid.uuid4(),
+            service_id=[uuid.uuid4()],
             product_id=uuid.uuid4(),
             employee_id=uuid.uuid4(),
             time_register=datetime(2026, 2, 14, 20, 6, 18),

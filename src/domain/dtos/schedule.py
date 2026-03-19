@@ -1,6 +1,6 @@
 from datetime import date, datetime, timezone
 from decimal import Decimal
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
@@ -10,11 +10,16 @@ from src.infrastructure.database.models.commom.payment_method import PaymentMeth
 from src.infrastructure.database.models.commom.payment_status import PaymentStatus
 
 
+class ServiceDTO(BaseModel):
+    id: UUID
+
+
 class ScheduleBaseDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     user_id: UUID
-    service_id: UUID
+    # Vários serviços vinculados ao agendamento.
+    service_id: List[UUID]
     product_id: Optional[UUID] = None
     employee_id: UUID
     company_id: UUID
@@ -50,15 +55,15 @@ class ScheduleOutDTO(ScheduleBaseDTO):
     time_end: Optional[datetime] = None
     user_name: Optional[str] = None
     employee_name: Optional[str] = None
-    service_name: Optional[str] = None
+    service_names: Optional[List[str]] = None
     product_name: Optional[str] = None
     schedule_duration_minutes: Optional[int] = None
 
 
 class ScheduleCreateDTO(ScheduleBaseDTO):
     user_id: UUID
-    service_id: UUID
-    product_id: UUID
+    service_id: List[UUID]
+    product_id: Optional[UUID] = None
     employee_id: UUID
     company_id: UUID
     time_register: datetime
@@ -72,7 +77,7 @@ class ScheduleCreateDTO(ScheduleBaseDTO):
 
 class ScheduleUpdateDTO(ScheduleBaseDTO):
     user_id: Optional[UUID] = None
-    service_id: Optional[UUID] = None
+    service_id: Optional[List[UUID]] = None
     product_id: Optional[UUID] = None
     employee_id: Optional[UUID] = None
     company_id: Optional[UUID] = None

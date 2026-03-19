@@ -19,3 +19,21 @@ class ScheduleCanceledException(DomainException):
     status_code: int = HTTPStatus.BAD_REQUEST.value
     code: str = 'SCHEDULE_CANCELED'
     message: str
+
+
+class ScheduleCloseServicesException(DomainException):
+    """
+    Serviços do agendamento ausentes, inativos ou não pertencentes à empresa.
+    """
+
+    status_code: int = HTTPStatus.BAD_REQUEST.value
+    code: str = 'SCHEDULE_CLOSE_SERVICES_INVALID'
+    message: str
+
+
+class ScheduleCloseAmountMismatchException(DomainException):
+    """amount_service diferente da soma dos preços dos serviços vinculados."""
+
+    status_code: int = HTTPStatus.BAD_REQUEST.value
+    code: str = 'SCHEDULE_CLOSE_AMOUNT_MISMATCH'
+    message: str

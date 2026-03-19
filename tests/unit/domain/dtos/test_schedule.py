@@ -10,7 +10,7 @@ pytestmark = pytest.mark.unit
 def _base_kwargs():
     return dict(
         user_id=uuid4(),
-        service_id=uuid4(),
+        service_id=[uuid4()],
         product_id=uuid4(),
         employee_id=uuid4(),
         company_id=uuid4(),
@@ -53,14 +53,14 @@ def test_schedule_out_dto_model_validate_accepts_orm_like_object_via_attributes(
         dict(
             id=uuid4(),
             user_id=uuid4(),
-            service_id=uuid4(),
+            service_id=[uuid4()],
             product_id=uuid4(),
             employee_id=uuid4(),
             company_id=uuid4(),
             time_register=now,
             time_start=None,
             time_end=None,
-            status=True,
+            is_confirmed=True,
             is_canceled=False,
             created_at=now,
             updated_at=now,

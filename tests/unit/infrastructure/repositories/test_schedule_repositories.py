@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
@@ -32,7 +33,7 @@ class TestScheduleRepositoryPostgres:
     async def test_create_schedule_success(self, repo, mock_session):
         dto = ScheduleCreateDTO(
             user_id=uuid4(),
-            service_id=uuid4(),
+            service_id=[uuid4()],
             product_id=uuid4(),
             employee_id=uuid4(),
             company_id=uuid4(),
@@ -67,7 +68,7 @@ class TestScheduleRepositoryPostgres:
         mock_session.rollback = AsyncMock()
         dto = ScheduleCreateDTO(
             user_id=uuid4(),
-            service_id=uuid4(),
+            service_id=[uuid4()],
             product_id=uuid4(),
             employee_id=uuid4(),
             company_id=uuid4(),
@@ -415,6 +416,38 @@ class TestScheduleRepositoryPostgres:
         mv.assert_called_once_with(mock_updated)
         assert result == expected
 
+    async def test_update_schedule_coerces_string_service_ids_from_dump(
+        self, repo, mock_session
+    ):
+        """
+        Cobre normalização quando
+        model_dump traz UUIDs como string
+        (ex.: round-trip JSON).
+        """
+        mock_updated = MagicMock()
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = mock_updated
+        mock_session.execute = AsyncMock(return_value=mock_result)
+        mock_session.commit = AsyncMock()
+
+        schedule_dto = MagicMock()
+        schedule_dto.model_dump.return_value = {
+            'service_id': [
+                '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+                'baf26222-1b35-452d-842e-668c2c33bd0e',
+            ],
+        }
+
+        expected = MagicMock()
+        with patch.object(ScheduleOutDTO, 'model_validate', return_value=expected):
+            result = await repo.update_schedule(uuid4(), schedule_dto, uuid4())
+
+        mock_session.commit.assert_awaited_once()
+        schedule_dto.model_dump.assert_called_once_with(
+            exclude_unset=True, exclude_none=True
+        )
+        assert result == expected
+
     async def test_update_schedule_rollback_on_error(self, repo, mock_session):
         mock_session.execute = AsyncMock(side_effect=ValueError('DB error'))
         mock_session.rollback = AsyncMock()
@@ -541,6 +574,75 @@ class TestScheduleRepositoryPostgres:
         added_instance = mock_session.add.call_args[0][0]
         mock_session.refresh.assert_awaited_once_with(added_instance)
         assert result == expected
+
+    async def test_sum_sale_for_service_ids_sums_prices(self, repo, mock_session):
+        company_id = uuid4()
+        s1, s2 = uuid4(), uuid4()
+        svc_a = MagicMock()
+        svc_a.id = s1
+        svc_a.price = Decimal('30')
+        svc_a.status = True
+        svc_b = MagicMock()
+        svc_b.id = s2
+        svc_b.price = Decimal('20.50')
+        svc_b.status = True
+        res = MagicMock()
+        mock_scalar_result = MagicMock()
+        mock_scalar_result.all.return_value = [svc_a, svc_b]
+        res.scalars.return_value = mock_scalar_result
+        mock_session.execute = AsyncMock(return_value=res)
+
+        total = await repo.sum_sale_for_service_ids([s1, s2], company_id)
+
+        assert total == Decimal('50.50')
+
+    async def test_sum_sale_for_service_ids_empty_returns_none(
+        self, repo, mock_session
+    ):
+        assert await repo.sum_sale_for_service_ids([], uuid4()) is None
+
+    async def test_sum_sale_for_service_ids_returns_none_when_service_missing(
+        self, repo, mock_session
+    ):
+        company_id = uuid4()
+        asked = uuid4()
+        other = uuid4()
+        svc = MagicMock()
+        svc.id = other
+        svc.price = Decimal('10')
+        svc.status = True
+        res = MagicMock()
+        mock_scalar = MagicMock()
+        mock_scalar.all.return_value = [svc]
+        res.scalars.return_value = mock_scalar
+        mock_session.execute = AsyncMock(return_value=res)
+
+        assert await repo.sum_sale_for_service_ids([asked], company_id) is None
+
+    async def test_sum_sale_for_service_ids_returns_none_when_service_inactive(
+        self, repo, mock_session
+    ):
+        company_id = uuid4()
+        sid = uuid4()
+        svc = MagicMock()
+        svc.id = sid
+        svc.price = Decimal('10')
+        svc.status = False
+        res = MagicMock()
+        mock_scalar = MagicMock()
+        mock_scalar.all.return_value = [svc]
+        res.scalars.return_value = mock_scalar
+        mock_session.execute = AsyncMock(return_value=res)
+
+        assert await repo.sum_sale_for_service_ids([sid], company_id) is None
+
+    async def test_sum_sale_for_service_ids_raises_database_exception_on_error(
+        self, repo, mock_session
+    ):
+        mock_session.execute = AsyncMock(side_effect=RuntimeError('execute failed'))
+
+        with pytest.raises(DatabaseException, match='execute failed'):
+            await repo.sum_sale_for_service_ids([uuid4()], uuid4())
 
     async def test_close_schedule_rollback_on_error(self, repo, mock_session):
         close_dto = CloseScheduleDTO(

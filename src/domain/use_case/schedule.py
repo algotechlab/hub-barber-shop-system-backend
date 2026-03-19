@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import List
 from uuid import UUID
 
@@ -14,9 +15,15 @@ from src.domain.dtos.schedule import (
 from src.domain.exceptions.schedule import (
     ScheduleAlreadyClosedException,
     ScheduleCanceledException,
+    ScheduleCloseAmountMismatchException,
+    ScheduleCloseServicesException,
     ScheduleNotFoundException,
 )
 from src.domain.service.schedule import ScheduleService
+
+
+def _quantize_money(value: Decimal) -> Decimal:
+    return Decimal(value).quantize(Decimal('0.01'))
 
 
 class ScheduleUseCase:
@@ -83,6 +90,21 @@ class ScheduleUseCase:
         if schedule.is_canceled:
             raise ScheduleCanceledException(
                 'Não é possível fechar um agendamento cancelado'
+            )
+
+        expected_total = await self.schedule_service.sum_sale_for_service_ids(
+            schedule.service_id, close_schedule.company_id
+        )
+        if expected_total is None:
+            raise ScheduleCloseServicesException(
+                'Um ou mais serviços do agendamento são inválidos ou inativos.'
+            )
+        if _quantize_money(close_schedule.amount_service) != _quantize_money(
+            expected_total
+        ):
+            raise ScheduleCloseAmountMismatchException(
+                f'amount_service deve ser {_quantize_money(expected_total)} '
+                '(soma dos preços dos serviços vinculados ao agendamento).'
             )
 
         schedule_finance = await self.schedule_service.close_schedule(close_schedule)
