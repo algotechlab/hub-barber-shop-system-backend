@@ -213,6 +213,7 @@ def build_schedule_finance(
 
     return ScheduleFinance(
         schedule_id=schedule.id,
+        service_id=list(schedule.service_id),
         company_id=COMPANY_ID,
         created_by=employee.id,
         amount_service=amount_service,

@@ -300,6 +300,7 @@ async def test_close_schedule_returns_finance_when_success():
     finance = ScheduleFinanceOutDTO(
         id=uuid4(),
         schedule_id=schedule.id,
+        service_id=schedule.service_id,
         company_id=schedule.company_id,
         created_by=uuid4(),
         amount_service=10,

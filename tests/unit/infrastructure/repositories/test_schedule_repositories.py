@@ -557,9 +557,16 @@ class TestScheduleRepositoryPostgres:
             payment_status=PaymentStatus.paid,
             paid_at=datetime(2026, 2, 14, 10, 0, 0),
         )
-        existing_result = MagicMock()
-        existing_result.scalar_one_or_none.return_value = None
-        mock_session.execute = AsyncMock(return_value=existing_result)
+        # 1) existing finance: none  2) schedule row for service_id snapshot
+        existing_finance_result = MagicMock()
+        existing_finance_result.scalar_one_or_none.return_value = None
+        schedule_row = MagicMock()
+        schedule_row.service_id = [uuid4()]
+        schedule_result = MagicMock()
+        schedule_result.scalar_one_or_none.return_value = schedule_row
+        mock_session.execute = AsyncMock(
+            side_effect=[existing_finance_result, schedule_result]
+        )
         mock_session.commit = AsyncMock()
         mock_session.refresh = AsyncMock()
         expected = MagicMock(spec=ScheduleFinanceOutDTO)

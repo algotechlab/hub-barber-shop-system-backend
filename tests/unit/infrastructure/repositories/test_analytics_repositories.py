@@ -52,19 +52,19 @@ class TestAnalyticsRepositoryPostgres:
         )
 
         paid_row = SimpleNamespace(
-            faturamento_bruto=Decimal('1000.00'),
-            total_atendimentos=20,
-            clientes_distintos=10,
-            dias_trabalhados=5,
+            gross_revenue=Decimal('1000.00'),
+            total_appointments=20,
+            distinct_customers=10,
+            working_days=5,
         )
         ranking_row = SimpleNamespace(
             employee_id=employee_id,
             employee_name='Hedris',
-            faturamento=Decimal('600.00'),
-            atendimentos=12,
-            clientes_distintos=8,
+            revenue=Decimal('600.00'),
+            appointments_count=12,
+            distinct_customers=8,
         )
-        base_period_row = SimpleNamespace(total_atendimentos=20, clientes_distintos=10)
+        base_period_row = SimpleNamespace(total_appointments=20, distinct_customers=10)
 
         mock_session.execute = AsyncMock(
             side_effect=[
@@ -74,11 +74,12 @@ class TestAnalyticsRepositoryPostgres:
                 _scalar_result(4),  # clients_with_multiple_visits_query
                 _all_result([ranking_row]),  # ranking query
                 _scalar_result(2),  # _count_new_clients (ranking row)
-                _scalar_result(3),  # retorno_query
+                _scalar_result(3),  # return_rate_subquery
+                _all_result([]),  # service ranking
                 _one_result(base_period_row),  # base_period_query
                 _scalar_result(3),  # _count_new_clients (customer metrics)
-                _scalar_result(2),  # clientes_nunca_voltaram_query
-                _scalar_result(5),  # clientes_com_mais_de_uma_visita_query
+                _scalar_result(2),  # never_returned_query
+                _scalar_result(5),  # multiple_visits_query
             ]
         )
 
@@ -87,13 +88,13 @@ class TestAnalyticsRepositoryPostgres:
         arrange_values_2 = 10
         arrange_values_3 = 3
 
-        assert result.resumo_mes.faturamento_bruto == Decimal('1000.00')
-        assert result.resumo_mes.despesas == Decimal('250.00')
-        assert result.resumo_mes.total_atendimentos == arrange_values
-        assert result.resumo_mes.clientes_novos_periodo == arrange_values_3
-        assert len(result.ranking_barbeiros) == 1
-        assert result.ranking_barbeiros[0].employee_id == employee_id
-        assert result.indicadores_clientes.clientes_distintos == arrange_values_2
+        assert result.monthly_summary.gross_revenue == Decimal('1000.00')
+        assert result.monthly_summary.expenses == Decimal('250.00')
+        assert result.monthly_summary.total_appointments == arrange_values
+        assert result.monthly_summary.new_customers_in_period == arrange_values_3
+        assert len(result.barber_ranking) == 1
+        assert result.barber_ranking[0].employee_id == employee_id
+        assert result.customer_metrics.distinct_customers == arrange_values_2
 
     @pytest.mark.asyncio
     async def test_get_dashboard_metrics_rollback_on_error(self, repo, mock_session):
@@ -124,12 +125,12 @@ class TestAnalyticsRepositoryPostgres:
         )
 
         paid_row = SimpleNamespace(
-            faturamento_bruto=Decimal('0.00'),
-            total_atendimentos=0,
-            clientes_distintos=0,
-            dias_trabalhados=0,
+            gross_revenue=Decimal('0.00'),
+            total_appointments=0,
+            distinct_customers=0,
+            working_days=0,
         )
-        base_period_row = SimpleNamespace(total_atendimentos=0, clientes_distintos=0)
+        base_period_row = SimpleNamespace(total_appointments=0, distinct_customers=0)
 
         mock_session.execute = AsyncMock(
             side_effect=[
@@ -138,17 +139,16 @@ class TestAnalyticsRepositoryPostgres:
                 _scalar_result(0),  # _count_new_clients (summary)
                 _scalar_result(0),  # clients_with_multiple_visits_query
                 _all_result([]),  # ranking query
+                _all_result([]),  # service ranking
                 _one_result(base_period_row),  # base_period_query
                 _scalar_result(0),  # _count_new_clients (customer metrics)
-                _scalar_result(0),  # clientes_nunca_voltaram_query
-                _scalar_result(0),  # clientes_com_mais_de_uma_visita_query
+                _scalar_result(0),  # never_returned_query
+                _scalar_result(0),  # multiple_visits_query
             ]
         )
 
         result = await repo.get_dashboard_metrics(filter_dto)
 
-        # Valida linha de proteção de divisão por zero (_safe_rate -> 0.0)
-        assert result.resumo_mes.taxa_retorno_percentual == 0.0
-        assert result.indicadores_clientes.taxa_retorno_percentual == 0.0
-        # Valida também que o fluxo com employee_id não quebra
-        assert result.resumo_mes.despesas == Decimal('0')
+        assert result.monthly_summary.return_rate_percent == 0.0
+        assert result.customer_metrics.return_rate_percent == 0.0
+        assert result.monthly_summary.expenses == Decimal('0')
