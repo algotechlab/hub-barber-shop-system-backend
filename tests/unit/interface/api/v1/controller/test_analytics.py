@@ -10,6 +10,7 @@ from src.domain.dtos.analytics import (
     DashboardFilterDTO,
     DashboardMetricsDTO,
     MonthlySummaryDTO,
+    ServiceRankingItemDTO,
 )
 from src.interface.api.v1.controller.analytics import AnalyticsController
 from src.interface.api.v1.schema.analytics import (
@@ -20,40 +21,48 @@ from src.interface.api.v1.schema.analytics import (
 
 def _build_metrics() -> DashboardMetricsDTO:
     return DashboardMetricsDTO(
-        resumo_mes=MonthlySummaryDTO(
-            faturamento_bruto=Decimal('1200.00'),
-            despesas=Decimal('400.00'),
-            lucro=Decimal('800.00'),
-            margem_percentual=66.67,
-            total_atendimentos=24,
-            clientes_distintos=18,
-            ticket_medio_atendimento=Decimal('50.00'),
-            ticket_medio_cliente=Decimal('66.67'),
-            clientes_novos_periodo=7,
-            taxa_retorno_percentual=44.44,
-            atendimentos_por_dia=4.8,
+        monthly_summary=MonthlySummaryDTO(
+            gross_revenue=Decimal('1200.00'),
+            expenses=Decimal('400.00'),
+            profit=Decimal('800.00'),
+            margin_percent=66.67,
+            total_appointments=24,
+            distinct_customers=18,
+            avg_ticket_per_appointment=Decimal('50.00'),
+            avg_ticket_per_customer=Decimal('66.67'),
+            new_customers_in_period=7,
+            return_rate_percent=44.44,
+            appointments_per_day=4.8,
         ),
-        ranking_barbeiros=[
+        barber_ranking=[
             BarberRankingItemDTO(
                 employee_id=uuid4(),
                 employee_name='Nilson',
-                faturamento=Decimal('650.00'),
-                atendimentos=12,
-                clientes_distintos=10,
-                ticket_medio_atendimento=Decimal('54.17'),
-                ticket_medio_cliente=Decimal('65.00'),
-                clientes_novos=3,
-                taxa_retorno_percentual=40.0,
-                frequencia_media_clientes=1.2,
+                revenue=Decimal('650.00'),
+                appointments_count=12,
+                distinct_customers=10,
+                avg_ticket_per_appointment=Decimal('54.17'),
+                avg_ticket_per_customer=Decimal('65.00'),
+                new_customers=3,
+                return_rate_percent=40.0,
+                avg_customer_frequency=1.2,
             )
         ],
-        indicadores_clientes=CustomerMetricsDTO(
-            clientes_distintos=18,
-            clientes_novos=7,
-            clientes_recorrentes=11,
-            frequencia_media=1.33,
-            clientes_nunca_voltaram=5,
-            taxa_retorno_percentual=61.11,
+        service_ranking=[
+            ServiceRankingItemDTO(
+                service_id=uuid4(),
+                service_name='Corte',
+                appointments_count=10,
+                revenue=Decimal('500.00'),
+            )
+        ],
+        customer_metrics=CustomerMetricsDTO(
+            distinct_customers=18,
+            new_customers=7,
+            returning_customers=11,
+            avg_frequency=1.33,
+            customers_never_returned=5,
+            return_rate_percent=61.11,
         ),
     )
 

@@ -373,7 +373,37 @@ class ScheduleRepositoryPostgres(ScheduleRepository):
             if existing_schedule_finance is not None:
                 return None
 
-            schedule_finance = ScheduleFinance(**close_schedule.model_dump())
+            schedule_query = select(Schedule).where(
+                Schedule.id.__eq__(close_schedule.schedule_id),
+                Schedule.company_id.__eq__(close_schedule.company_id),
+                Schedule.is_deleted.__eq__(False),
+            )
+            updated_confirmed = (
+                update(Schedule)
+                .where(
+                    Schedule.id.__eq__(close_schedule.schedule_id),
+                    Schedule.company_id.__eq__(close_schedule.company_id),
+                    Schedule.is_deleted.__eq__(False),
+                )
+                .values(is_confirmed=True)
+                .returning(Schedule)
+            )
+
+            updated_confirmed_result = await self.session.execute(updated_confirmed)
+
+            updated_confirmed_row = updated_confirmed_result.scalar_one_or_none()
+            if updated_confirmed_row is None:
+                return None
+
+            schedule_result = await self.session.execute(schedule_query)
+            schedule_row = schedule_result.scalar_one_or_none()
+            if schedule_row is None:
+                return None
+
+            finance_payload = close_schedule.model_dump()
+            finance_payload['service_id'] = list(schedule_row.service_id)
+
+            schedule_finance = ScheduleFinance(**finance_payload)
             self.session.add(schedule_finance)
             await self.session.commit()
             await self.session.refresh(schedule_finance)

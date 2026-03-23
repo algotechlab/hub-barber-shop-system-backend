@@ -14,49 +14,57 @@ class DashboardFilterInSchema(BaseModel):
     @model_validator(mode='after')
     def validate_period(self) -> 'DashboardFilterInSchema':
         if self.end_date < self.start_date:
-            raise ValueError('end_date deve ser maior ou igual a start_date')
+            raise ValueError('end_date must be greater than or equal to start_date')
         return self
 
 
 class MonthlySummaryOutSchema(BaseModel):
-    faturamento_bruto: Decimal
-    despesas: Decimal
-    lucro: Decimal
-    margem_percentual: float
-    total_atendimentos: int
-    clientes_distintos: int
-    ticket_medio_atendimento: Decimal
-    ticket_medio_cliente: Decimal
-    clientes_novos_periodo: int
-    taxa_retorno_percentual: float
-    atendimentos_por_dia: float = Field(
-        description='Total de atendimentos dividido por dias trabalhados no período'
+    gross_revenue: Decimal
+    expenses: Decimal
+    profit: Decimal
+    margin_percent: float
+    total_appointments: int
+    distinct_customers: int
+    avg_ticket_per_appointment: Decimal
+    avg_ticket_per_customer: Decimal
+    new_customers_in_period: int
+    return_rate_percent: float
+    appointments_per_day: float = Field(
+        description='Total appointments divided by working days in the period'
     )
 
 
 class BarberRankingItemOutSchema(BaseModel):
     employee_id: UUID
     employee_name: str
-    faturamento: Decimal
-    atendimentos: int
-    clientes_distintos: int
-    ticket_medio_atendimento: Decimal
-    ticket_medio_cliente: Decimal
-    clientes_novos: int
-    taxa_retorno_percentual: float
-    frequencia_media_clientes: float
+    revenue: Decimal
+    appointments_count: int
+    distinct_customers: int
+    avg_ticket_per_appointment: Decimal
+    avg_ticket_per_customer: Decimal
+    new_customers: int
+    return_rate_percent: float
+    avg_customer_frequency: float
+
+
+class ServiceRankingItemOutSchema(BaseModel):
+    service_id: UUID
+    service_name: str
+    appointments_count: int
+    revenue: Decimal
 
 
 class CustomerMetricsOutSchema(BaseModel):
-    clientes_distintos: int
-    clientes_novos: int
-    clientes_recorrentes: int
-    frequencia_media: float
-    clientes_nunca_voltaram: int
-    taxa_retorno_percentual: float
+    distinct_customers: int
+    new_customers: int
+    returning_customers: int
+    avg_frequency: float
+    customers_never_returned: int
+    return_rate_percent: float
 
 
 class DashboardMetricsOutSchema(BaseModel):
-    resumo_mes: MonthlySummaryOutSchema
-    ranking_barbeiros: List[BarberRankingItemOutSchema]
-    indicadores_clientes: CustomerMetricsOutSchema
+    monthly_summary: MonthlySummaryOutSchema
+    barber_ranking: List[BarberRankingItemOutSchema]
+    service_ranking: List[ServiceRankingItemOutSchema]
+    customer_metrics: CustomerMetricsOutSchema

@@ -241,6 +241,7 @@ class TestScheduleController:
         use_case.close_schedule.return_value = ScheduleFinanceOutSchema(
             id=uuid.uuid4(),
             schedule_id=schedule_id,
+            service_id=[uuid.uuid4()],
             company_id=company_id,
             created_by=created_by,
             amount_service=10,

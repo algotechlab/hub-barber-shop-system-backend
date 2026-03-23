@@ -201,6 +201,7 @@ async def test_schedule_service_close_delegates_to_repository():
     expected = ScheduleFinanceOutDTO(
         id=uuid4(),
         schedule_id=close_dto.schedule_id,
+        service_id=[uuid4()],
         company_id=close_dto.company_id,
         created_by=close_dto.created_by,
         amount_service=10,
