@@ -95,6 +95,7 @@ class ScheduleFinanceOutSchema(BaseModel):
 
     id: UUID
     schedule_id: UUID
+    service_id: List[UUID]
     company_id: UUID
     created_by: UUID
     amount_service: Decimal

@@ -49,6 +49,7 @@ def _build_schedule_finance_out() -> dict:
     return {
         'id': str(uuid.uuid4()),
         'schedule_id': str(uuid.uuid4()),
+        'service_id': [str(uuid.uuid4())],
         'company_id': str(uuid.uuid4()),
         'created_by': str(uuid.uuid4()),
         'amount_service': '10.00',

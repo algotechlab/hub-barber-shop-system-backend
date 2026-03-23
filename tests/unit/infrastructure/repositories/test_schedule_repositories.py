@@ -557,9 +557,22 @@ class TestScheduleRepositoryPostgres:
             payment_status=PaymentStatus.paid,
             paid_at=datetime(2026, 2, 14, 10, 0, 0),
         )
-        existing_result = MagicMock()
-        existing_result.scalar_one_or_none.return_value = None
-        mock_session.execute = AsyncMock(return_value=existing_result)
+        # 1) existing finance: none  2) update returning  3) schedule row for service_id
+        existing_finance_result = MagicMock()
+        existing_finance_result.scalar_one_or_none.return_value = None
+        update_returning_result = MagicMock()
+        update_returning_result.scalar_one_or_none.return_value = MagicMock()
+        schedule_row = MagicMock()
+        schedule_row.service_id = [uuid4()]
+        schedule_result = MagicMock()
+        schedule_result.scalar_one_or_none.return_value = schedule_row
+        mock_session.execute = AsyncMock(
+            side_effect=[
+                existing_finance_result,
+                update_returning_result,
+                schedule_result,
+            ]
+        )
         mock_session.commit = AsyncMock()
         mock_session.refresh = AsyncMock()
         expected = MagicMock(spec=ScheduleFinanceOutDTO)
@@ -574,6 +587,69 @@ class TestScheduleRepositoryPostgres:
         added_instance = mock_session.add.call_args[0][0]
         mock_session.refresh.assert_awaited_once_with(added_instance)
         assert result == expected
+
+    async def test_close_schedule_returns_none_when_update_returns_no_row(
+        self, repo, mock_session
+    ):
+        close_dto = CloseScheduleDTO(
+            schedule_id=uuid4(),
+            company_id=uuid4(),
+            created_by=uuid4(),
+            amount_service=10,
+            amount_product=None,
+            amount_discount=None,
+            amount_total=10,
+            payment_method=PaymentMethod.pix,
+            payment_status=PaymentStatus.paid,
+            paid_at=datetime(2026, 2, 14, 10, 0, 0),
+        )
+        existing_finance_result = MagicMock()
+        existing_finance_result.scalar_one_or_none.return_value = None
+        update_returning_result = MagicMock()
+        update_returning_result.scalar_one_or_none.return_value = None
+        mock_session.execute = AsyncMock(
+            side_effect=[existing_finance_result, update_returning_result]
+        )
+
+        result = await repo.close_schedule(close_dto)
+        arrange_result = 2
+        assert result is None
+        assert mock_session.execute.await_count == arrange_result
+        mock_session.add.assert_not_called()
+
+    async def test_close_schedule_returns_none_when_schedule_row_missing(
+        self, repo, mock_session
+    ):
+        close_dto = CloseScheduleDTO(
+            schedule_id=uuid4(),
+            company_id=uuid4(),
+            created_by=uuid4(),
+            amount_service=10,
+            amount_product=None,
+            amount_discount=None,
+            amount_total=10,
+            payment_method=PaymentMethod.pix,
+            payment_status=PaymentStatus.paid,
+            paid_at=datetime(2026, 2, 14, 10, 0, 0),
+        )
+        existing_finance_result = MagicMock()
+        existing_finance_result.scalar_one_or_none.return_value = None
+        update_returning_result = MagicMock()
+        update_returning_result.scalar_one_or_none.return_value = MagicMock()
+        schedule_result = MagicMock()
+        schedule_result.scalar_one_or_none.return_value = None
+        mock_session.execute = AsyncMock(
+            side_effect=[
+                existing_finance_result,
+                update_returning_result,
+                schedule_result,
+            ]
+        )
+
+        result = await repo.close_schedule(close_dto)
+
+        assert result is None
+        mock_session.add.assert_not_called()
 
     async def test_sum_sale_for_service_ids_sums_prices(self, repo, mock_session):
         company_id = uuid4()

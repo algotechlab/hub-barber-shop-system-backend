@@ -13,6 +13,7 @@ from src.domain.dtos.analytics import (
     DashboardFilterDTO,
     DashboardMetricsDTO,
     MonthlySummaryDTO,
+    ServiceRankingItemDTO,
 )
 from src.domain.repositories.analytics import AnalyticsRepository
 from src.infrastructure.database.models.commom.payment_status import PaymentStatus
@@ -20,6 +21,7 @@ from src.infrastructure.database.models.employees import Employee
 from src.infrastructure.database.models.expense import Expense
 from src.infrastructure.database.models.schedule import Schedule
 from src.infrastructure.database.models.schedule_finance import ScheduleFinance
+from src.infrastructure.database.models.service import Service
 
 
 class AnalyticsRepositoryPostgres(AnalyticsRepository):
@@ -111,11 +113,11 @@ class AnalyticsRepositoryPostgres(AnalyticsRepository):
     ) -> MonthlySummaryDTO:
         paid_query = (
             select(
-                func.sum(ScheduleFinance.amount_total).label('faturamento_bruto'),
-                func.count(ScheduleFinance.id).label('total_atendimentos'),
-                func.count(func.distinct(Schedule.user_id)).label('clientes_distintos'),
+                func.sum(ScheduleFinance.amount_total).label('gross_revenue'),
+                func.count(ScheduleFinance.id).label('total_appointments'),
+                func.count(func.distinct(Schedule.user_id)).label('distinct_customers'),
                 func.count(func.distinct(cast(ScheduleFinance.paid_at, Date))).label(
-                    'dias_trabalhados'
+                    'working_days'
                 ),
             )
             .select_from(ScheduleFinance)
@@ -128,10 +130,10 @@ class AnalyticsRepositoryPostgres(AnalyticsRepository):
         )
         paid_row = (await self.session.execute(paid_query)).one()
 
-        faturamento_bruto = self._safe_decimal(paid_row.faturamento_bruto)
-        total_atendimentos = int(paid_row.total_atendimentos or 0)
-        clientes_distintos = int(paid_row.clientes_distintos or 0)
-        dias_trabalhados = int(paid_row.dias_trabalhados or 0)
+        gross_revenue = self._safe_decimal(paid_row.gross_revenue)
+        total_appointments = int(paid_row.total_appointments or 0)
+        distinct_customers = int(paid_row.distinct_customers or 0)
+        working_days = int(paid_row.working_days or 0)
 
         expense_filters: list = [
             Expense.company_id.__eq__(dashboard_filter.company_id),
@@ -145,28 +147,28 @@ class AnalyticsRepositoryPostgres(AnalyticsRepository):
             )
 
         expense_query = select(func.sum(Expense.amount)).where(*expense_filters)
-        despesas = self._safe_decimal(
+        expenses = self._safe_decimal(
             (await self.session.execute(expense_query)).scalar_one()
         )
 
-        lucro = faturamento_bruto - despesas
-        margem_percentual = (
+        profit = gross_revenue - expenses
+        margin_percent = (
             0.0
-            if faturamento_bruto == Decimal('0')
-            else round(float((lucro / faturamento_bruto) * Decimal('100')), 2)
+            if gross_revenue == Decimal('0')
+            else round(float((profit / gross_revenue) * Decimal('100')), 2)
         )
-        ticket_medio_atendimento = (
+        avg_ticket_per_appointment = (
             Decimal('0')
-            if total_atendimentos == 0
-            else faturamento_bruto / Decimal(total_atendimentos)
+            if total_appointments == 0
+            else gross_revenue / Decimal(total_appointments)
         )
-        ticket_medio_cliente = (
+        avg_ticket_per_customer = (
             Decimal('0')
-            if clientes_distintos == 0
-            else faturamento_bruto / Decimal(clientes_distintos)
+            if distinct_customers == 0
+            else gross_revenue / Decimal(distinct_customers)
         )
 
-        clientes_novos_periodo = await self._count_new_clients(
+        new_customers_in_period = await self._count_new_clients(
             dashboard_filter, period_start, period_end_exclusive
         )
 
@@ -183,7 +185,7 @@ class AnalyticsRepositoryPostgres(AnalyticsRepository):
             .having(func.count(ScheduleFinance.id) > 1)
             .subquery()
         )
-        clientes_com_retorno = int(
+        returning_customers_count = int(
             (
                 await self.session.execute(clients_with_multiple_visits_query)
             ).scalar_one()
@@ -191,24 +193,20 @@ class AnalyticsRepositoryPostgres(AnalyticsRepository):
         )
 
         return MonthlySummaryDTO(
-            faturamento_bruto=faturamento_bruto,
-            despesas=despesas,
-            lucro=lucro,
-            margem_percentual=margem_percentual,
-            total_atendimentos=total_atendimentos,
-            clientes_distintos=clientes_distintos,
-            ticket_medio_atendimento=ticket_medio_atendimento,
-            ticket_medio_cliente=ticket_medio_cliente,
-            clientes_novos_periodo=clientes_novos_periodo,
-            taxa_retorno_percentual=self._safe_rate(
-                clientes_com_retorno, clientes_distintos
+            gross_revenue=gross_revenue,
+            expenses=expenses,
+            profit=profit,
+            margin_percent=margin_percent,
+            total_appointments=total_appointments,
+            distinct_customers=distinct_customers,
+            avg_ticket_per_appointment=avg_ticket_per_appointment,
+            avg_ticket_per_customer=avg_ticket_per_customer,
+            new_customers_in_period=new_customers_in_period,
+            return_rate_percent=self._safe_rate(
+                returning_customers_count, distinct_customers
             ),
-            atendimentos_por_dia=round(
-                (
-                    total_atendimentos / dias_trabalhados
-                    if dias_trabalhados > 0
-                    else 0.0
-                ),
+            appointments_per_day=round(
+                (total_appointments / working_days if working_days > 0 else 0.0),
                 2,
             ),
         )
@@ -223,9 +221,9 @@ class AnalyticsRepositoryPostgres(AnalyticsRepository):
             select(
                 Schedule.employee_id.label('employee_id'),
                 Employee.name.label('employee_name'),
-                func.sum(ScheduleFinance.amount_total).label('faturamento'),
-                func.count(ScheduleFinance.id).label('atendimentos'),
-                func.count(func.distinct(Schedule.user_id)).label('clientes_distintos'),
+                func.sum(ScheduleFinance.amount_total).label('revenue'),
+                func.count(ScheduleFinance.id).label('appointments_count'),
+                func.count(func.distinct(Schedule.user_id)).label('distinct_customers'),
             )
             .select_from(ScheduleFinance)
             .join(Schedule, Schedule.id.__eq__(ScheduleFinance.schedule_id))
@@ -243,18 +241,18 @@ class AnalyticsRepositoryPostgres(AnalyticsRepository):
         ranking: list[BarberRankingItemDTO] = []
         for row in rows:
             employee_id: UUID = row.employee_id
-            faturamento = self._safe_decimal(row.faturamento)
-            atendimentos = int(row.atendimentos or 0)
-            clientes_distintos = int(row.clientes_distintos or 0)
+            revenue = self._safe_decimal(row.revenue)
+            appointments_count = int(row.appointments_count or 0)
+            distinct_customers = int(row.distinct_customers or 0)
 
-            clientes_novos = await self._count_new_clients(
+            new_customers = await self._count_new_clients(
                 dashboard_filter,
                 period_start,
                 period_end_exclusive,
                 employee_id=employee_id,
             )
 
-            retorno_query = select(func.count()).select_from(
+            return_rate_subquery = select(func.count()).select_from(
                 select(Schedule.user_id)
                 .select_from(ScheduleFinance)
                 .join(Schedule, Schedule.id.__eq__(ScheduleFinance.schedule_id))
@@ -274,42 +272,128 @@ class AnalyticsRepositoryPostgres(AnalyticsRepository):
                 .having(func.count(ScheduleFinance.id) > 1)
                 .subquery()
             )
-            clientes_com_retorno = int(
-                (await self.session.execute(retorno_query)).scalar_one() or 0
+            returning_customers = int(
+                (await self.session.execute(return_rate_subquery)).scalar_one() or 0
             )
 
-            ticket_medio_atendimento = (
+            avg_ticket_per_appointment = (
                 Decimal('0')
-                if atendimentos == 0
-                else faturamento / Decimal(atendimentos)
+                if appointments_count == 0
+                else revenue / Decimal(appointments_count)
             )
-            ticket_medio_cliente = (
+            avg_ticket_per_customer = (
                 Decimal('0')
-                if clientes_distintos == 0
-                else faturamento / Decimal(clientes_distintos)
+                if distinct_customers == 0
+                else revenue / Decimal(distinct_customers)
             )
-            frequencia_media_clientes = round(
-                (atendimentos / clientes_distintos) if clientes_distintos > 0 else 0.0,
+            avg_customer_frequency = round(
+                (appointments_count / distinct_customers)
+                if distinct_customers > 0
+                else 0.0,
                 2,
             )
 
             ranking.append(
                 BarberRankingItemDTO(
                     employee_id=employee_id,
-                    employee_name=row.employee_name or 'Sem nome',
-                    faturamento=faturamento,
-                    atendimentos=atendimentos,
-                    clientes_distintos=clientes_distintos,
-                    ticket_medio_atendimento=ticket_medio_atendimento,
-                    ticket_medio_cliente=ticket_medio_cliente,
-                    clientes_novos=clientes_novos,
-                    taxa_retorno_percentual=self._safe_rate(
-                        clientes_com_retorno, clientes_distintos
+                    employee_name=row.employee_name or 'Unnamed',
+                    revenue=revenue,
+                    appointments_count=appointments_count,
+                    distinct_customers=distinct_customers,
+                    avg_ticket_per_appointment=avg_ticket_per_appointment,
+                    avg_ticket_per_customer=avg_ticket_per_customer,
+                    new_customers=new_customers,
+                    return_rate_percent=self._safe_rate(
+                        returning_customers, distinct_customers
                     ),
-                    frequencia_media_clientes=frequencia_media_clientes,
+                    avg_customer_frequency=avg_customer_frequency,
                 )
             )
 
+        return ranking
+
+    async def _build_service_ranking(
+        self,
+        dashboard_filter: DashboardFilterDTO,
+        period_start: datetime,
+        period_end_exclusive: datetime,
+    ) -> List[ServiceRankingItemDTO]:
+        period_sf = (
+            select(
+                ScheduleFinance.id.label('sf_id'),
+                ScheduleFinance.amount_service,
+                ScheduleFinance.service_id,
+            )
+            .select_from(ScheduleFinance)
+            .join(Schedule, Schedule.id.__eq__(ScheduleFinance.schedule_id))
+            .where(
+                *self._period_filters(
+                    dashboard_filter, period_start, period_end_exclusive
+                )
+            )
+        ).cte('period_sf')
+
+        expanded = (
+            select(
+                period_sf.c.sf_id,
+                period_sf.c.amount_service,
+                func.unnest(period_sf.c.service_id).label('sid'),
+            ).select_from(period_sf)
+        ).cte('expanded')
+
+        price_expr = func.coalesce(Service.price, 0)
+        total_price = func.sum(price_expr).over(partition_by=expanded.c.sf_id)
+
+        priced = (
+            select(
+                expanded.c.sf_id,
+                expanded.c.sid,
+                expanded.c.amount_service,
+                price_expr.label('price'),
+                total_price.label('total_price'),
+            )
+            .select_from(expanded)
+            .join(Service, Service.id.__eq__(expanded.c.sid))
+            .where(
+                Service.is_deleted.__eq__(False),
+                Service.company_id.__eq__(dashboard_filter.company_id),
+            )
+        ).cte('priced')
+
+        revenue = func.coalesce(
+            func.sum(
+                priced.c.amount_service
+                * (priced.c.price / func.nullif(priced.c.total_price, 0))
+            ),
+            0,
+        ).label('revenue')
+
+        final_query = (
+            select(
+                priced.c.sid.label('service_id'),
+                Service.name.label('service_name'),
+                func.count(func.distinct(priced.c.sf_id)).label('appointments_count'),
+                revenue,
+            )
+            .select_from(priced)
+            .join(Service, Service.id.__eq__(priced.c.sid))
+            .group_by(priced.c.sid, Service.name)
+            .order_by(revenue.desc())
+            .limit(20)
+        )
+
+        result = await self.session.execute(final_query)
+        rows = result.all()
+        ranking: list[ServiceRankingItemDTO] = []
+        for row in rows:
+            ranking.append(
+                ServiceRankingItemDTO(
+                    service_id=row.service_id,
+                    service_name=row.service_name,
+                    appointments_count=int(row.appointments_count or 0),
+                    revenue=self._safe_decimal(row.revenue),
+                )
+            )
         return ranking
 
     async def _build_customer_metrics(
@@ -320,8 +404,8 @@ class AnalyticsRepositoryPostgres(AnalyticsRepository):
     ) -> CustomerMetricsDTO:
         base_period_query = (
             select(
-                func.count(ScheduleFinance.id).label('total_atendimentos'),
-                func.count(func.distinct(Schedule.user_id)).label('clientes_distintos'),
+                func.count(ScheduleFinance.id).label('total_appointments'),
+                func.count(func.distinct(Schedule.user_id)).label('distinct_customers'),
             )
             .select_from(ScheduleFinance)
             .join(Schedule, Schedule.id.__eq__(ScheduleFinance.schedule_id))
@@ -332,13 +416,13 @@ class AnalyticsRepositoryPostgres(AnalyticsRepository):
             )
         )
         base_period_row = (await self.session.execute(base_period_query)).one()
-        total_atendimentos = int(base_period_row.total_atendimentos or 0)
-        clientes_distintos = int(base_period_row.clientes_distintos or 0)
+        total_appointments = int(base_period_row.total_appointments or 0)
+        distinct_customers = int(base_period_row.distinct_customers or 0)
 
-        clientes_novos = await self._count_new_clients(
+        new_customers = await self._count_new_clients(
             dashboard_filter, period_start, period_end_exclusive
         )
-        clientes_recorrentes = max(clientes_distintos - clientes_novos, 0)
+        returning_customers = max(distinct_customers - new_customers, 0)
 
         period_users_subquery = (
             select(func.distinct(Schedule.user_id).label('user_id'))
@@ -367,39 +451,35 @@ class AnalyticsRepositoryPostgres(AnalyticsRepository):
             .subquery()
         )
 
-        clientes_nunca_voltaram_query = select(func.count()).where(
+        never_returned_query = select(func.count()).where(
             historical_visits_query.c.total_visits.__eq__(1)
         )
-        clientes_nunca_voltaram = int(
-            (await self.session.execute(clientes_nunca_voltaram_query)).scalar_one()
-            or 0
+        customers_never_returned = int(
+            (await self.session.execute(never_returned_query)).scalar_one() or 0
         )
 
-        clientes_com_mais_de_uma_visita_query = select(func.count()).where(
+        multiple_visits_query = select(func.count()).where(
             historical_visits_query.c.total_visits.__gt__(1)
         )
-        clientes_com_retorno = int(
-            (
-                await self.session.execute(clientes_com_mais_de_uma_visita_query)
-            ).scalar_one()
-            or 0
+        returning_visits_count = int(
+            (await self.session.execute(multiple_visits_query)).scalar_one() or 0
         )
 
         return CustomerMetricsDTO(
-            clientes_distintos=clientes_distintos,
-            clientes_novos=clientes_novos,
-            clientes_recorrentes=clientes_recorrentes,
-            frequencia_media=round(
+            distinct_customers=distinct_customers,
+            new_customers=new_customers,
+            returning_customers=returning_customers,
+            avg_frequency=round(
                 (
-                    total_atendimentos / clientes_distintos
-                    if clientes_distintos > 0
+                    total_appointments / distinct_customers
+                    if distinct_customers > 0
                     else 0.0
                 ),
                 2,
             ),
-            clientes_nunca_voltaram=clientes_nunca_voltaram,
-            taxa_retorno_percentual=self._safe_rate(
-                clientes_com_retorno, clientes_distintos
+            customers_never_returned=customers_never_returned,
+            return_rate_percent=self._safe_rate(
+                returning_visits_count, distinct_customers
             ),
         )
 
@@ -411,10 +491,13 @@ class AnalyticsRepositoryPostgres(AnalyticsRepository):
                 dashboard_filter.start_date, dashboard_filter.end_date
             )
 
-            summary = await self._build_monthly_summary(
+            monthly_summary = await self._build_monthly_summary(
                 dashboard_filter, period_start, period_end_exclusive
             )
-            ranking = await self._build_barber_ranking(
+            barber_ranking = await self._build_barber_ranking(
+                dashboard_filter, period_start, period_end_exclusive
+            )
+            service_ranking = await self._build_service_ranking(
                 dashboard_filter, period_start, period_end_exclusive
             )
             customer_metrics = await self._build_customer_metrics(
@@ -422,9 +505,10 @@ class AnalyticsRepositoryPostgres(AnalyticsRepository):
             )
 
             return DashboardMetricsDTO(
-                resumo_mes=summary,
-                ranking_barbeiros=ranking,
-                indicadores_clientes=customer_metrics,
+                monthly_summary=monthly_summary,
+                barber_ranking=barber_ranking,
+                service_ranking=service_ranking,
+                customer_metrics=customer_metrics,
             )
         except Exception as error:
             await self.session.rollback()

@@ -10,6 +10,7 @@ from src.domain.dtos.analytics import (
     DashboardFilterDTO,
     DashboardMetricsDTO,
     MonthlySummaryDTO,
+    ServiceRankingItemDTO,
 )
 from src.domain.service.analytics import AnalyticsService
 
@@ -18,40 +19,48 @@ pytestmark = pytest.mark.unit
 
 def _build_metrics() -> DashboardMetricsDTO:
     return DashboardMetricsDTO(
-        resumo_mes=MonthlySummaryDTO(
-            faturamento_bruto=Decimal('1000.00'),
-            despesas=Decimal('300.00'),
-            lucro=Decimal('700.00'),
-            margem_percentual=70.0,
-            total_atendimentos=20,
-            clientes_distintos=15,
-            ticket_medio_atendimento=Decimal('50.00'),
-            ticket_medio_cliente=Decimal('66.67'),
-            clientes_novos_periodo=5,
-            taxa_retorno_percentual=40.0,
-            atendimentos_por_dia=4.0,
+        monthly_summary=MonthlySummaryDTO(
+            gross_revenue=Decimal('1000.00'),
+            expenses=Decimal('300.00'),
+            profit=Decimal('700.00'),
+            margin_percent=70.0,
+            total_appointments=20,
+            distinct_customers=15,
+            avg_ticket_per_appointment=Decimal('50.00'),
+            avg_ticket_per_customer=Decimal('66.67'),
+            new_customers_in_period=5,
+            return_rate_percent=40.0,
+            appointments_per_day=4.0,
         ),
-        ranking_barbeiros=[
+        barber_ranking=[
             BarberRankingItemDTO(
                 employee_id=uuid4(),
                 employee_name='Hedris',
-                faturamento=Decimal('500.00'),
-                atendimentos=10,
-                clientes_distintos=8,
-                ticket_medio_atendimento=Decimal('50.00'),
-                ticket_medio_cliente=Decimal('62.50'),
-                clientes_novos=2,
-                taxa_retorno_percentual=37.5,
-                frequencia_media_clientes=1.25,
+                revenue=Decimal('500.00'),
+                appointments_count=10,
+                distinct_customers=8,
+                avg_ticket_per_appointment=Decimal('50.00'),
+                avg_ticket_per_customer=Decimal('62.50'),
+                new_customers=2,
+                return_rate_percent=37.5,
+                avg_customer_frequency=1.25,
             )
         ],
-        indicadores_clientes=CustomerMetricsDTO(
-            clientes_distintos=15,
-            clientes_novos=5,
-            clientes_recorrentes=10,
-            frequencia_media=1.33,
-            clientes_nunca_voltaram=4,
-            taxa_retorno_percentual=66.67,
+        service_ranking=[
+            ServiceRankingItemDTO(
+                service_id=uuid4(),
+                service_name='Combo',
+                appointments_count=5,
+                revenue=Decimal('350.00'),
+            )
+        ],
+        customer_metrics=CustomerMetricsDTO(
+            distinct_customers=15,
+            new_customers=5,
+            returning_customers=10,
+            avg_frequency=1.33,
+            customers_never_returned=4,
+            return_rate_percent=66.67,
         ),
     )
 

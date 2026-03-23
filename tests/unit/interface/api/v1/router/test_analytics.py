@@ -15,6 +15,7 @@ from src.interface.api.v1.schema.analytics import (
     CustomerMetricsOutSchema,
     DashboardMetricsOutSchema,
     MonthlySummaryOutSchema,
+    ServiceRankingItemOutSchema,
 )
 from src.main import app
 
@@ -26,40 +27,48 @@ STATUS_CODE_422 = 422
 
 def _build_dashboard_out() -> DashboardMetricsOutSchema:
     return DashboardMetricsOutSchema(
-        resumo_mes=MonthlySummaryOutSchema(
-            faturamento_bruto=Decimal('1000.00'),
-            despesas=Decimal('350.00'),
-            lucro=Decimal('650.00'),
-            margem_percentual=65.0,
-            total_atendimentos=20,
-            clientes_distintos=14,
-            ticket_medio_atendimento=Decimal('50.00'),
-            ticket_medio_cliente=Decimal('71.43'),
-            clientes_novos_periodo=5,
-            taxa_retorno_percentual=42.86,
-            atendimentos_por_dia=4.0,
+        monthly_summary=MonthlySummaryOutSchema(
+            gross_revenue=Decimal('1000.00'),
+            expenses=Decimal('350.00'),
+            profit=Decimal('650.00'),
+            margin_percent=65.0,
+            total_appointments=20,
+            distinct_customers=14,
+            avg_ticket_per_appointment=Decimal('50.00'),
+            avg_ticket_per_customer=Decimal('71.43'),
+            new_customers_in_period=5,
+            return_rate_percent=42.86,
+            appointments_per_day=4.0,
         ),
-        ranking_barbeiros=[
+        barber_ranking=[
             BarberRankingItemOutSchema(
                 employee_id=uuid.uuid4(),
                 employee_name='Hedris',
-                faturamento=Decimal('600.00'),
-                atendimentos=12,
-                clientes_distintos=9,
-                ticket_medio_atendimento=Decimal('50.00'),
-                ticket_medio_cliente=Decimal('66.67'),
-                clientes_novos=3,
-                taxa_retorno_percentual=44.44,
-                frequencia_media_clientes=1.33,
+                revenue=Decimal('600.00'),
+                appointments_count=12,
+                distinct_customers=9,
+                avg_ticket_per_appointment=Decimal('50.00'),
+                avg_ticket_per_customer=Decimal('66.67'),
+                new_customers=3,
+                return_rate_percent=44.44,
+                avg_customer_frequency=1.33,
             )
         ],
-        indicadores_clientes=CustomerMetricsOutSchema(
-            clientes_distintos=14,
-            clientes_novos=5,
-            clientes_recorrentes=9,
-            frequencia_media=1.43,
-            clientes_nunca_voltaram=4,
-            taxa_retorno_percentual=64.29,
+        service_ranking=[
+            ServiceRankingItemOutSchema(
+                service_id=uuid.uuid4(),
+                service_name='Corte',
+                appointments_count=10,
+                revenue=Decimal('400.00'),
+            )
+        ],
+        customer_metrics=CustomerMetricsOutSchema(
+            distinct_customers=14,
+            new_customers=5,
+            returning_customers=9,
+            avg_frequency=1.43,
+            customers_never_returned=4,
+            return_rate_percent=64.29,
         ),
     )
 
@@ -109,9 +118,10 @@ class TestAnalyticsRoutes:
 
         assert response.status_code == STATUS_CODE_200, response.json()
         payload = response.json()
-        assert 'resumo_mes' in payload
-        assert 'ranking_barbeiros' in payload
-        assert 'indicadores_clientes' in payload
+        assert 'monthly_summary' in payload
+        assert 'barber_ranking' in payload
+        assert 'service_ranking' in payload
+        assert 'customer_metrics' in payload
 
     def test_get_dashboard_metrics_returns_422_when_missing_dates(
         self, client, override_dependency_analytics

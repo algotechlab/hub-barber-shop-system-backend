@@ -14,42 +14,52 @@ class DashboardFilterDTO(BaseModel):
 
 
 class MonthlySummaryDTO(BaseModel):
-    faturamento_bruto: Decimal
-    despesas: Decimal
-    lucro: Decimal
-    margem_percentual: float
-    total_atendimentos: int
-    clientes_distintos: int
-    ticket_medio_atendimento: Decimal
-    ticket_medio_cliente: Decimal
-    clientes_novos_periodo: int
-    taxa_retorno_percentual: float
-    atendimentos_por_dia: float
+    gross_revenue: Decimal
+    expenses: Decimal
+    profit: Decimal
+    margin_percent: float
+    total_appointments: int
+    distinct_customers: int
+    avg_ticket_per_appointment: Decimal
+    avg_ticket_per_customer: Decimal
+    new_customers_in_period: int
+    return_rate_percent: float
+    appointments_per_day: float
 
 
 class BarberRankingItemDTO(BaseModel):
     employee_id: UUID
     employee_name: str
-    faturamento: Decimal
-    atendimentos: int
-    clientes_distintos: int
-    ticket_medio_atendimento: Decimal
-    ticket_medio_cliente: Decimal
-    clientes_novos: int
-    taxa_retorno_percentual: float
-    frequencia_media_clientes: float
+    revenue: Decimal
+    appointments_count: int
+    distinct_customers: int
+    avg_ticket_per_appointment: Decimal
+    avg_ticket_per_customer: Decimal
+    new_customers: int
+    return_rate_percent: float
+    avg_customer_frequency: float
+
+
+class ServiceRankingItemDTO(BaseModel):
+    """Revenue per service, allocated by catalog price (same rule as schedule close)."""
+
+    service_id: UUID
+    service_name: str
+    appointments_count: int
+    revenue: Decimal
 
 
 class CustomerMetricsDTO(BaseModel):
-    clientes_distintos: int
-    clientes_novos: int
-    clientes_recorrentes: int
-    frequencia_media: float
-    clientes_nunca_voltaram: int
-    taxa_retorno_percentual: float
+    distinct_customers: int
+    new_customers: int
+    returning_customers: int
+    avg_frequency: float
+    customers_never_returned: int
+    return_rate_percent: float
 
 
 class DashboardMetricsDTO(BaseModel):
-    resumo_mes: MonthlySummaryDTO
-    ranking_barbeiros: List[BarberRankingItemDTO]
-    indicadores_clientes: CustomerMetricsDTO
+    monthly_summary: MonthlySummaryDTO
+    barber_ranking: List[BarberRankingItemDTO]
+    service_ranking: List[ServiceRankingItemDTO]
+    customer_metrics: CustomerMetricsDTO
