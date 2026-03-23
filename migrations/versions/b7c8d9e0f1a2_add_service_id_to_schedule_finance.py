@@ -3,6 +3,10 @@
 Revision ID: b7c8d9e0f1a2
 Revises: 6a2d3c4e5f6g
 Create Date: 2026-03-18 12:00:00.000000
+
+Tables follow the same convention as earlier revisions (unqualified names → default
+schema, usually `public`). Do not pass `schema=` here unless all historical migrations
+use the same schema — otherwise local DBs without a `barbersystem` schema fail.
 """
 
 from typing import Sequence, Union

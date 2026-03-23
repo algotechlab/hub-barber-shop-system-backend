@@ -64,6 +64,20 @@ class TestAnalyticsRepositoryPostgres:
             appointments_count=12,
             distinct_customers=8,
         )
+        service_a = uuid4()
+        service_b = uuid4()
+        service_ranking_row_1 = SimpleNamespace(
+            service_id=service_a,
+            service_name='Corte',
+            appointments_count=7,
+            revenue=Decimal('150.50'),
+        )
+        service_ranking_row_2 = SimpleNamespace(
+            service_id=service_b,
+            service_name='Barba',
+            appointments_count=None,
+            revenue=None,
+        )
         base_period_row = SimpleNamespace(total_appointments=20, distinct_customers=10)
 
         mock_session.execute = AsyncMock(
@@ -75,7 +89,10 @@ class TestAnalyticsRepositoryPostgres:
                 _all_result([ranking_row]),  # ranking query
                 _scalar_result(2),  # _count_new_clients (ranking row)
                 _scalar_result(3),  # return_rate_subquery
-                _all_result([]),  # service ranking
+                _all_result([
+                    service_ranking_row_1,
+                    service_ranking_row_2,
+                ]),  # service ranking
                 _one_result(base_period_row),  # base_period_query
                 _scalar_result(3),  # _count_new_clients (customer metrics)
                 _scalar_result(2),  # never_returned_query
@@ -87,13 +104,24 @@ class TestAnalyticsRepositoryPostgres:
         arrange_values = 20
         arrange_values_2 = 10
         arrange_values_3 = 3
+        arrange_values_4 = 1
+        arrange_values_5 = 2
+        arrange_values_6 = 7
 
         assert result.monthly_summary.gross_revenue == Decimal('1000.00')
         assert result.monthly_summary.expenses == Decimal('250.00')
         assert result.monthly_summary.total_appointments == arrange_values
         assert result.monthly_summary.new_customers_in_period == arrange_values_3
-        assert len(result.barber_ranking) == 1
+        assert len(result.barber_ranking) == arrange_values_4
         assert result.barber_ranking[0].employee_id == employee_id
+        assert len(result.service_ranking) == arrange_values_5
+        assert result.service_ranking[0].service_id == service_a
+        assert result.service_ranking[0].service_name == 'Corte'
+        assert result.service_ranking[0].appointments_count == arrange_values_6
+        assert result.service_ranking[0].revenue == Decimal('150.50')
+        assert result.service_ranking[1].service_id == service_b
+        assert result.service_ranking[1].appointments_count == 0
+        assert result.service_ranking[1].revenue == Decimal('0')
         assert result.customer_metrics.distinct_customers == arrange_values_2
 
     @pytest.mark.asyncio
