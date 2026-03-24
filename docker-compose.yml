@@ -1,4 +1,71 @@
 services:
+  evolution-api:
+    container_name: evolution_api
+    image: evoapicloud/evolution-api:v2.3.6
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8086:8080"
+    environment:
+      AUTHENTICATION_API_KEY: apikey321
+      CONFIG_SESSION_PHONE_VERSION: 2.3000.1029560485
+      BAILEYS_VERSION: 2.3000.1029560485
+      DATABASE_ENABLED: "true"
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: postgresql://postgres:postgres@postgres:5432/postgres
+      CACHE_REDIS_ENABLED: "true"
+      CACHE_REDIS_URI: redis://redis:6379/6
+      CACHE_REDIS_PREFIX_KEY: evolution
+      CACHE_REDIS_SAVE_INSTANCES: "true"
+      CACHE_LOCAL_ENABLED: "false"
+    volumes:
+      - evolution_instances:/evolution/instances
+    networks:
+      - evolution-net
+
+  postgres:
+    image: postgres:15
+    container_name: evolution_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5441:5432"
+    networks:
+      - evolution-net
+    command: >
+      -c listen_addresses=*
+      -c max_connections=200
+      -c shared_buffers=256MB
+      -c work_mem=8MB
+      -c log_min_messages=WARNING
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7
+    container_name: evolution_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - evolution-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   barbersystem_database:
     image: postgres:15
@@ -51,7 +118,10 @@ services:
 volumes:
   postgres_data:
   fastapi_database_data:
+  evolution_instances:
 
 networks:
   barbersystem-net:
+    driver: bridge
+  evolution-net:
     driver: bridge
