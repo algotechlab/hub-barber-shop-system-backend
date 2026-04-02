@@ -57,7 +57,10 @@ Base path: `/api/v1`
 - `/schedule`
 - `/schedule-blocks`
 - `/market-paid`
+- `/marketing` (template WhatsApp, conexão Evolution, inativos, envio)
 - `/slug-companies`
+
+Documentação do módulo marketing: [`docs/MARKETING.md`](docs/MARKETING.md).
 
 Documentação interativa:
 
@@ -95,6 +98,7 @@ cp env.example.env .env
 - `JWT_SECRET`
 - credenciais `AWS_*` (se for usar upload em S3)
 - `MARKET_PAID_ACCESS_TOKEN` (se for usar integração Mercado Pago)
+- `EVOLUTION_API_BASE_URL`, `EVOLUTION_API_KEY` (módulo marketing / WhatsApp — ver [`docs/MARKETING.md`](docs/MARKETING.md))
 
 ## Rodando com Docker
 
