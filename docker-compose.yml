@@ -101,6 +101,8 @@ services:
     depends_on:
       barbersystem_database:
         condition: service_healthy
+      evolution-api:
+        condition: service_started
     ports:
       - "${API_PORT}:${API_PORT}"
     environment:
@@ -109,10 +111,13 @@ services:
       SQLALCHEMY_DATABASE_URI: postgresql+asyncpg://postgres:postgres@barbersystem_database:5432/barbersystem
       DEBUG: "${DEBUG}"
       ALLOWED_HOSTS: "${ALLOWED_HOSTS}"
+      # localhost no .env aponta para o próprio container; na rede Docker o serviço escuta em 8080.
+      EVOLUTION_API_BASE_URL: http://evolution-api:8080
     volumes:
       - .:/app
     networks:
       - barbersystem-net
+      - evolution-net
     command: uvicorn src.main:app --host 0.0.0.0 --port ${API_PORT}
 
 
