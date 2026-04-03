@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timezone
 from unittest.mock import AsyncMock
 
 import pytest
@@ -20,6 +21,9 @@ URL_EMPLOYEES = '/api/v1/employees'
 STATUS_CODE_200 = 200
 STATUS_CODE_201 = 201
 STATUS_CODE_204 = 204
+
+_JOURNEY_START = datetime(1970, 1, 1, 9, 0, tzinfo=timezone.utc)
+_JOURNEY_END = datetime(1970, 1, 1, 18, 0, tzinfo=timezone.utc)
 
 
 def _install_overrides() -> AsyncMock:
@@ -87,6 +91,8 @@ class TestEmployeeRoutes:
             password='plain',
             is_active=True,
             role='admin',
+            start_time=_JOURNEY_START,
+            end_time=_JOURNEY_END,
         ).model_dump(mode='json')
 
         response = client.post(URL_EMPLOYEES, json=payload)

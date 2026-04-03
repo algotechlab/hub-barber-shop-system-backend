@@ -197,6 +197,8 @@ class TestOwnerRepositoryPostgres:
             def __eq__(self, other):
                 return ('eq', self.name, other)
 
+            __hash__ = None
+
             def ilike(self, pattern: str):
                 return ('ilike', self.name, pattern)
 

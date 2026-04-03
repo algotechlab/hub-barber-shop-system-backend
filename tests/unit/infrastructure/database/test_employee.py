@@ -17,6 +17,8 @@ class TestEmployeeModel:
         assert 'password' in column_names
         assert 'is_active' in column_names
         assert 'company_id' in column_names
+        assert 'start_time' in column_names
+        assert 'end_time' in column_names
         assert 'created_at' in column_names
         assert 'updated_at' in column_names
         assert 'is_deleted' in column_names

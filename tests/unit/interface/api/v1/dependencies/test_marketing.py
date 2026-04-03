@@ -97,4 +97,4 @@ async def test_resolve_marketing_company_id_raises_without_company():
     req.state = _State()
     with pytest.raises(HTTPException) as exc:
         await resolve_marketing_company_id(req, None, None)
-    assert exc.value.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert exc.value.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT

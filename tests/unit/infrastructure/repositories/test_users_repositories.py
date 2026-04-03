@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
+from sqlalchemy.engine import Result
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.exceptions.custom import DatabaseException
 from src.domain.dtos.auth import UserAuthDTO
@@ -85,6 +86,8 @@ class TestUsersRepositoryPostgres:
 
             def __eq__(self, other):  # noqa: D105
                 return ('eq', self.name, other)
+
+            __hash__ = None
 
             def ilike(self, pattern: str):
                 return ('ilike', self.name, pattern)
@@ -180,8 +183,6 @@ class TestUsersRepositoryPostgres:
         mock_session.rollback.assert_awaited_once()
 
     async def test_get_user_returns_none_when_not_found(self, repo, mock_session):
-        from sqlalchemy.engine import Result
-
         mock_result = MagicMock(spec=Result)
         mock_result.scalar_one_or_none.return_value = None
         mock_session.execute = AsyncMock(return_value=mock_result)
@@ -191,8 +192,6 @@ class TestUsersRepositoryPostgres:
         assert result is None
 
     async def test_get_user_success(self, repo, mock_session):
-        from sqlalchemy.engine import Result
-
         mock_orm_user = MagicMock()
         expected_dto = MagicMock()
 
@@ -253,8 +252,6 @@ class TestUsersRepositoryPostgres:
         mock_session.rollback.assert_awaited_once()
 
     async def test_update_user_returns_none_when_not_found(self, repo, mock_session):
-        from sqlalchemy.engine import Result
-
         mock_result = MagicMock(spec=Result)
         mock_result.scalar_one_or_none.return_value = None
         mock_session.execute = AsyncMock(return_value=mock_result)
@@ -266,8 +263,6 @@ class TestUsersRepositoryPostgres:
         mock_session.commit.assert_awaited_once()
 
     async def test_update_user_success(self, repo, mock_session):
-        from sqlalchemy.engine import Result
-
         mock_updated_orm = MagicMock()
         expected_dto = MagicMock()
 
@@ -295,8 +290,6 @@ class TestUsersRepositoryPostgres:
         mock_session.rollback.assert_awaited_once()
 
     async def test_delete_user_success_returns_true(self, repo, mock_session):
-        from sqlalchemy.engine import Result
-
         mock_user = MagicMock()
         mock_result = MagicMock(spec=Result)
         mock_result.scalar_one_or_none.return_value = mock_user
@@ -309,8 +302,6 @@ class TestUsersRepositoryPostgres:
         mock_session.commit.assert_awaited_once()
 
     async def test_delete_user_not_found_returns_false(self, repo, mock_session):
-        from sqlalchemy.engine import Result
-
         mock_result = MagicMock(spec=Result)
         mock_result.scalar_one_or_none.return_value = None
         mock_session.execute = AsyncMock(return_value=mock_result)

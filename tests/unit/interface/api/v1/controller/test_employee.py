@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
@@ -11,6 +12,9 @@ from src.interface.api.v1.schema.employee import (
     EmployeeSchema,
     UpdateEmployeeSchema,
 )
+
+_JOURNEY_START = datetime(1970, 1, 1, 9, 0, tzinfo=timezone.utc)
+_JOURNEY_END = datetime(1970, 1, 1, 18, 0, tzinfo=timezone.utc)
 
 
 @pytest.mark.unit
@@ -37,6 +41,8 @@ class TestEmployeeController:
                 is_active=True,
                 role='admin',
                 company_id=uuid4(),
+                start_time=_JOURNEY_START,
+                end_time=_JOURNEY_END,
             )
         ]
         mock_employee_use_case.list_employees.return_value = expected
@@ -59,6 +65,8 @@ class TestEmployeeController:
             password='plain',
             is_active=True,
             role='admin',
+            start_time=_JOURNEY_START,
+            end_time=_JOURNEY_END,
         )
         mock_employee_use_case.create_employee.return_value = employee_out_dto
 

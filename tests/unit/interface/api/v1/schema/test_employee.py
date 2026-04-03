@@ -10,6 +10,9 @@ from src.interface.api.v1.schema.employee import (
     UpdateEmployeeSchema,
 )
 
+_JOURNEY_START = datetime(1970, 1, 1, 9, 0, tzinfo=timezone.utc)
+_JOURNEY_END = datetime(1970, 1, 1, 18, 0, tzinfo=timezone.utc)
+
 
 @pytest.mark.unit
 class TestEmployeeSchema:
@@ -25,6 +28,8 @@ class TestEmployeeSchema:
             is_active=True,
             role='admin',
             company_id=company_id,
+            start_time=_JOURNEY_START,
+            end_time=_JOURNEY_END,
         )
 
         assert schema.id == employee_id
@@ -43,6 +48,8 @@ class TestEmployeeSchema:
                 is_active=True,
                 role='admin',
                 company_id=uuid4(),
+                start_time=_JOURNEY_START,
+                end_time=_JOURNEY_END,
             )
 
 
@@ -56,6 +63,8 @@ class TestCreateEmployeeSchema:
             password='plain',
             is_active=True,
             role='employee',
+            start_time=_JOURNEY_START,
+            end_time=_JOURNEY_END,
         )
 
         assert schema.name == 'Maria'
@@ -73,6 +82,8 @@ class TestCreateEmployeeSchema:
                 # password missing
                 is_active=True,
                 role='employee',
+                start_time=_JOURNEY_START,
+                end_time=_JOURNEY_END,
             )
 
 
@@ -115,6 +126,8 @@ class TestEmployeeOutSchema:
             is_active=True,
             role='admin',
             company_id=company_id,
+            start_time=_JOURNEY_START,
+            end_time=_JOURNEY_END,
             created_at=now,
             updated_at=now,
         )
