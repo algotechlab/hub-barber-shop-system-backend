@@ -1,7 +1,7 @@
-from datetime import datetime
+from datetime import time
 from uuid import UUID
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String
+from sqlalchemy import Boolean, ForeignKey, String, Time
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.infrastructure.database.models.base import BaseModel
@@ -17,8 +17,6 @@ class Employee(BaseModel):
     role: Mapped[str] = mapped_column(
         String(255), nullable=False, default=EmployeeRole.role_employee.value
     )
-    start_time: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
-    end_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    start_time: Mapped[time] = mapped_column(Time, nullable=False)
+    end_time: Mapped[time] = mapped_column(Time, nullable=False)
     company_id: Mapped[UUID] = mapped_column(ForeignKey('company.id'), nullable=False)

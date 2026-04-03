@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import time
 from unittest.mock import AsyncMock
 
 import pytest
@@ -22,8 +22,8 @@ STATUS_CODE_200 = 200
 STATUS_CODE_201 = 201
 STATUS_CODE_204 = 204
 
-_JOURNEY_START = datetime(1970, 1, 1, 9, 0, tzinfo=timezone.utc)
-_JOURNEY_END = datetime(1970, 1, 1, 18, 0, tzinfo=timezone.utc)
+_JOURNEY_START = time(9, 0)
+_JOURNEY_END = time(18, 0)
 
 
 def _install_overrides() -> AsyncMock:

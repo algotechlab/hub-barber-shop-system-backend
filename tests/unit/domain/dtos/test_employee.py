@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, time, timezone
 from uuid import uuid4
 
 import pytest
@@ -12,25 +12,25 @@ from src.domain.dtos.employee import (
     validate_employee_journey_partial,
 )
 
-_JOURNEY_START = datetime(1970, 1, 1, 9, 0, tzinfo=timezone.utc)
-_JOURNEY_END = datetime(1970, 1, 1, 18, 0, tzinfo=timezone.utc)
-_BOUNDARY_START = datetime(1970, 1, 1, 8, 30, tzinfo=timezone.utc)
-_BOUNDARY_END = datetime(1970, 1, 1, 21, 0, tzinfo=timezone.utc)
+_JOURNEY_START = time(9, 0)
+_JOURNEY_END = time(18, 0)
+_BOUNDARY_START = time(8, 30)
+_BOUNDARY_END = time(21, 0)
 
 
 @pytest.mark.unit
 class TestClockInJourneyBounds:
     def test_accepts_min_and_max_boundary_times(self):
-        _clock_in_journey_bounds(_BOUNDARY_START.time(), 'início')
-        _clock_in_journey_bounds(_BOUNDARY_END.time(), 'fim')
+        _clock_in_journey_bounds(_BOUNDARY_START, 'início')
+        _clock_in_journey_bounds(_BOUNDARY_END, 'fim')
 
     def test_rejects_time_before_journey_min(self):
         with pytest.raises(ValueError, match='entre 08:30 e 21:00'):
-            _clock_in_journey_bounds(datetime(1970, 1, 1, 8, 29).time(), 'teste')
+            _clock_in_journey_bounds(time(8, 29), 'teste')
 
     def test_rejects_time_after_journey_max(self):
         with pytest.raises(ValueError, match='entre 08:30 e 21:00'):
-            _clock_in_journey_bounds(datetime(1970, 1, 1, 21, 1).time(), 'teste')
+            _clock_in_journey_bounds(time(21, 1), 'teste')
 
 
 @pytest.mark.unit
@@ -44,10 +44,7 @@ class TestValidateEmployeeJourneyPair:
 
     def test_raises_when_end_out_of_bounds_before_order_check(self):
         with pytest.raises(ValueError, match='fim'):
-            validate_employee_journey_pair(
-                _JOURNEY_START,
-                datetime(1970, 1, 1, 22, 0, tzinfo=timezone.utc),
-            )
+            validate_employee_journey_pair(_JOURNEY_START, time(22, 0))
 
 
 @pytest.mark.unit
@@ -63,17 +60,11 @@ class TestValidateEmployeeJourneyPartial:
 
     def test_only_start_invalid(self):
         with pytest.raises(ValueError, match='início'):
-            validate_employee_journey_partial(
-                datetime(1970, 1, 1, 8, 0, tzinfo=timezone.utc),
-                None,
-            )
+            validate_employee_journey_partial(time(8, 0), None)
 
     def test_only_end_invalid(self):
         with pytest.raises(ValueError, match='fim'):
-            validate_employee_journey_partial(
-                None,
-                datetime(1970, 1, 1, 21, 15, tzinfo=timezone.utc),
-            )
+            validate_employee_journey_partial(None, time(21, 15))
 
     def test_both_valid_order(self):
         validate_employee_journey_partial(_JOURNEY_START, _JOURNEY_END)
@@ -151,7 +142,7 @@ class TestEmployeeBaseDTO:
                 is_active=True,
                 role='admin',
                 company_id=uuid4(),
-                start_time=datetime(1970, 1, 1, 8, 0, tzinfo=timezone.utc),
+                start_time=time(8, 0),
                 end_time=_JOURNEY_END,
             )
 
@@ -166,7 +157,7 @@ class TestEmployeeBaseDTO:
                 role='admin',
                 company_id=uuid4(),
                 start_time=_JOURNEY_START,
-                end_time=datetime(1970, 1, 1, 21, 30, tzinfo=timezone.utc),
+                end_time=time(21, 30),
             )
 
     def test_employee_base_dto_rejects_start_not_before_end(self):
@@ -211,15 +202,11 @@ class TestUpdateEmployeeDTO:
 
     def test_rejects_only_invalid_start_time(self):
         with pytest.raises(ValidationError):
-            UpdateEmployeeDTO(
-                start_time=datetime(1970, 1, 1, 8, 0, tzinfo=timezone.utc),
-            )
+            UpdateEmployeeDTO(start_time=time(8, 0))
 
     def test_rejects_only_invalid_end_time(self):
         with pytest.raises(ValidationError):
-            UpdateEmployeeDTO(
-                end_time=datetime(1970, 1, 1, 22, 0, tzinfo=timezone.utc),
-            )
+            UpdateEmployeeDTO(end_time=time(22, 0))
 
     def test_accepts_only_start_time_when_valid(self):
         dto = UpdateEmployeeDTO(start_time=_JOURNEY_START)

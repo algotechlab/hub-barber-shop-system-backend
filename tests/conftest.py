@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, time, timezone
 from unittest.mock import AsyncMock
 from uuid import UUID, uuid4
 
@@ -22,8 +22,8 @@ from src.main import app
 PLAIN_PASSWORD = 'password'
 HASHED_PASSWORD = 'hashed_argon2'
 
-EMPLOYEE_JOURNEY_START = datetime(1970, 1, 1, 9, 0, tzinfo=timezone.utc)
-EMPLOYEE_JOURNEY_END = datetime(1970, 1, 1, 18, 0, tzinfo=timezone.utc)
+EMPLOYEE_JOURNEY_START = time(9, 0)
+EMPLOYEE_JOURNEY_END = time(18, 0)
 
 
 @pytest.fixture
