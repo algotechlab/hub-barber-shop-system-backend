@@ -55,10 +55,10 @@ services:
 
   redis:
     image: redis:7
-    container_name: evolution_redis
+    container_name: hub_barber_shop_evolution_redis
     restart: always
     ports:
-      - "6379:6379"
+      - "6380:6379"
     networks:
       - evolution-net
     healthcheck:
