@@ -1,6 +1,6 @@
 services:
   evolution-api:
-    container_name: evolution_api
+    container_name: hub_barber_shop_evolution_api
     image: evoapicloud/evolution-api:v2.3.6
     restart: always
     depends_on:
