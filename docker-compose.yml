@@ -38,7 +38,8 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5441:5432"
+      # Host 5442: não colide com outro evolution_postgres no servidor (ex.: 5441).
+      - "5442:5432"
     networks:
       - evolution-net
     command: >
