@@ -9,6 +9,8 @@ class HttpxRequest(TypedDict, total=False):
     headers: dict[str, str]
     json: dict
     timeout: float
+    # False: não chama raise_for_status (tratamento manual do status HTTP)
+    raise_for_status: bool
 
 
 class DefaultHttpClientErrorMessages:
@@ -46,7 +48,8 @@ class ApiBaseClient:
                     url=data['url'],
                     json=data.get('json'),
                 )
-                response.raise_for_status()
+                if data.get('raise_for_status', True):
+                    response.raise_for_status()
                 return response
 
         except httpx.TimeoutException as exc:

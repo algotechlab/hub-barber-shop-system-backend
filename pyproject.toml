@@ -113,7 +113,7 @@ test = 'pytest -s -x --cov=src -vv'
 post_test = 'coverage html'
 open_coverage = 'open htmlcov/index.html'
 pre_test_unit = 'task lint'
-test_unit = 'pytest tests -s -x --cov=src -vv'
+test_unit = 'pytest tests/unit -s -x --cov=src -vv'
 
 [alembic]
 script_location = "migrations"

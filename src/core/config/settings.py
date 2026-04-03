@@ -69,6 +69,11 @@ class Settings(BaseSettings):
     S3_UPLOAD_MAX_SIZE_MB: int = 5
     S3_ALLOWED_IMAGE_CONTENT_TYPES: str = 'image/jpeg,image/png,image/webp'
 
+    # Evolution API (header `apikey`; ver doc oficial)
+    EVOLUTION_API_BASE_URL: str = ''
+    EVOLUTION_API_KEY: str = ''
+    AUTHENTICATION_API_KEY: str = ''
+
     @field_validator('BACKEND_CORS_ORIGINS', mode='before')
     def split_origins(cls, value: Any) -> Union[List[str], List[AnyHttpUrl]]:
         """
