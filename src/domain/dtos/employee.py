@@ -1,8 +1,42 @@
-from datetime import datetime
+from datetime import datetime, time
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
+
+JOURNEY_MIN_TIME = time(8, 30)
+JOURNEY_MAX_TIME = time(21, 0)
+
+
+def _clock_in_journey_bounds(t: time, field_label: str) -> None:
+    if t < JOURNEY_MIN_TIME or t > JOURNEY_MAX_TIME:
+        raise ValueError(
+            f'O horário de {field_label} da jornada deve estar entre 08:30 e 21:00.'
+        )
+
+
+def validate_employee_journey_pair(start_time: datetime, end_time: datetime) -> None:
+    _clock_in_journey_bounds(start_time.time(), 'início')
+    _clock_in_journey_bounds(end_time.time(), 'fim')
+    if start_time.time() >= end_time.time():
+        raise ValueError(
+            'O horário de início da jornada deve ser anterior ao horário de fim.'
+        )
+
+
+def validate_employee_journey_partial(
+    start_time: Optional[datetime],
+    end_time: Optional[datetime],
+) -> None:
+    if start_time is not None:
+        _clock_in_journey_bounds(start_time.time(), 'início')
+    if end_time is not None:
+        _clock_in_journey_bounds(end_time.time(), 'fim')
+    if start_time is not None and end_time is not None:
+        if start_time.time() >= end_time.time():
+            raise ValueError(
+                'O horário de início da jornada deve ser anterior ao horário de fim.'
+            )
 
 
 class EmployeeBaseDTO(BaseModel):
@@ -13,6 +47,13 @@ class EmployeeBaseDTO(BaseModel):
     is_active: bool
     role: str
     company_id: UUID
+    start_time: datetime
+    end_time: datetime
+
+    @model_validator(mode='after')
+    def _validate_journey(self):
+        validate_employee_journey_pair(self.start_time, self.end_time)
+        return self
 
 
 class EmployeeOutDTO(BaseModel):
@@ -23,6 +64,8 @@ class EmployeeOutDTO(BaseModel):
     is_active: bool
     role: str
     company_id: UUID
+    start_time: datetime
+    end_time: datetime
     is_block: bool = False
     created_at: datetime
     updated_at: datetime
@@ -38,3 +81,10 @@ class UpdateEmployeeDTO(BaseModel):
     is_active: Optional[bool] = None
     role: Optional[str] = None
     company_id: Optional[UUID] = None
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
+
+    @model_validator(mode='after')
+    def _validate_journey(self):
+        validate_employee_journey_partial(self.start_time, self.end_time)
+        return self

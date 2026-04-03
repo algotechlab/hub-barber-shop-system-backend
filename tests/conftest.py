@@ -22,6 +22,9 @@ from src.main import app
 PLAIN_PASSWORD = 'password'
 HASHED_PASSWORD = 'hashed_argon2'
 
+EMPLOYEE_JOURNEY_START = datetime(1970, 1, 1, 9, 0, tzinfo=timezone.utc)
+EMPLOYEE_JOURNEY_END = datetime(1970, 1, 1, 18, 0, tzinfo=timezone.utc)
+
 
 @pytest.fixture
 def client():
@@ -63,6 +66,8 @@ def employee_schema() -> EmployeeSchema:
         is_active=True,
         role='admin',
         company_id=uuid.uuid4(),
+        start_time=EMPLOYEE_JOURNEY_START,
+        end_time=EMPLOYEE_JOURNEY_END,
     )
 
 
@@ -77,6 +82,8 @@ def employee_out_schema() -> EmployeeOutSchema:
         is_active=True,
         role='admin',
         company_id=uuid.uuid4(),
+        start_time=EMPLOYEE_JOURNEY_START,
+        end_time=EMPLOYEE_JOURNEY_END,
         created_at=now,
         updated_at=now,
     )
@@ -92,11 +99,14 @@ def employee_base_dto():
         is_active=True,
         role='admin',
         company_id=uuid.uuid4(),
+        start_time=EMPLOYEE_JOURNEY_START,
+        end_time=EMPLOYEE_JOURNEY_END,
     )
 
 
 @pytest.fixture
 def generate_model_employee(generate_uuid: UUID) -> Employee:
+    cid = uuid.uuid4()
     return Employee(
         id=generate_uuid,
         name='John Doe',
@@ -104,6 +114,9 @@ def generate_model_employee(generate_uuid: UUID) -> Employee:
         phone='1234567890',
         password='password',
         is_active=True,
+        company_id=cid,
+        start_time=EMPLOYEE_JOURNEY_START,
+        end_time=EMPLOYEE_JOURNEY_END,
     )
 
 
@@ -118,6 +131,8 @@ def employee_out_dto(employee_base_dto):
         is_active=employee_base_dto.is_active,
         role=employee_base_dto.role,
         company_id=employee_base_dto.company_id,
+        start_time=employee_base_dto.start_time,
+        end_time=employee_base_dto.end_time,
         created_at=now,
         updated_at=now,
     )

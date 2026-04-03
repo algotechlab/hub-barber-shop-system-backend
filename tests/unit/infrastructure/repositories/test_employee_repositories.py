@@ -10,6 +10,9 @@ from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.employee import EmployeeBaseDTO, EmployeeOutDTO, UpdateEmployeeDTO
 from src.infrastructure.repositories.employee_postgres import EmployeeRepositoryPostgres
 
+_JOURNEY_START = datetime(1970, 1, 1, 9, 0, tzinfo=timezone.utc)
+_JOURNEY_END = datetime(1970, 1, 1, 18, 0, tzinfo=timezone.utc)
+
 
 @pytest.mark.unit
 class TestEmployeeRepositoryPostgres:
@@ -31,6 +34,8 @@ class TestEmployeeRepositoryPostgres:
             is_active=True,
             role='admin',
             company_id=uuid4(),
+            start_time=_JOURNEY_START,
+            end_time=_JOURNEY_END,
         )
 
     async def test_create_employee_success(self, repo, mock_session, employee_base_dto):
@@ -177,6 +182,8 @@ class TestEmployeeRepositoryPostgres:
 
             def __eq__(self, other):
                 return ('eq', self.name, other)
+
+            __hash__ = None
 
             def ilike(self, pattern: str):
                 return ('ilike', self.name, pattern)

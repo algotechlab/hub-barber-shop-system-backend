@@ -8,6 +8,9 @@ from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.employee import EmployeeBaseDTO, EmployeeOutDTO, UpdateEmployeeDTO
 from src.domain.repositories.employee import EmployeeRepository
 
+_JOURNEY_START = datetime(1970, 1, 1, 9, 0, tzinfo=timezone.utc)
+_JOURNEY_END = datetime(1970, 1, 1, 18, 0, tzinfo=timezone.utc)
+
 
 @pytest.mark.unit
 class TestEmployeeRepositoryContract:
@@ -49,16 +52,19 @@ class TestEmployeeRepositoryContract:
             is_active=True,
             role='admin',
             company_id=company_id,
+            start_time=_JOURNEY_START,
+            end_time=_JOURNEY_END,
         )
         out = EmployeeOutDTO(
             id=employee_id,
             name=base.name,
             last_name=base.last_name,
             phone=base.phone,
-            password='hashed',
             is_active=base.is_active,
             role=base.role,
             company_id=company_id,
+            start_time=base.start_time,
+            end_time=base.end_time,
             created_at=now,
             updated_at=now,
         )
@@ -88,6 +94,7 @@ class TestEmployeeRepositoryContract:
                     return None
                 return EmployeeAuthDTO(
                     id=employee_id,
+                    name=base.name,
                     password='hashed',
                     company_id=company_id,
                 )
