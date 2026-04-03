@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, time, timezone
 from uuid import uuid4
 
 import pytest
@@ -10,8 +10,8 @@ from src.interface.api.v1.schema.employee import (
     UpdateEmployeeSchema,
 )
 
-_JOURNEY_START = datetime(1970, 1, 1, 9, 0, tzinfo=timezone.utc)
-_JOURNEY_END = datetime(1970, 1, 1, 18, 0, tzinfo=timezone.utc)
+_JOURNEY_START = time(9, 0)
+_JOURNEY_END = time(18, 0)
 
 
 @pytest.mark.unit

@@ -15,25 +15,25 @@ def _clock_in_journey_bounds(t: time, field_label: str) -> None:
         )
 
 
-def validate_employee_journey_pair(start_time: datetime, end_time: datetime) -> None:
-    _clock_in_journey_bounds(start_time.time(), 'início')
-    _clock_in_journey_bounds(end_time.time(), 'fim')
-    if start_time.time() >= end_time.time():
+def validate_employee_journey_pair(start_time: time, end_time: time) -> None:
+    _clock_in_journey_bounds(start_time, 'início')
+    _clock_in_journey_bounds(end_time, 'fim')
+    if start_time >= end_time:
         raise ValueError(
             'O horário de início da jornada deve ser anterior ao horário de fim.'
         )
 
 
 def validate_employee_journey_partial(
-    start_time: Optional[datetime],
-    end_time: Optional[datetime],
+    start_time: Optional[time],
+    end_time: Optional[time],
 ) -> None:
     if start_time is not None:
-        _clock_in_journey_bounds(start_time.time(), 'início')
+        _clock_in_journey_bounds(start_time, 'início')
     if end_time is not None:
-        _clock_in_journey_bounds(end_time.time(), 'fim')
+        _clock_in_journey_bounds(end_time, 'fim')
     if start_time is not None and end_time is not None:
-        if start_time.time() >= end_time.time():
+        if start_time >= end_time:
             raise ValueError(
                 'O horário de início da jornada deve ser anterior ao horário de fim.'
             )
@@ -47,8 +47,8 @@ class EmployeeBaseDTO(BaseModel):
     is_active: bool
     role: str
     company_id: UUID
-    start_time: datetime
-    end_time: datetime
+    start_time: time
+    end_time: time
 
     @model_validator(mode='after')
     def _validate_journey(self):
@@ -64,8 +64,8 @@ class EmployeeOutDTO(BaseModel):
     is_active: bool
     role: str
     company_id: UUID
-    start_time: datetime
-    end_time: datetime
+    start_time: time
+    end_time: time
     is_block: bool = False
     created_at: datetime
     updated_at: datetime
@@ -81,8 +81,8 @@ class UpdateEmployeeDTO(BaseModel):
     is_active: Optional[bool] = None
     role: Optional[str] = None
     company_id: Optional[UUID] = None
-    start_time: Optional[datetime] = None
-    end_time: Optional[datetime] = None
+    start_time: Optional[time] = None
+    end_time: Optional[time] = None
 
     @model_validator(mode='after')
     def _validate_journey(self):

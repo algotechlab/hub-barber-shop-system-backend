@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, time
 from typing import Optional
 from uuid import UUID
 
@@ -18,8 +18,8 @@ class EmployeeSchema(BaseModel):
     is_active: bool
     role: str
     company_id: UUID
-    start_time: datetime
-    end_time: datetime
+    start_time: time
+    end_time: time
     is_block: bool = False
 
 
@@ -31,8 +31,8 @@ class EmployeeOutSchema(BaseModel):
     is_active: bool
     role: str
     company_id: UUID
-    start_time: datetime
-    end_time: datetime
+    start_time: time
+    end_time: time
     created_at: datetime
     updated_at: datetime
 
@@ -44,8 +44,8 @@ class CreateEmployeeSchema(BaseModel):
     password: str
     is_active: bool
     role: str
-    start_time: datetime
-    end_time: datetime
+    start_time: time
+    end_time: time
 
     @model_validator(mode='after')
     def _validate_journey(self):
@@ -61,8 +61,8 @@ class UpdateEmployeeSchema(BaseModel):
     is_active: Optional[bool] = None
     role: Optional[str] = None
     company_id: Optional[UUID] = None
-    start_time: Optional[datetime] = None
-    end_time: Optional[datetime] = None
+    start_time: Optional[time] = None
+    end_time: Optional[time] = None
 
     @model_validator(mode='after')
     def _validate_journey(self):
