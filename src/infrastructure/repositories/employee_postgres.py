@@ -1,7 +1,7 @@
 from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import select, update
+from sqlalchemy import Time, cast, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.exceptions.custom import DatabaseException
@@ -70,6 +70,7 @@ class EmployeeRepositoryPostgres(EmployeeRepository):
         self, pagination: PaginationParamsDTO, company_id: UUID
     ) -> list[EmployeeOutDTO]:
         try:
+            now_time = cast(func.current_timestamp(), Time)
             has_active_block = (
                 select(ScheduleBlock.id)
                 .where(
@@ -77,6 +78,10 @@ class EmployeeRepositoryPostgres(EmployeeRepository):
                     ScheduleBlock.company_id.__eq__(company_id),
                     ScheduleBlock.is_deleted.__eq__(False),
                     ScheduleBlock.is_block.__eq__(True),
+                    ScheduleBlock.start_date.__le__(func.current_date()),
+                    ScheduleBlock.end_date.__ge__(func.current_date()),
+                    ScheduleBlock.start_time.__le__(now_time),
+                    ScheduleBlock.end_time.__ge__(now_time),
                 )
                 .exists()
             )

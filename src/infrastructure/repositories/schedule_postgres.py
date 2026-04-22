@@ -6,7 +6,7 @@ from typing import List, Optional
 from uuid import UUID, uuid4
 
 import sqlalchemy as sa
-from sqlalchemy import select, update
+from sqlalchemy import Time, cast, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.exceptions.custom import DatabaseException
@@ -251,11 +251,16 @@ class ScheduleRepositoryPostgres(ScheduleRepository):
 
     async def block_schedule(self, employee_id: UUID, company_id: UUID) -> None:
         try:
+            now_time = cast(func.current_timestamp(), Time)
             query = select(ScheduleBlock).where(
                 ScheduleBlock.employee_id.__eq__(employee_id),
                 ScheduleBlock.company_id.__eq__(company_id),
                 ScheduleBlock.is_deleted.__eq__(False),
                 ScheduleBlock.is_block.__eq__(True),
+                ScheduleBlock.start_date.__le__(func.current_date()),
+                ScheduleBlock.end_date.__ge__(func.current_date()),
+                ScheduleBlock.start_time.__le__(now_time),
+                ScheduleBlock.end_time.__ge__(now_time),
             )
             result = await self.session.execute(query)
             block = result.scalar_one_or_none()
