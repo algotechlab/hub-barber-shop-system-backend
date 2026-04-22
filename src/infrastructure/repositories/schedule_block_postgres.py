@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 from typing import List, Optional
 from uuid import UUID
 
@@ -21,25 +20,16 @@ class ScheduleBlockRepositoryPostgres(ScheduleBlockRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    @staticmethod
-    def _to_db_naive_utc(value: datetime) -> datetime:
-        if value.tzinfo is None:
-            return value
-        return value.astimezone(timezone.utc).replace(tzinfo=None)
-
     async def create_schedule_block(
         self, schedule_block: ScheduleBlockCreateDTO
     ) -> ScheduleBlockOutDTO:
         try:
             payload = schedule_block.model_dump()
-            payload['start_time'] = self._to_db_naive_utc(payload['start_time'])
-            payload['end_time'] = self._to_db_naive_utc(payload['end_time'])
-
-            schedule_block = ScheduleBlock(**payload, is_block=True)
-            self.session.add(schedule_block)
+            schedule_block_orm = ScheduleBlock(**payload, is_block=True)
+            self.session.add(schedule_block_orm)
             await self.session.commit()
-            await self.session.refresh(schedule_block)
-            return ScheduleBlockOutDTO.model_validate(schedule_block)
+            await self.session.refresh(schedule_block_orm)
+            return ScheduleBlockOutDTO.model_validate(schedule_block_orm)
         except Exception as error:
             await self.session.rollback()
             raise DatabaseException(str(error))
@@ -68,16 +58,18 @@ class ScheduleBlockRepositoryPostgres(ScheduleBlockRepository):
             schedule_blocks = result.all()
             return [
                 ScheduleBlockOutListDTO(
-                    id=schedule_block.id,
+                    id=row.id,
                     employee_id=employee_id or None,
                     employee_name=employee_name or '',
-                    start_time=schedule_block.start_time,
-                    end_time=schedule_block.end_time,
-                    is_block=schedule_block.is_block,
-                    created_at=schedule_block.created_at,
-                    updated_at=schedule_block.updated_at,
+                    start_date=row.start_date,
+                    end_date=row.end_date,
+                    start_time=row.start_time,
+                    end_time=row.end_time,
+                    is_block=row.is_block,
+                    created_at=row.created_at,
+                    updated_at=row.updated_at,
                 )
-                for schedule_block, employee_id, employee_name in schedule_blocks
+                for row, employee_id, employee_name in schedule_blocks
             ]
         except Exception as error:
             await self.session.rollback()
@@ -85,7 +77,7 @@ class ScheduleBlockRepositoryPostgres(ScheduleBlockRepository):
 
     async def get_schedule_block(self, id: UUID) -> Optional[ScheduleBlockOutDTO]:
         try:
-            query = select(ScheduleBlock).where(ScheduleBlock.employee_id.__eq__(id))
+            query = select(ScheduleBlock).where(ScheduleBlock.id.__eq__(id))
             result = await self.session.execute(query)
             schedule_block = result.scalar_one_or_none()
             if schedule_block is None:
@@ -102,12 +94,6 @@ class ScheduleBlockRepositoryPostgres(ScheduleBlockRepository):
             update_data = schedule_block.model_dump(
                 exclude_unset=True, exclude_none=True
             )
-            if 'start_time' in update_data:
-                update_data['start_time'] = self._to_db_naive_utc(
-                    update_data['start_time']
-                )
-            if 'end_time' in update_data:
-                update_data['end_time'] = self._to_db_naive_utc(update_data['end_time'])
             query = (
                 update(ScheduleBlock)
                 .where(ScheduleBlock.id.__eq__(id))
@@ -119,7 +105,7 @@ class ScheduleBlockRepositoryPostgres(ScheduleBlockRepository):
             if updated_schedule_block is None:
                 return None
             await self.session.commit()
-            return ScheduleBlockOutDTO.model_validate(result.scalar_one_or_none())
+            return ScheduleBlockOutDTO.model_validate(updated_schedule_block)
         except Exception as error:
             await self.session.rollback()
             raise DatabaseException(str(error))
@@ -128,7 +114,7 @@ class ScheduleBlockRepositoryPostgres(ScheduleBlockRepository):
         try:
             query = (
                 update(ScheduleBlock)
-                .where(ScheduleBlock.employee_id.__eq__(id))
+                .where(ScheduleBlock.id.__eq__(id))
                 .values(is_deleted=True)
                 .returning(ScheduleBlock)
             )
