@@ -109,8 +109,10 @@ class CashRegisterRepositoryPostgres(CashRegisterRepository):
         start_at: datetime,
         end_at: datetime,
     ) -> Decimal:
+        # `paid_at` é TIMESTAMP sem TZ e `created_at` é TIMESTAMPTZ; COALESCE misto
+        # faz o driver comparar naive/aware e quebra (asyncpg). Unifica em TIMESTAMPTZ.
         paid_ts = func.coalesce(
-            ScheduleFinance.paid_at,
+            func.timezone('UTC', ScheduleFinance.paid_at),
             ScheduleFinance.created_at,
         )
         stmt = select(func.coalesce(func.sum(ScheduleFinance.amount_total), 0)).where(
@@ -130,11 +132,12 @@ class CashRegisterRepositoryPostgres(CashRegisterRepository):
         start_at: datetime,
         end_at: datetime,
     ) -> Decimal:
+        occurred_at_tz = func.timezone('UTC', Expense.occurred_at)
         stmt = select(func.coalesce(func.sum(Expense.amount), 0)).where(
             Expense.company_id.__eq__(company_id),
             Expense.is_deleted.__eq__(False),
-            Expense.occurred_at.__ge__(start_at),
-            Expense.occurred_at.__le__(end_at),
+            occurred_at_tz.__ge__(start_at),
+            occurred_at_tz.__le__(end_at),
         )
         result = await self.session.execute(stmt)
         raw = result.scalar_one()
