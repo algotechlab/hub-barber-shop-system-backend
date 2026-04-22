@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, time, timezone
 from typing import List
 from uuid import UUID, uuid4
 
@@ -42,15 +42,19 @@ class TestScheduleBlockRepositoryContract:
         create_dto = ScheduleBlockCreateDTO(
             employee_id=employee_id,
             company_id=company_id,
-            start_time=now,
-            end_time=now,
+            start_date=date(2026, 4, 1),
+            end_date=date(2026, 4, 2),
+            start_time=time(8, 30),
+            end_time=time(12, 0),
         )
         out = ScheduleBlockOutDTO(
             id=block_id,
             employee_id=employee_id,
             company_id=company_id,
-            start_time=now,
-            end_time=now,
+            start_date=create_dto.start_date,
+            end_date=create_dto.end_date,
+            start_time=create_dto.start_time,
+            end_time=create_dto.end_time,
             is_block=False,
             created_at=now,
             updated_at=now,
@@ -68,7 +72,20 @@ class TestScheduleBlockRepositoryContract:
             async def list_schedule_blocks(
                 self, company_id: UUID
             ) -> List[ScheduleBlockOutListDTO]:
-                return [out]
+                return [
+                    ScheduleBlockOutListDTO(
+                        id=out.id,
+                        employee_id=out.employee_id,
+                        employee_name='Test',
+                        start_date=out.start_date,
+                        end_date=out.end_date,
+                        start_time=out.start_time,
+                        end_time=out.end_time,
+                        is_block=out.is_block,
+                        created_at=out.created_at,
+                        updated_at=out.updated_at,
+                    )
+                ]
 
             async def update_schedule_block(
                 self, id: UUID, schedule_block: ScheduleBlockUpdateDTO

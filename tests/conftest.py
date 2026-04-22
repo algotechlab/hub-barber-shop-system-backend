@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, time, timezone
+from datetime import date, datetime, time, timezone
 from unittest.mock import AsyncMock
 from uuid import UUID, uuid4
 
@@ -198,8 +198,10 @@ def generate_schedule_block_create_dto():
     return ScheduleBlockCreateDTO(
         employee_id=uuid4(),
         company_id=uuid4(),
-        start_time=datetime.now(timezone.utc),
-        end_time=datetime.now(timezone.utc),
+        start_date=date(2026, 3, 1),
+        end_date=date(2026, 3, 5),
+        start_time=time(9, 0, 0),
+        end_time=time(18, 0, 0),
     )
 
 
@@ -209,8 +211,10 @@ def generate_schedule_block_out_dto():
         id=uuid4(),
         employee_id=uuid4(),
         company_id=uuid4(),
-        start_time=datetime.now(timezone.utc),
-        end_time=datetime.now(timezone.utc),
+        start_date=date(2026, 3, 1),
+        end_date=date(2026, 3, 1),
+        start_time=time(10, 0, 0),
+        end_time=time(11, 0, 0),
         is_block=False,
         created_at=datetime.now(timezone.utc),
         updated_at=datetime.now(timezone.utc),
@@ -225,8 +229,10 @@ def generate_schedule_block_out_list_dto():
             id=uuid4(),
             employee_id=uuid4(),
             employee_name='John Doe',
-            start_time=datetime.now(timezone.utc),
-            end_time=datetime.now(timezone.utc),
+            start_date=date(2026, 3, 1),
+            end_date=date(2026, 3, 3),
+            start_time=time(9, 0, 0),
+            end_time=time(17, 0, 0),
             is_block=False,
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),

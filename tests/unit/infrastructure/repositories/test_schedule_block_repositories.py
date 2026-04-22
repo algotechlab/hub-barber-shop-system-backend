@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import date, time
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
@@ -21,25 +21,14 @@ class TestScheduleBlockRepositoryPostgres:
     def repo(self, mock_session):
         return ScheduleBlockRepositoryPostgres(session=mock_session)
 
-    def test_to_db_naive_utc_keeps_naive_datetime(self, repo):
-        naive = datetime(2026, 3, 7, 16, 3, 18)
-
-        result = repo._to_db_naive_utc(naive)
-
-        assert result == naive
-        assert result.tzinfo is None
-
     async def test_create_schedule_block_success(
         self, repo, mock_session, generate_schedule_block_create_dto
     ):
-        now = datetime.now(timezone.utc)
+        now = MagicMock()
         mock_orm_block = MagicMock()
         mock_orm_block.id = uuid4()
         mock_orm_block.employee_id = generate_schedule_block_create_dto.employee_id
         mock_orm_block.company_id = generate_schedule_block_create_dto.company_id
-        mock_orm_block.start_time = datetime.now()
-        mock_orm_block.end_time = datetime.now()
-        mock_orm_block.is_block = False
         mock_orm_block.created_at = now
         mock_orm_block.updated_at = now
         mock_session.commit = AsyncMock()
@@ -64,8 +53,14 @@ class TestScheduleBlockRepositoryPostgres:
         mock_session.refresh.assert_awaited_once_with(mock_orm_block)
         mock_model.assert_called_once()
         model_payload = mock_model.call_args.kwargs
-        assert model_payload['start_time'].tzinfo is None
-        assert model_payload['end_time'].tzinfo is None
+        assert (
+            model_payload['start_date'] == generate_schedule_block_create_dto.start_date
+        )
+        assert model_payload['end_date'] == generate_schedule_block_create_dto.end_date
+        assert (
+            model_payload['start_time'] == generate_schedule_block_create_dto.start_time
+        )
+        assert model_payload['end_time'] == generate_schedule_block_create_dto.end_time
         mock_validate.assert_called_once_with(mock_orm_block)
         assert result == expected_dto
 
@@ -93,14 +88,15 @@ class TestScheduleBlockRepositoryPostgres:
 
     async def test_list_schedule_blocks_success(self, repo, mock_session):
         employee_id = uuid4()
-        now = datetime.now(timezone.utc)
         mock_orm_block = MagicMock()
         mock_orm_block.id = uuid4()
-        mock_orm_block.start_time = now
-        mock_orm_block.end_time = now
+        mock_orm_block.start_date = date(2026, 3, 1)
+        mock_orm_block.end_date = date(2026, 3, 2)
+        mock_orm_block.start_time = time(9, 0)
+        mock_orm_block.end_time = time(17, 0)
         mock_orm_block.is_block = True
-        mock_orm_block.created_at = now
-        mock_orm_block.updated_at = now
+        mock_orm_block.created_at = MagicMock()
+        mock_orm_block.updated_at = MagicMock()
 
         mock_result = MagicMock()
         mock_result.all.return_value = [(mock_orm_block, employee_id, 'John Doe')]
@@ -112,8 +108,10 @@ class TestScheduleBlockRepositoryPostgres:
         assert result[0].id == mock_orm_block.id
         assert result[0].employee_id == employee_id
         assert result[0].employee_name == 'John Doe'
-        assert result[0].start_time == now
-        assert result[0].end_time == now
+        assert result[0].start_date == mock_orm_block.start_date
+        assert result[0].end_date == mock_orm_block.end_date
+        assert result[0].start_time == mock_orm_block.start_time
+        assert result[0].end_time == mock_orm_block.end_time
         assert result[0].is_block is True
 
     async def test_list_schedule_blocks_rollback_on_error(self, repo, mock_session):
@@ -183,39 +181,6 @@ class TestScheduleBlockRepositoryPostgres:
 
         mock_session.commit.assert_awaited_once()
         assert result == generate_schedule_block_out_dto
-
-    async def test_update_schedule_block_normalizes_start_and_end_time(
-        self, repo, mock_session, generate_schedule_block_out_dto
-    ):
-        mock_updated_orm = MagicMock()
-        mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = mock_updated_orm
-        mock_session.execute = AsyncMock(return_value=mock_result)
-        mock_session.commit = AsyncMock()
-        aware_start = datetime(2026, 3, 7, 16, 3, 18, tzinfo=timezone.utc)
-        aware_end = datetime(2026, 3, 7, 17, 3, 18, tzinfo=timezone.utc)
-
-        with (
-            patch.object(
-                ScheduleBlockOutDTO,
-                'model_validate',
-                return_value=generate_schedule_block_out_dto,
-            ),
-            patch.object(
-                repo,
-                '_to_db_naive_utc',
-                wraps=repo._to_db_naive_utc,
-            ) as normalize,
-        ):
-            await repo.update_schedule_block(
-                uuid4(),
-                ScheduleBlockUpdateDTO(
-                    start_time=aware_start,
-                    end_time=aware_end,
-                ),
-            )
-        arrange_call_count = 2
-        assert normalize.call_count == arrange_call_count
 
     async def test_update_schedule_block_rollback_on_error(self, repo, mock_session):
         mock_session.execute = AsyncMock(side_effect=ValueError('DB error'))
