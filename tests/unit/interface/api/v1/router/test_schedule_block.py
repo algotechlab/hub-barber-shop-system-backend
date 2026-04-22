@@ -55,14 +55,18 @@ class TestScheduleBlockRoutes:
     ):
         payload = CreateScheduleBlockSchema(
             employee_id=uuid.uuid4(),
-            start_time='2026-03-01T10:00:00Z',
-            end_time='2026-03-01T11:00:00Z',
+            start_date='2026-03-01',
+            end_date='2026-03-03',
+            start_time='10:00:00',
+            end_time='11:00:00',
         )
         override_dependency_schedule_blocks.create_schedule_block.return_value = {
             'id': str(uuid.uuid4()),
             'employee_id': str(payload.employee_id),
-            'start_time': '2026-03-01T10:00:00Z',
-            'end_time': '2026-03-01T11:00:00Z',
+            'start_date': '2026-03-01',
+            'end_date': '2026-03-03',
+            'start_time': '10:00:00',
+            'end_time': '11:00:00',
             'created_at': '2026-03-01T09:00:00Z',
             'updated_at': '2026-03-01T09:00:00Z',
         }
@@ -81,8 +85,10 @@ class TestScheduleBlockRoutes:
         override_dependency_schedule_blocks.get_schedule_block.return_value = {
             'id': str(block_id),
             'employee_id': str(uuid.uuid4()),
-            'start_time': '2026-03-01T10:00:00Z',
-            'end_time': '2026-03-01T11:00:00Z',
+            'start_date': '2026-03-01',
+            'end_date': '2026-03-01',
+            'start_time': '10:00:00',
+            'end_time': '11:00:00',
             'created_at': '2026-03-01T09:00:00Z',
             'updated_at': '2026-03-01T09:00:00Z',
         }
@@ -97,14 +103,16 @@ class TestScheduleBlockRoutes:
     ):
         block_id = uuid.uuid4()
         payload = UpdateScheduleBlockSchema(
-            start_time='2026-03-01T12:00:00Z',
-            end_time='2026-03-01T13:00:00Z',
+            start_time='12:00:00',
+            end_time='13:00:00',
         )
         override_dependency_schedule_blocks.update_schedule_block.return_value = {
             'id': str(block_id),
             'employee_id': str(uuid.uuid4()),
-            'start_time': '2026-03-01T12:00:00Z',
-            'end_time': '2026-03-01T13:00:00Z',
+            'start_date': '2026-03-01',
+            'end_date': '2026-03-01',
+            'start_time': '12:00:00',
+            'end_time': '13:00:00',
             'created_at': '2026-03-01T09:00:00Z',
             'updated_at': '2026-03-01T09:30:00Z',
         }

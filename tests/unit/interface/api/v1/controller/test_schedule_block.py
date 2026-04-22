@@ -31,6 +31,8 @@ class TestScheduleBlockController:
         company_id = uuid4()
         payload = CreateScheduleBlockSchema(
             employee_id=uuid4(),
+            start_date=generate_schedule_block_out_dto.start_date,
+            end_date=generate_schedule_block_out_dto.end_date,
             start_time=generate_schedule_block_out_dto.start_time,
             end_time=generate_schedule_block_out_dto.end_time,
         )
@@ -79,11 +81,13 @@ class TestScheduleBlockController:
         ]
 
     async def test_update_schedule_block_converts_schema_to_dto(
-        self, controller, mock_use_case
+        self, controller, mock_use_case, generate_schedule_block_out_dto
     ):
         block_id = uuid4()
         payload = UpdateScheduleBlockSchema()
-        mock_use_case.update_schedule_block.return_value = AsyncMock()
+        mock_use_case.update_schedule_block.return_value = (
+            generate_schedule_block_out_dto
+        )
 
         await controller.update_schedule_block(block_id, payload)
 

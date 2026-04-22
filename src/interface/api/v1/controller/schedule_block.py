@@ -3,7 +3,6 @@ from uuid import UUID
 
 from src.domain.dtos.schedule_block import (
     ScheduleBlockCreateDTO,
-    ScheduleBlockOutListDTO,
     ScheduleBlockUpdateDTO,
 )
 from src.domain.use_case.schedule_block import ScheduleBlockUseCase
@@ -32,7 +31,7 @@ class ScheduleBlockController:
 
     async def list_schedule_blocks(
         self, company_id: UUID
-    ) -> List[ScheduleBlockOutListDTO]:
+    ) -> List[ScheduleBlockOutListSchema]:
         schedule_blocks = await self.schedule_block_use_case.list_schedule_blocks(
             company_id
         )
@@ -49,9 +48,10 @@ class ScheduleBlockController:
         self, id: UUID, schedule_block: UpdateScheduleBlockSchema
     ) -> ScheduleBlockOutSchema:
         schedule_block_dto = ScheduleBlockUpdateDTO(**schedule_block.model_dump())
-        return await self.schedule_block_use_case.update_schedule_block(
+        updated = await self.schedule_block_use_case.update_schedule_block(
             id, schedule_block_dto
         )
+        return ScheduleBlockOutSchema(**updated.model_dump())
 
     async def delete_schedule_block(self, id: UUID) -> bool:
         return await self.schedule_block_use_case.delete_schedule_block(id)
