@@ -493,33 +493,71 @@ class TestScheduleRepositoryPostgres:
         mock_session.rollback.assert_awaited_once()
 
     async def test_list_schedule_history_success(self, repo, mock_session):
-        schedule_orm_1 = MagicMock()
-        schedule_orm_2 = MagicMock()
+        mock_orm_schedules = [MagicMock(), MagicMock()]
         mock_result = MagicMock()
-        mock_scalars = MagicMock()
-        mock_scalars.all.return_value = [schedule_orm_1, schedule_orm_2]
-        mock_result.scalars.return_value = mock_scalars
+        mock_result.all.return_value = [
+            (
+                mock_orm_schedules[0],
+                'User 1',
+                'Employee 1',
+                'Service 1',
+                'Product 1',
+                30,
+            ),
+            (
+                mock_orm_schedules[1],
+                'User 2',
+                'Employee 2',
+                'Service 2',
+                'Product 2',
+                45,
+            ),
+        ]
         mock_session.execute = AsyncMock(return_value=mock_result)
 
-        expected_1 = MagicMock()
-        expected_2 = MagicMock()
-        with patch.object(
-            ScheduleOutDTO, 'model_validate', side_effect=[expected_1, expected_2]
-        ) as mv:
-            result = await repo.list_schedule_history(uuid4())
-        range_result = 2
-        assert result == [expected_1, expected_2]
-
-        assert mv.call_count == range_result
+        expected = [MagicMock(), MagicMock()]
+        with patch.object(ScheduleOutDTO, 'model_validate', side_effect=expected) as mv:
+            result = await repo.list_schedule_history(
+                PaginationParamsDTO(), uuid4(), True, True
+            )
+        call_count = 2
+        assert result == expected
+        assert mv.call_count == call_count
 
     async def test_list_schedule_history_rollback_on_error(self, repo, mock_session):
         mock_session.execute = AsyncMock(side_effect=ValueError('DB error'))
         mock_session.rollback = AsyncMock()
 
         with pytest.raises(DatabaseException, match='DB error'):
-            await repo.list_schedule_history(uuid4())
+            await repo.list_schedule_history(PaginationParamsDTO(), uuid4(), True, True)
 
         mock_session.rollback.assert_awaited_once()
+
+    async def test_list_schedule_history_respects_flags_and_filters(
+        self, repo, mock_session
+    ):
+        mock_result = MagicMock()
+        mock_result.all.return_value = []
+        mock_session.execute = AsyncMock(return_value=mock_result)
+        cid = uuid4()
+        eid = uuid4()
+        uid = uuid4()
+
+        for inc_c, inc_f in (
+            (False, False),
+            (True, False),
+            (False, True),
+        ):
+            await repo.list_schedule_history(
+                PaginationParamsDTO(),
+                cid,
+                include_canceled=inc_c,
+                include_finished=inc_f,
+                employee_id=eid,
+                user_id=uid,
+            )
+        call_count = 3
+        assert mock_session.execute.await_count == call_count
 
     async def test_close_schedule_returns_none_when_already_closed(
         self, repo, mock_session

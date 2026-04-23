@@ -74,6 +74,31 @@ async def list_user_schedules(
 
 
 @router.get(
+    '/history',
+    description='Lista histórico: cancelados e/ou finalizados (fechamento financeiro).',
+    status_code=status.HTTP_200_OK,
+    response_model=List[ScheduleOutSchema],
+)
+async def list_schedule_history(
+    controller: ScheduleRepositoryDep,
+    pagination: PaginationParamsDep,
+    request: Request,
+    include_canceled: bool = True,
+    include_finished: bool = True,
+    employee_id: UUID | None = None,
+) -> List[ScheduleOutSchema]:
+    user_id = getattr(request.state, 'user_id', None)
+    return await controller.list_schedule_history(
+        pagination,
+        company_id=request.state.company_id,
+        include_canceled=include_canceled,
+        include_finished=include_finished,
+        employee_id=employee_id,
+        user_id=user_id,
+    )
+
+
+@router.get(
     '/slots',
     description='Rota para listar slots de agendamento',
     status_code=status.HTTP_200_OK,

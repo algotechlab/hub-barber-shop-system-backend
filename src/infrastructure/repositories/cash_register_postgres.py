@@ -109,18 +109,20 @@ class CashRegisterRepositoryPostgres(CashRegisterRepository):
         start_at: datetime,
         end_at: datetime,
     ) -> Decimal:
-        # `paid_at` é TIMESTAMP sem TZ e `created_at` é TIMESTAMPTZ; COALESCE misto
-        # faz o driver comparar naive/aware e quebra (asyncpg). Unifica em TIMESTAMPTZ.
-        paid_ts = func.coalesce(
-            func.timezone('UTC', ScheduleFinance.paid_at),
-            ScheduleFinance.created_at,
-        )
+        # Vendas = fechamentos de agendamento no período. Usa `created_at` do
+        # `schedule_finance` (momento do registro do fechamento), para o resposta do
+        # caixa acompanhar o fechamento no turno. `paid_at` retroativo
+        # não exclui a venda
+        # da janela; status cancelado/reembolsado não entra no caixa.
         stmt = select(func.coalesce(func.sum(ScheduleFinance.amount_total), 0)).where(
             ScheduleFinance.company_id.__eq__(company_id),
             ScheduleFinance.is_deleted.__eq__(False),
-            ScheduleFinance.payment_status.__eq__(PaymentStatus.paid),
-            paid_ts.__ge__(start_at),
-            paid_ts.__le__(end_at),
+            ~ScheduleFinance.payment_status.in_((
+                PaymentStatus.canceled,
+                PaymentStatus.refunded,
+            )),
+            ScheduleFinance.created_at.__ge__(start_at),
+            ScheduleFinance.created_at.__le__(end_at),
         )
         result = await self.session.execute(stmt)
         raw = result.scalar_one()

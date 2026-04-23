@@ -34,6 +34,17 @@ class ScheduleRepository(ABC):
     ) -> List[ScheduleOutDTO]: ...
 
     @abstractmethod
+    async def list_schedule_history(
+        self,
+        pagination: PaginationParamsDTO,
+        company_id: UUID,
+        include_canceled: bool = True,
+        include_finished: bool = True,
+        employee_id: Optional[UUID] = None,
+        user_id: Optional[UUID] = None,
+    ) -> List[ScheduleOutDTO]: ...
+
+    @abstractmethod
     async def get_slots(self, slots: SlotsInDTO) -> List[SlotOutDTO]: ...
 
     @abstractmethod

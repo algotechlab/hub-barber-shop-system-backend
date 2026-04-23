@@ -21,8 +21,10 @@ def _enum_values(enum_cls: type) -> list[str]:
 class CashRegisterSession(BaseModel):
     """
     Turno de caixa: abertura (saldo inicial) e fechamento (conferência).
-    Entradas por vendas vêm de `schedule_finance`; saídas operacionais de `expense`;
-    ajustes pontuais em `cash_register_adjustment`.
+    Entradas por vendas vêm de `schedule_finance` (fechamento de agendamento),
+    contabilizadas pelo `created_at` do registro e por status,
+    (exceto cancelado/reembolso);
+    saídas operacionais de `expense`; ajustes em `cash_register_adjustment`.
     """
 
     company_id: Mapped[UUID] = mapped_column(
