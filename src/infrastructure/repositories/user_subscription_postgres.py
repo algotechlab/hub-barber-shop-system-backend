@@ -75,18 +75,18 @@ class UserSubscriptionRepositoryPostgres(UserSubscriptionRepository):
     ) -> Dict[UUID, List[SubscriptionPlanProductLineOutDTO]]:
         if not plan_ids:
             return {}
-        q = select(
+        query = select(
             subscription_plan_product_table.c.subscription_plan_id,
             subscription_plan_product_table.c.product_id,
             subscription_plan_product_table.c.quantity,
         ).where(
             subscription_plan_product_table.c.subscription_plan_id.in_(list(plan_ids))
         )
-        r = await self.session.execute(q)
+        result = await self.session.execute(query)
         out: Dict[UUID, List[SubscriptionPlanProductLineOutDTO]] = {
             p: [] for p in plan_ids
         }
-        for plan_id, pid, qty in r.all():
+        for plan_id, pid, qty in result.all():
             out[plan_id].append(
                 SubscriptionPlanProductLineOutDTO(product_id=pid, quantity=qty)
             )
@@ -94,14 +94,16 @@ class UserSubscriptionRepositoryPostgres(UserSubscriptionRepository):
 
     @staticmethod
     def _to_out(row: UserSubscriptionModel) -> UserSubscriptionOutDTO:
-        st = row.status
-        st_val: str = st.value if isinstance(st, UserSubscriptionStatus) else str(st)
+        status = row.status
+        status_val: str = (
+            status.value if isinstance(status, UserSubscriptionStatus) else str(status)
+        )
         return UserSubscriptionOutDTO(
             id=row.id,
             user_id=row.user_id,
             subscription_plan_id=row.subscription_plan_id,
             company_id=row.company_id,
-            status=st_val,  # type: ignore[arg-type]
+            status=status_val,  # type: ignore[arg-type]
             started_at=row.started_at,
             ended_at=row.ended_at,
             external_subscription_id=row.external_subscription_id,
@@ -138,13 +140,13 @@ class UserSubscriptionRepositoryPostgres(UserSubscriptionRepository):
         self, subscription_id: UUID, company_id: UUID
     ) -> Optional[UserSubscriptionOutDTO]:
         try:
-            q = select(UserSubscriptionModel).where(
+            query = select(UserSubscriptionModel).where(
                 UserSubscriptionModel.id == subscription_id,
                 UserSubscriptionModel.company_id == company_id,
                 UserSubscriptionModel.is_deleted.is_(False),
             )
-            r = await self.session.execute(q)
-            row = r.scalar_one_or_none()
+            result = await self.session.execute(query)
+            row = result.scalar_one_or_none()
             if row is None:
                 return None
             return self._to_out(row)
@@ -156,15 +158,15 @@ class UserSubscriptionRepositoryPostgres(UserSubscriptionRepository):
         self, user_id: UUID, subscription_plan_id: UUID, company_id: UUID
     ) -> bool:
         try:
-            q = select(UserSubscriptionModel.id).where(
+            query = select(UserSubscriptionModel.id).where(
                 UserSubscriptionModel.user_id == user_id,
                 UserSubscriptionModel.subscription_plan_id == subscription_plan_id,
                 UserSubscriptionModel.company_id == company_id,
                 UserSubscriptionModel.is_deleted.is_(False),
                 UserSubscriptionModel.status == UserSubscriptionStatus.active,
             )
-            r = await self.session.execute(q)
-            return r.scalar_one_or_none() is not None
+            result = await self.session.execute(query)
+            return result.scalar_one_or_none() is not None
         except Exception as error:
             await self.session.rollback()
             raise DatabaseException(str(error)) from error
@@ -173,15 +175,15 @@ class UserSubscriptionRepositoryPostgres(UserSubscriptionRepository):
         self, user_id: UUID, subscription_plan_id: UUID, company_id: UUID
     ) -> bool:
         try:
-            q = select(UserSubscriptionModel.id).where(
+            query = select(UserSubscriptionModel.id).where(
                 UserSubscriptionModel.user_id == user_id,
                 UserSubscriptionModel.subscription_plan_id == subscription_plan_id,
                 UserSubscriptionModel.company_id == company_id,
                 UserSubscriptionModel.is_deleted.is_(False),
                 UserSubscriptionModel.status == UserSubscriptionStatus.pending_payment,
             )
-            r = await self.session.execute(q)
-            return r.scalar_one_or_none() is not None
+            result = await self.session.execute(query)
+            return result.scalar_one_or_none() is not None
         except Exception as error:
             await self.session.rollback()
             raise DatabaseException(str(error)) from error
@@ -193,7 +195,7 @@ class UserSubscriptionRepositoryPostgres(UserSubscriptionRepository):
         user_id: UUID,
     ) -> List[UserSubscriptionWithPlanOutDTO]:
         try:
-            q = (
+            query = (
                 select(
                     UserSubscriptionModel,
                     SubscriptionPlan.name,
@@ -203,21 +205,23 @@ class UserSubscriptionRepositoryPostgres(UserSubscriptionRepository):
                 )
                 .join(
                     SubscriptionPlan,
-                    UserSubscriptionModel.subscription_plan_id == SubscriptionPlan.id,
+                    UserSubscriptionModel.subscription_plan_id.__eq__(
+                        SubscriptionPlan.id
+                    ),
                 )
                 .where(
-                    UserSubscriptionModel.user_id == user_id,
-                    UserSubscriptionModel.company_id == company_id,
+                    UserSubscriptionModel.user_id.__eq__(user_id),
+                    UserSubscriptionModel.company_id.__eq__(company_id),
                     UserSubscriptionModel.is_deleted.is_(False),
                 )
                 .order_by(UserSubscriptionModel.created_at.desc())
             )
-            q = q.offset(pagination.offset).limit(pagination.limit)
-            r = await self.session.execute(q)
-            raw_rows = r.all()
+            query = query.offset(pagination.offset).limit(pagination.limit)
+            result = await self.session.execute(query)
+            raw_rows = result.all()
             plan_ids = list({t[0].subscription_plan_id for t in raw_rows})
-            s_map = await self._service_ids_by_plan(plan_ids)
-            pl_map = await self._product_lines_by_plan(plan_ids)
+            service_ids_map = await self._service_ids_by_plan(plan_ids)
+            product_lines_map = await self._product_lines_by_plan(plan_ids)
             out: List[UserSubscriptionWithPlanOutDTO] = []
             for us, p_name, p_price, p_desc, p_uses in raw_rows:
                 pid = us.subscription_plan_id
@@ -225,8 +229,8 @@ class UserSubscriptionRepositoryPostgres(UserSubscriptionRepository):
                 base['plan_name'] = p_name
                 base['plan_price'] = p_price
                 base['plan_description'] = p_desc
-                base['service_ids'] = s_map.get(pid, [])
-                base['plan_product_lines'] = pl_map.get(pid, [])
+                base['service_ids'] = service_ids_map.get(pid, [])
+                base['plan_product_lines'] = product_lines_map.get(pid, [])
                 base['plan_uses_per_month'] = p_uses
                 out.append(UserSubscriptionWithPlanOutDTO.model_validate(base))
             return out
@@ -241,7 +245,7 @@ class UserSubscriptionRepositoryPostgres(UserSubscriptionRepository):
         client_name: str | None = None,
     ) -> List[UserSubscriptionWithPlanAndClientOutDTO]:
         try:
-            q = (
+            query = (
                 select(
                     UserSubscriptionModel,
                     SubscriptionPlan.name,
@@ -252,30 +256,33 @@ class UserSubscriptionRepositoryPostgres(UserSubscriptionRepository):
                 )
                 .join(
                     SubscriptionPlan,
-                    UserSubscriptionModel.subscription_plan_id == SubscriptionPlan.id,
+                    UserSubscriptionModel.subscription_plan_id.__eq__(
+                        SubscriptionPlan.id
+                    ),
                 )
-                .join(User, UserSubscriptionModel.user_id == User.id)
+                .join(User, UserSubscriptionModel.user_id.__eq__(User.id))
                 .where(
-                    UserSubscriptionModel.company_id == company_id,
+                    UserSubscriptionModel.company_id.__eq__(company_id),
                     UserSubscriptionModel.is_deleted.is_(False),
-                    UserSubscriptionModel.status
-                    == UserSubscriptionStatus.pending_payment,
+                    UserSubscriptionModel.status.__eq__(
+                        UserSubscriptionStatus.pending_payment
+                    ),
                 )
             )
             if client_name and client_name.strip():
                 like = f'%{client_name.strip()}%'
-                q = q.where(User.name.ilike(like))
-            q = (
-                q
+                query = query.where(User.name.ilike(like))
+            query = (
+                query
                 .order_by(UserSubscriptionModel.created_at.desc())
                 .offset(pagination.offset)
                 .limit(pagination.limit)
             )
-            r = await self.session.execute(q)
-            raw_rows = r.all()
+            result = await self.session.execute(query)
+            raw_rows = result.all()
             plan_ids = list({t[0].subscription_plan_id for t in raw_rows})
-            s_map = await self._service_ids_by_plan(plan_ids)
-            pl_map = await self._product_lines_by_plan(plan_ids)
+            service_ids_map = await self._service_ids_by_plan(plan_ids)
+            product_lines_map = await self._product_lines_by_plan(plan_ids)
             out: List[UserSubscriptionWithPlanAndClientOutDTO] = []
             for us, p_name, p_price, p_desc, p_uses, c_name in raw_rows:
                 pid = us.subscription_plan_id
@@ -283,8 +290,8 @@ class UserSubscriptionRepositoryPostgres(UserSubscriptionRepository):
                 base['plan_name'] = p_name
                 base['plan_price'] = p_price
                 base['plan_description'] = p_desc
-                base['service_ids'] = s_map.get(pid, [])
-                base['plan_product_lines'] = pl_map.get(pid, [])
+                base['service_ids'] = service_ids_map.get(pid, [])
+                base['plan_product_lines'] = product_lines_map.get(pid, [])
                 base['plan_uses_per_month'] = p_uses
                 base['client_name'] = c_name
                 out.append(UserSubscriptionWithPlanAndClientOutDTO.model_validate(base))
@@ -325,12 +332,12 @@ class UserSubscriptionRepositoryPostgres(UserSubscriptionRepository):
                 .values(**values)
                 .returning(UserSubscriptionModel)
             )
-            r = await self.session.execute(stmt)
+            result = await self.session.execute(stmt)
             await self.session.commit()
-            row = r.scalar_one_or_none()
-            if row is None:
+            updated_user_subscription = result.scalar_one_or_none()
+            if updated_user_subscription is None:
                 return None
-            return self._to_out(row)
+            return self._to_out(updated_user_subscription)
         except Exception as error:
             await self.session.rollback()
             raise DatabaseException(str(error)) from error
