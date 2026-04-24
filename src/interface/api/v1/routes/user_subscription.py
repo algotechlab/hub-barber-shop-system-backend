@@ -25,7 +25,10 @@ router = APIRouter(
 
 @router.post(
     '',
-    description='Associa o usuário autenticado a um plano de assinatura ativo',
+    description=(
+        'Solicita adesão a um plano ativo: cria registro em PENDING_PAYMENT até o '
+        'funcionário confirmar o pagamento em activate-after-payment'
+    ),
     status_code=status.HTTP_201_CREATED,
     response_model=UserSubscriptionOutSchema,
 )

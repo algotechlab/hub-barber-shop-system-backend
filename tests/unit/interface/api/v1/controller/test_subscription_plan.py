@@ -24,8 +24,10 @@ class TestSubscriptionPlanController:
             SubscriptionPlanOutDTO(
                 id=uuid.uuid4(),
                 company_id=company_id,
-                service_id=uuid.uuid4(),
                 name='A',
+                description=None,
+                service_ids=[uuid.uuid4()],
+                product_lines=[],
                 price=Decimal('1'),
                 uses_per_month=None,
                 is_active=True,
@@ -44,11 +46,14 @@ class TestSubscriptionPlanController:
     async def test_create_get_update_delete(self):
         company_id = uuid.uuid4()
         now = datetime.now(timezone.utc)
+        sid = uuid.uuid4()
         out = SubscriptionPlanOutDTO(
             id=uuid.uuid4(),
             company_id=company_id,
-            service_id=uuid.uuid4(),
             name='A',
+            description=None,
+            service_ids=[sid],
+            product_lines=[],
             price=Decimal('1'),
             is_active=True,
             created_at=now,
@@ -64,7 +69,7 @@ class TestSubscriptionPlanController:
 
         c = await ctrl.create_plan(
             CreateSubscriptionPlanSchema(
-                service_id=out.service_id, name='A', price=Decimal('1')
+                service_ids=out.service_ids, name='A', price=Decimal('1')
             ),
             company_id=company_id,
         )

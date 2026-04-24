@@ -18,14 +18,31 @@ class SubscriptionPlanUseCase:
     def __init__(self, service: SubscriptionPlanService):
         self._service = service
 
+    async def _validate_services(
+        self, company_id: UUID, service_ids: List[UUID]
+    ) -> None:
+        for sid in service_ids:
+            if not await self._service.service_belongs_to_company(sid, company_id):
+                raise SubscriptionPlanServiceMismatchException(
+                    'Serviço inexistente ou de outra empresa'
+                )
+
+    async def _validate_products(
+        self, company_id: UUID, product_ids: List[UUID]
+    ) -> None:
+        for pid in product_ids:
+            if not await self._service.product_belongs_to_company(pid, company_id):
+                raise SubscriptionPlanServiceMismatchException(
+                    'Produto inexistente ou de outra empresa'
+                )
+
     async def create_plan(
         self, data: SubscriptionPlanCreateDTO
     ) -> SubscriptionPlanOutDTO:
-        if not await self._service.service_belongs_to_company(
-            data.service_id, data.company_id
-        ):
-            raise SubscriptionPlanServiceMismatchException(
-                'Serviço inexistente ou de outra empresa'
+        await self._validate_services(data.company_id, data.service_ids)
+        if data.product_lines:
+            await self._validate_products(
+                data.company_id, [p.product_id for p in data.product_lines]
             )
         return await self._service.create_plan(data)
 
@@ -57,13 +74,12 @@ class SubscriptionPlanUseCase:
     async def update_plan(
         self, id: UUID, data: SubscriptionPlanUpdateDTO, company_id: UUID
     ) -> SubscriptionPlanOutDTO:
-        if data.service_id is not None:
-            if not await self._service.service_belongs_to_company(
-                data.service_id, company_id
-            ):
-                raise SubscriptionPlanServiceMismatchException(
-                    'Serviço inexistente ou de outra empresa'
-                )
+        if data.service_ids is not None:
+            await self._validate_services(company_id, data.service_ids)
+        if data.product_lines is not None and data.product_lines:
+            await self._validate_products(
+                company_id, [p.product_id for p in data.product_lines]
+            )
         updated = await self._service.update_plan(id, data, company_id)
         if updated is None:
             raise SubscriptionPlanNotFoundException(

@@ -2,7 +2,15 @@ from decimal import Decimal as DecimalType
 from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import DECIMAL, Boolean, CheckConstraint, ForeignKey, Integer, String
+from sqlalchemy import (
+    DECIMAL,
+    Boolean,
+    CheckConstraint,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.infrastructure.database.models.base import BaseModel
@@ -18,9 +26,7 @@ class SubscriptionPlan(BaseModel):
     company_id: Mapped[UUID] = mapped_column(
         ForeignKey('company.id'), nullable=False, index=True
     )
-    service_id: Mapped[UUID] = mapped_column(
-        ForeignKey('service.id'), nullable=False, index=True
-    )
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     price: Mapped[DecimalType] = mapped_column(DECIMAL(10, 2), nullable=False)
     uses_per_month: Mapped[Optional[int]] = mapped_column(

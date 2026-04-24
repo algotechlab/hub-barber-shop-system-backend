@@ -30,8 +30,10 @@ def _out():
     return SubscriptionPlanOutSchema(
         id=uuid.uuid4(),
         company_id=uuid.uuid4(),
-        service_id=uuid.uuid4(),
         name='A',
+        description=None,
+        service_ids=[uuid.uuid4()],
+        product_lines=[],
         price=Decimal('1'),
         uses_per_month=2,
         is_active=True,
@@ -97,7 +99,7 @@ class TestSubscriptionPlanRoutes:
         m = _install_employee_mode()
         m.create_plan.return_value = _out()
         payload = CreateSubscriptionPlanSchema(
-            service_id=uuid.uuid4(),
+            service_ids=[uuid.uuid4()],
             name='B',
             price=Decimal('2'),
         ).model_dump(mode='json')

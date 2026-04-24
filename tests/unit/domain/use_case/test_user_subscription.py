@@ -8,6 +8,9 @@ from src.domain.dtos.user_subscription import UserSubscriptionOutDTO
 from src.domain.exceptions.subscription import (
     SubscriptionPlanNotFoundException,
     UserSubscriptionActiveExistsException,
+    UserSubscriptionInvalidStateException,
+    UserSubscriptionNotFoundException,
+    UserSubscriptionPendingExistsException,
 )
 from src.domain.use_case.user_subscription import UserSubscriptionUseCase
 
@@ -25,6 +28,8 @@ def _us_out(company_id, user_id, plan_id):
         started_at=now,
         ended_at=None,
         external_subscription_id=None,
+        payment_at=None,
+        payment_method=None,
         created_at=now,
         updated_at=now,
         is_deleted=False,
@@ -63,9 +68,27 @@ async def test_create_for_user_active_exists():
 
 
 @pytest.mark.asyncio
+async def test_create_for_user_pending_exists():
+    us = AsyncMock()
+    us.has_active_for_plan.return_value = False
+    us.has_pending_for_plan.return_value = True
+    plan = AsyncMock()
+    plan.get_plan.return_value = AsyncMock()
+    uc = UserSubscriptionUseCase(us, plan)
+    with pytest.raises(UserSubscriptionPendingExistsException):
+        await uc.create_for_user(
+            user_id=uuid4(),
+            company_id=uuid4(),
+            subscription_plan_id=uuid4(),
+        )
+    us.create.assert_not_awaited()
+
+
+@pytest.mark.asyncio
 async def test_create_for_user_success():
     us = AsyncMock()
     us.has_active_for_plan.return_value = False
+    us.has_pending_for_plan.return_value = False
     plan = AsyncMock()
     cid, uid, pid = uuid4(), uuid4(), uuid4()
     plan.get_plan.return_value = AsyncMock()
@@ -79,6 +102,68 @@ async def test_create_for_user_success():
     call = us.create.call_args[0][0]
     assert call.user_id == uid
     assert call.subscription_plan_id == pid
+    assert call.status == 'PENDING_PAYMENT'
+
+
+@pytest.mark.asyncio
+async def test_activate_after_payment_success():
+    us = AsyncMock()
+    plan = AsyncMock()
+    sid, cid = uuid4(), uuid4()
+    now = datetime.now(timezone.utc)
+    activated = UserSubscriptionOutDTO(
+        id=sid,
+        user_id=uuid4(),
+        subscription_plan_id=uuid4(),
+        company_id=cid,
+        status='ACTIVE',
+        started_at=now,
+        ended_at=None,
+        external_subscription_id='ext-1',
+        payment_at=now,
+        payment_method='PIX',
+        created_at=now,
+        updated_at=now,
+        is_deleted=False,
+    )
+    us.activate_pending.return_value = activated
+    uc = UserSubscriptionUseCase(us, plan)
+    r = await uc.activate_after_payment(
+        subscription_id=sid,
+        company_id=cid,
+        external_subscription_id='ext-1',
+        payment_method='PIX',
+    )
+    assert r.status == 'ACTIVE'
+    us.get_by_id.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_activate_after_payment_not_found():
+    us = AsyncMock()
+    plan = AsyncMock()
+    sid, cid = uuid4(), uuid4()
+    us.activate_pending.return_value = None
+    us.get_by_id.return_value = None
+    uc = UserSubscriptionUseCase(us, plan)
+    with pytest.raises(UserSubscriptionNotFoundException):
+        await uc.activate_after_payment(
+            subscription_id=sid, company_id=cid, payment_method='PIX'
+        )
+
+
+@pytest.mark.asyncio
+async def test_activate_after_payment_wrong_state():
+    us = AsyncMock()
+    plan = AsyncMock()
+    sid, cid = uuid4(), uuid4()
+    us.activate_pending.return_value = None
+    us.get_by_id.return_value = _us_out(cid, uuid4(), uuid4())
+    uc = UserSubscriptionUseCase(us, plan)
+    with pytest.raises(UserSubscriptionInvalidStateException):
+        await uc.activate_after_payment(
+            subscription_id=sid, company_id=cid, payment_method='PIX'
+        )
 
 
 @pytest.mark.asyncio
@@ -92,3 +177,16 @@ async def test_list_mine_delegates():
     r = await uc.list_mine(p, cid, uid)
     assert r == []
     us.list_by_user.assert_awaited_once_with(p, cid, uid)
+
+
+@pytest.mark.asyncio
+async def test_list_pending_for_company_delegates():
+    us = AsyncMock()
+    us.list_pending_by_company.return_value = []
+    plan = AsyncMock()
+    uc = UserSubscriptionUseCase(us, plan)
+    p = PaginationParamsDTO()
+    cid = uuid4()
+    r = await uc.list_pending_for_company(p, cid)
+    assert r == []
+    us.list_pending_by_company.assert_awaited_once_with(p, cid, client_name=None)

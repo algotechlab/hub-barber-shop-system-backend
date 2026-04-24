@@ -46,3 +46,8 @@ class SubscriptionPlanRepository(ABC):
     async def service_belongs_to_company(
         self, service_id: UUID, company_id: UUID
     ) -> bool: ...
+
+    @abstractmethod
+    async def product_belongs_to_company(
+        self, product_id: UUID, company_id: UUID
+    ) -> bool: ...

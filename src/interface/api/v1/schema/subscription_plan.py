@@ -1,16 +1,23 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
 
+class SubscriptionPlanProductLineSchema(BaseModel):
+    product_id: UUID
+    quantity: int = Field(default=1, ge=1)
+
+
 class SubscriptionPlanOutSchema(BaseModel):
     id: UUID
     company_id: UUID
-    service_id: UUID
     name: str
+    description: Optional[str] = None
+    service_ids: List[UUID] = Field(default_factory=list)
+    product_lines: List[SubscriptionPlanProductLineSchema] = Field(default_factory=list)
     price: Decimal
     uses_per_month: Optional[int] = None
     is_active: bool
@@ -18,10 +25,19 @@ class SubscriptionPlanOutSchema(BaseModel):
     updated_at: datetime
     is_deleted: bool
 
+    @field_validator('product_lines', 'service_ids', mode='before')
+    @classmethod
+    def _default_lists(cls, v):
+        return v or []
+
 
 class CreateSubscriptionPlanSchema(BaseModel):
-    service_id: UUID
     name: str = Field(min_length=1, max_length=100)
+    description: Optional[str] = None
+    service_ids: List[UUID] = Field(
+        min_length=1, description='Pelo menos um serviço do catálogo da empresa'
+    )
+    product_lines: List[SubscriptionPlanProductLineSchema] = Field(default_factory=list)
     price: Decimal = Field(..., ge=0)
     uses_per_month: Optional[int] = Field(
         default=None,
@@ -38,8 +54,10 @@ class CreateSubscriptionPlanSchema(BaseModel):
 
 
 class UpdateSubscriptionPlanSchema(BaseModel):
-    service_id: Optional[UUID] = None
     name: Optional[str] = Field(None, min_length=1, max_length=100)
+    description: Optional[str] = None
+    service_ids: Optional[List[UUID]] = None
+    product_lines: Optional[List[SubscriptionPlanProductLineSchema]] = None
     price: Optional[Decimal] = Field(None, ge=0)
     uses_per_month: Optional[int] = None
     is_active: Optional[bool] = None

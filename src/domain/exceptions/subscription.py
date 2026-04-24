@@ -22,6 +22,20 @@ class UserSubscriptionActiveExistsException(DomainException):
     code: str = 'USER_SUBSCRIPTION_ACTIVE_EXISTS'
 
 
+class UserSubscriptionPendingExistsException(DomainException):
+    """Já existe solicitação pendente de assinatura neste plano para o usuário."""
+
+    status_code: int = HTTPStatus.CONFLICT.value
+    code: str = 'USER_SUBSCRIPTION_PENDING_EXISTS'
+
+
+class UserSubscriptionInvalidStateException(DomainException):
+    """Operação incompatível com o status atual da assinatura."""
+
+    status_code: int = HTTPStatus.BAD_REQUEST.value
+    code: str = 'USER_SUBSCRIPTION_INVALID_STATE'
+
+
 class UserSubscriptionNotFoundException(DomainException):
     status_code: int = HTTPStatus.NOT_FOUND.value
     code: str = 'USER_SUBSCRIPTION_NOT_FOUND'
