@@ -3,7 +3,7 @@ from decimal import Decimal
 from typing import List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class SubscriptionPlanProductLineSchema(BaseModel):
@@ -52,6 +52,20 @@ class CreateSubscriptionPlanSchema(BaseModel):
             raise ValueError('uses_per_month deve ser >= 1')
         return v
 
+    @field_validator('service_ids')
+    @classmethod
+    def _unique_service_ids(cls, v: List[UUID]) -> List[UUID]:
+        if len(v) != len(set(v)):
+            raise ValueError('service_ids não pode repetir o mesmo serviço')
+        return v
+
+    @model_validator(mode='after')
+    def _unique_product_lines(self) -> 'CreateSubscriptionPlanSchema':
+        pids = [p.product_id for p in self.product_lines]
+        if len(pids) != len(set(pids)):
+            raise ValueError('product_lines não pode repetir o mesmo product_id')
+        return self
+
 
 class UpdateSubscriptionPlanSchema(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=100)
@@ -68,3 +82,19 @@ class UpdateSubscriptionPlanSchema(BaseModel):
         if v is not None and v < 1:
             raise ValueError('uses_per_month deve ser >= 1')
         return v
+
+    @field_validator('service_ids')
+    @classmethod
+    def _unique_service_ids(cls, v: Optional[List[UUID]]) -> Optional[List[UUID]]:
+        if v is not None and len(v) != len(set(v)):
+            raise ValueError('service_ids não pode repetir o mesmo serviço')
+        return v
+
+    @model_validator(mode='after')
+    def _unique_product_lines(self) -> 'UpdateSubscriptionPlanSchema':
+        if self.product_lines is None:
+            return self
+        pids = [p.product_id for p in self.product_lines]
+        if len(pids) != len(set(pids)):
+            raise ValueError('product_lines não pode repetir o mesmo product_id')
+        return self
