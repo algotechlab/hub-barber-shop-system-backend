@@ -31,15 +31,15 @@ class SubscriptionPlanRepositoryPostgres(SubscriptionPlanRepository):
     ) -> Dict[UUID, List[UUID]]:
         if not plan_ids:
             return {}
-        q = select(
+        query = select(
             subscription_plan_service_table.c.subscription_plan_id,
             subscription_plan_service_table.c.service_id,
         ).where(
             subscription_plan_service_table.c.subscription_plan_id.in_(list(plan_ids))
         )
-        r = await self.session.execute(q)
+        result = await self.session.execute(query)
         out: Dict[UUID, List[UUID]] = {p: [] for p in plan_ids}
-        for plan_id, sid in r.all():
+        for plan_id, sid in result.all():
             out[plan_id].append(sid)
         return out
 
@@ -48,18 +48,18 @@ class SubscriptionPlanRepositoryPostgres(SubscriptionPlanRepository):
     ) -> Dict[UUID, List[SubscriptionPlanProductLineOutDTO]]:
         if not plan_ids:
             return {}
-        q = select(
+        query = select(
             subscription_plan_product_table.c.subscription_plan_id,
             subscription_plan_product_table.c.product_id,
             subscription_plan_product_table.c.quantity,
         ).where(
             subscription_plan_product_table.c.subscription_plan_id.in_(list(plan_ids))
         )
-        r = await self.session.execute(q)
+        result = await self.session.execute(query)
         out: Dict[UUID, List[SubscriptionPlanProductLineOutDTO]] = {
             p: [] for p in plan_ids
         }
-        for plan_id, pid, qty in r.all():
+        for plan_id, pid, qty in result.all():
             out[plan_id].append(
                 SubscriptionPlanProductLineOutDTO(product_id=pid, quantity=qty)
             )
@@ -90,13 +90,13 @@ class SubscriptionPlanRepositoryPostgres(SubscriptionPlanRepository):
         self, service_id: UUID, company_id: UUID
     ) -> bool:
         try:
-            q = select(Service).where(
-                Service.id == service_id,
-                Service.company_id == company_id,
+            query = select(Service).where(
+                Service.id.__eq__(service_id),
+                Service.company_id.__eq__(company_id),
                 Service.is_deleted.is_(False),
             )
-            r = await self.session.execute(q)
-            return r.scalar_one_or_none() is not None
+            result = await self.session.execute(query)
+            return result.scalar_one_or_none() is not None
         except Exception as error:
             await self.session.rollback()
             raise DatabaseException(str(error)) from error
@@ -105,13 +105,13 @@ class SubscriptionPlanRepositoryPostgres(SubscriptionPlanRepository):
         self, product_id: UUID, company_id: UUID
     ) -> bool:
         try:
-            q = select(Product).where(
-                Product.id == product_id,
-                Product.company_id == company_id,
+            query = select(Product).where(
+                Product.id.__eq__(product_id),
+                Product.company_id.__eq__(company_id),
                 Product.is_deleted.is_(False),
             )
-            r = await self.session.execute(q)
-            return r.scalar_one_or_none() is not None
+            result = await self.session.execute(query)
+            return result.scalar_one_or_none() is not None
         except Exception as error:
             await self.session.rollback()
             raise DatabaseException(str(error)) from error
@@ -147,9 +147,11 @@ class SubscriptionPlanRepositoryPostgres(SubscriptionPlanRepository):
                 )
             await self.session.commit()
             await self.session.refresh(row)
-            svc = await self._service_ids_for_plan([plan_id])
-            pr = await self._product_lines_for_plan([plan_id])
-            return self._row_to_dto(row, svc.get(plan_id, []), pr.get(plan_id, []))
+            service_ids = await self._service_ids_for_plan([plan_id])
+            product_lines = await self._product_lines_for_plan([plan_id])
+            return self._row_to_dto(
+                row, service_ids.get(plan_id, []), product_lines.get(plan_id, [])
+            )
         except Exception as error:
             await self.session.rollback()
             raise DatabaseException(str(error)) from error
@@ -169,14 +171,16 @@ class SubscriptionPlanRepositoryPostgres(SubscriptionPlanRepository):
             ]
             if active_only:
                 flt.append(SubscriptionPlan.is_active.is_(True))
-            q = select(SubscriptionPlan).where(*flt)
-            r = await self.session.execute(q)
-            row = r.scalar_one_or_none()
-            if row is None:
+            query = select(SubscriptionPlan).where(*flt)
+            result = await self.session.execute(query)
+            subscription_plan = result.scalar_one_or_none()
+            if subscription_plan is None:
                 return None
-            sid_map = await self._service_ids_for_plan([id])
-            pl_map = await self._product_lines_for_plan([id])
-            return self._row_to_dto(row, sid_map.get(id, []), pl_map.get(id, []))
+            service_ids = await self._service_ids_for_plan([id])
+            product_lines = await self._product_lines_for_plan([id])
+            return self._row_to_dto(
+                subscription_plan, service_ids.get(id, []), product_lines.get(id, [])
+            )
         except Exception as error:
             await self.session.rollback()
             raise DatabaseException(str(error)) from error
@@ -190,14 +194,18 @@ class SubscriptionPlanRepositoryPostgres(SubscriptionPlanRepository):
     ) -> List[SubscriptionPlanOutDTO]:
         try:
             flt = [
-                SubscriptionPlan.company_id == company_id,
+                SubscriptionPlan.company_id.__eq__(company_id),
                 SubscriptionPlan.is_deleted.is_(False),
             ]
             if active_only:
                 flt.append(SubscriptionPlan.is_active.is_(True))
-            q = (
+            query = (
                 select(SubscriptionPlan)
-                .where(*flt)
+                .where(
+                    SubscriptionPlan.company_id.__eq__(company_id),
+                    SubscriptionPlan.is_deleted.is_(False),
+                    SubscriptionPlan.is_active.is_(True) if active_only else True,
+                )
                 .order_by(SubscriptionPlan.created_at.desc())
             )
             if (
@@ -205,21 +213,25 @@ class SubscriptionPlanRepositoryPostgres(SubscriptionPlanRepository):
                 and pagination.filter_value
                 and hasattr(SubscriptionPlan, pagination.filter_by)
             ):
-                q = q.filter(
+                query = query.filter(
                     getattr(SubscriptionPlan, pagination.filter_by).ilike(
                         f'%{pagination.filter_value}%'
                     )
                 )
-            q = q.offset(pagination.offset).limit(pagination.limit)
-            r = await self.session.execute(q)
-            rows = list(r.scalars().all())
+            query = query.offset(pagination.offset).limit(pagination.limit)
+            result = await self.session.execute(query)
+            rows = list(result.scalars().all())
             if not rows:
                 return []
             pids = [p.id for p in rows]
-            s_map = await self._service_ids_for_plan(pids)
-            pl_map = await self._product_lines_for_plan(pids)
+            service_ids_map = await self._service_ids_for_plan(pids)
+            product_lines_map = await self._product_lines_for_plan(pids)
             return [
-                self._row_to_dto(row, s_map.get(row.id, []), pl_map.get(row.id, []))
+                self._row_to_dto(
+                    row,
+                    service_ids_map.get(row.id, []),
+                    product_lines_map.get(row.id, []),
+                )
                 for row in rows
             ]
         except Exception as error:
@@ -233,13 +245,13 @@ class SubscriptionPlanRepositoryPostgres(SubscriptionPlanRepository):
             field_updates = data.model_dump(
                 exclude_unset=True, exclude={'service_ids', 'product_lines'}
             )
-            q = select(SubscriptionPlan).where(
-                SubscriptionPlan.id == id,
-                SubscriptionPlan.company_id == company_id,
+            query = select(SubscriptionPlan).where(
+                SubscriptionPlan.id.__eq__(id),
+                SubscriptionPlan.company_id.__eq__(company_id),
                 SubscriptionPlan.is_deleted.is_(False),
             )
-            r0 = await self.session.execute(q)
-            existing = r0.scalar_one_or_none()
+            result = await self.session.execute(query)
+            existing = result.scalar_one_or_none()
             if existing is None:
                 return None
 
@@ -269,8 +281,8 @@ class SubscriptionPlanRepositoryPostgres(SubscriptionPlanRepository):
                             quantity=pl.quantity,
                         )
                     )
-            for k, v in field_updates.items():
-                setattr(existing, k, v)
+            for key, value in field_updates.items():
+                setattr(existing, key, value)
             await self.session.commit()
             await self.session.refresh(existing)
             return await self.get_plan(id, company_id)
@@ -280,13 +292,13 @@ class SubscriptionPlanRepositoryPostgres(SubscriptionPlanRepository):
 
     async def delete_plan(self, id: UUID, company_id: UUID) -> bool:
         try:
-            stmt = select(SubscriptionPlan).where(
-                SubscriptionPlan.id == id,
-                SubscriptionPlan.company_id == company_id,
+            query = select(SubscriptionPlan).where(
+                SubscriptionPlan.id.__eq__(id),
+                SubscriptionPlan.company_id.__eq__(company_id),
                 SubscriptionPlan.is_deleted.is_(False),
             )
-            r0 = await self.session.execute(stmt)
-            row = r0.scalar_one_or_none()
+            result = await self.session.execute(query)
+            row = result.scalar_one_or_none()
             if row is None:
                 return False
             row.is_deleted = True

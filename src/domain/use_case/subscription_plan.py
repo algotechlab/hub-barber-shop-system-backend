@@ -88,8 +88,8 @@ class SubscriptionPlanUseCase:
         return updated
 
     async def delete_plan(self, id: UUID, company_id: UUID) -> bool:
-        ok = await self._service.delete_plan(id, company_id)
-        if not ok:
+        delete_plan = await self._service.delete_plan(id, company_id)
+        if not delete_plan:
             raise SubscriptionPlanNotFoundException(
                 'Plano de assinatura não encontrado'
             )
