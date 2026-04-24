@@ -1,8 +1,3 @@
-"""
-Associação plano–serviço e plano–produto (tabelas sem colunas padrão do BaseModel).
-Definição alinhada à migration `b2c3d4e5f6a0`.
-"""
-
 from sqlalchemy import Column, ForeignKey, Integer, Table, Uuid
 
 from src.infrastructure.database.models.base import BaseModel
