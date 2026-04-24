@@ -6,7 +6,7 @@ from typing import List, Optional
 from uuid import UUID, uuid4
 
 import sqlalchemy as sa
-from sqlalchemy import Time, cast, func, select, update
+from sqlalchemy import Time, cast, exists, false, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.exceptions.custom import DatabaseException
@@ -347,19 +347,94 @@ class ScheduleRepositoryPostgres(ScheduleRepository):
         except Exception as error:
             raise DatabaseException(str(error))
 
-    async def list_schedule_history(self, company_id: UUID) -> List[ScheduleOutDTO]:
+    def _history_status_filter(
+        self, company_id: UUID, include_canceled: bool, include_finished: bool
+    ):
+        """
+        Finalizado: existe `schedule_finance` ativo (fechamento)
+        e agendamento não cancelado.
+        Cancelado: `is_canceled` é verdadeiro.
+        """
+        if not include_canceled and not include_finished:
+            return false()
+
+        canceled_expr = Schedule.is_canceled.is_(True)
+        finished_subq = (
+            select(1)
+            .select_from(ScheduleFinance)
+            .where(
+                ScheduleFinance.schedule_id.__eq__(Schedule.id),
+                ScheduleFinance.company_id.__eq__(company_id),
+                ScheduleFinance.is_deleted.is_(False),
+            )
+        )
+        finished_expr = Schedule.is_canceled.is_(False) & exists(finished_subq)
+
+        if include_canceled and include_finished:
+            return or_(canceled_expr, finished_expr)
+        if include_canceled:
+            return canceled_expr
+        return finished_expr
+
+    async def list_schedule_history(
+        self,
+        pagination: PaginationParamsDTO,
+        company_id: UUID,
+        include_canceled: bool = True,
+        include_finished: bool = True,
+        employee_id: Optional[UUID] = None,
+        user_id: Optional[UUID] = None,
+    ) -> List[ScheduleOutDTO]:
         try:
+            id_filters = [
+                Schedule.is_deleted.is_(False),
+                Schedule.company_id.__eq__(company_id),
+                self._history_status_filter(
+                    company_id, include_canceled, include_finished
+                ),
+            ]
+            if employee_id is not None:
+                id_filters.append(Schedule.employee_id.__eq__(employee_id))
+            if user_id is not None:
+                id_filters.append(Schedule.user_id.__eq__(user_id))
+
+            paginated_schedule_ids = (
+                select(Schedule.id)
+                .where(*id_filters)
+                .order_by(Schedule.created_at.desc())
+                .offset(pagination.offset)
+                .limit(pagination.limit)
+                .subquery()
+            )
+
+            names_sq = (
+                select(sa.func.array_agg(Service.name))
+                .where(Service.id.__eq__(sa.any_(Schedule.service_id)))
+                .scalar_subquery()
+            )
+            duration_sq = (
+                select(sa.func.sum(Service.duration))
+                .where(Service.id.__eq__(sa.any_(Schedule.service_id)))
+                .scalar_subquery()
+            )
+
             query = (
-                select(Schedule)
-                .where(
-                    Schedule.company_id.__eq__(company_id),
-                    Schedule.is_deleted.__eq__(False),
+                select(
+                    Schedule,
+                    User.name.label('user_name'),
+                    Employee.name.label('employee_name'),
+                    names_sq.label('service_names'),
+                    Product.name.label('product_name'),
+                    duration_sq.label('service_duration_minutes'),
                 )
+                .outerjoin(User, Schedule.user_id == User.id)
+                .outerjoin(Employee, Schedule.employee_id.__eq__(Employee.id))
+                .outerjoin(Product, Schedule.product_id.__eq__(Product.id))
+                .where(Schedule.id.in_(select(paginated_schedule_ids.c.id)))
                 .order_by(Schedule.created_at.desc())
             )
             result = await self.session.execute(query)
-            schedules = result.scalars().all()
-            return [ScheduleOutDTO.model_validate(schedule) for schedule in schedules]
+            return [self._schedule_row_to_out_dto(*row) for row in result.all()]
         except Exception as error:
             await self.session.rollback()
             raise DatabaseException(str(error))

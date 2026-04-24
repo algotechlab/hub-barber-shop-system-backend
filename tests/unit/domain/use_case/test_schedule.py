@@ -105,6 +105,24 @@ async def test_get_schedule_by_user_id_delegates_to_service_layer():
 
 
 @pytest.mark.asyncio
+async def test_list_schedule_history_delegates_to_service_layer():
+    service = AsyncMock()
+    service.list_schedule_history.return_value = []
+    use_case = ScheduleUseCase(service)
+    pagination = PaginationParamsDTO()
+    company_id = uuid4()
+
+    result = await use_case.list_schedule_history(
+        pagination, company_id, True, True, None, None
+    )
+
+    service.list_schedule_history.assert_awaited_once_with(
+        pagination, company_id, True, True, None, None
+    )
+    assert result == []
+
+
+@pytest.mark.asyncio
 async def test_get_slots_delegates_to_service_layer():
     service = AsyncMock()
     use_case = ScheduleUseCase(service)

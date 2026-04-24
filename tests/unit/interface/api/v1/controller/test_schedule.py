@@ -89,6 +89,43 @@ class TestScheduleController:
         )
 
     @pytest.mark.asyncio
+    async def test_list_schedule_history(self):
+        company_id = uuid.uuid4()
+        use_case = AsyncMock()
+        use_case.list_schedule_history.return_value = [
+            ScheduleOutDTO(
+                id=uuid.uuid4(),
+                user_id=uuid.uuid4(),
+                service_id=[uuid.uuid4()],
+                product_id=uuid.uuid4(),
+                employee_id=uuid.uuid4(),
+                company_id=company_id,
+                time_register='2026-02-14T20:06:18',
+                time_start=None,
+                time_end=None,
+                status=True,
+                is_canceled=True,
+                created_at='2026-02-14T20:06:18',
+                updated_at='2026-02-14T20:06:18',
+                is_deleted=False,
+            )
+        ]
+        controller = ScheduleController(use_case)
+        pagination = PaginationParamsDTO()
+
+        result = await controller.list_schedule_history(
+            pagination,
+            company_id=company_id,
+            include_canceled=True,
+            include_finished=False,
+        )
+
+        assert len(result) == 1
+        use_case.list_schedule_history.assert_awaited_once_with(
+            pagination, company_id, True, False, None, None
+        )
+
+    @pytest.mark.asyncio
     async def test_create_schedule(self):
         company_id = uuid.uuid4()
         use_case = AsyncMock()

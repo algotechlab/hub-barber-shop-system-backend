@@ -124,6 +124,23 @@ class TestScheduleRoutes:
         assert response.status_code == STATUS_CODE_200, response.json()
         assert len(response.json()) == 1
 
+    def test_list_schedule_history_returns_200(
+        self, client, override_dependency_schedules
+    ):
+        schedule = _build_schedule_out()
+        override_dependency_schedules.list_schedule_history.return_value = [schedule]
+
+        response = client.get(
+            f'{URL_SCHEDULES}/history?include_canceled=true&include_finished=true'
+        )
+
+        assert response.status_code == STATUS_CODE_200, response.json()
+        assert len(response.json()) == 1
+        override_dependency_schedules.list_schedule_history.assert_called_once()
+        call_kw = override_dependency_schedules.list_schedule_history.call_args.kwargs
+        assert call_kw['include_canceled'] is True
+        assert call_kw['include_finished'] is True
+
     def test_list_user_schedules_returns_401_when_not_user(
         self, client, override_dependency_schedules
     ):

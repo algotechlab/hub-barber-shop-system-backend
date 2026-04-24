@@ -40,6 +40,24 @@ class ScheduleService:
             pagination, company_id, user_id
         )
 
+    async def list_schedule_history(
+        self,
+        pagination: PaginationParamsDTO,
+        company_id: UUID,
+        include_canceled: bool = True,
+        include_finished: bool = True,
+        employee_id: Optional[UUID] = None,
+        user_id: Optional[UUID] = None,
+    ) -> List[ScheduleOutDTO]:
+        return await self.schedule_repository.list_schedule_history(
+            pagination,
+            company_id,
+            include_canceled,
+            include_finished,
+            employee_id,
+            user_id,
+        )
+
     async def get_slots(self, slots: SlotsInDTO) -> List[SlotOutDTO]:
         return await self.schedule_repository.get_slots(slots)
 
