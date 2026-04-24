@@ -58,6 +58,32 @@ def test_create_dto_rejects_product_line_quantity_below_one():
         )
 
 
+def test_create_dto_rejects_duplicate_product_id_in_lines():
+    pid = uuid4()
+    with pytest.raises(ValidationError):
+        SubscriptionPlanCreateDTO(
+            company_id=uuid4(),
+            service_ids=[uuid4()],
+            name='Plano',
+            price=Decimal('10'),
+            product_lines=[
+                SubscriptionPlanProductLineOutDTO(product_id=pid, quantity=1),
+                SubscriptionPlanProductLineOutDTO(product_id=pid, quantity=2),
+            ],
+        )
+
+
+def test_create_dto_rejects_duplicate_service_ids():
+    sid = uuid4()
+    with pytest.raises(ValidationError):
+        SubscriptionPlanCreateDTO(
+            company_id=uuid4(),
+            service_ids=[sid, sid],
+            name='Plano',
+            price=Decimal('10'),
+        )
+
+
 def test_update_dto_rejects_empty_service_ids_when_set():
     with pytest.raises(ValidationError):
         SubscriptionPlanUpdateDTO(service_ids=[])
@@ -75,6 +101,23 @@ def test_update_dto_rejects_product_line_quantity_below_one():
                 SubscriptionPlanProductLineOutDTO(product_id=uuid4(), quantity=0)
             ],
         )
+
+
+def test_update_dto_rejects_duplicate_product_id_in_lines():
+    pid = uuid4()
+    with pytest.raises(ValidationError):
+        SubscriptionPlanUpdateDTO(
+            product_lines=[
+                SubscriptionPlanProductLineOutDTO(product_id=pid, quantity=1),
+                SubscriptionPlanProductLineOutDTO(product_id=pid, quantity=1),
+            ],
+        )
+
+
+def test_update_dto_rejects_duplicate_service_ids():
+    sid = uuid4()
+    with pytest.raises(ValidationError):
+        SubscriptionPlanUpdateDTO(service_ids=[sid, sid])
 
 
 def test_out_dto_constructs():

@@ -3,7 +3,7 @@ from decimal import Decimal
 from typing import List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class SubscriptionPlanProductLineOutDTO(BaseModel):
@@ -62,6 +62,20 @@ class SubscriptionPlanCreateDTO(BaseModel):
                 raise ValueError('quantity do produto deve ser >= 1')
         return v
 
+    @field_validator('service_ids')
+    @classmethod
+    def _validate_unique_service_ids(cls, v: List[UUID]) -> List[UUID]:
+        if len(v) != len(set(v)):
+            raise ValueError('service_ids não pode repetir o mesmo serviço')
+        return v
+
+    @model_validator(mode='after')
+    def _validate_unique_product_ids(self) -> 'SubscriptionPlanCreateDTO':
+        pids = [line.product_id for line in self.product_lines]
+        if len(pids) != len(set(pids)):
+            raise ValueError('product_lines não pode repetir o mesmo product_id')
+        return self
+
 
 class SubscriptionPlanUpdateDTO(BaseModel):
     name: Optional[str] = None
@@ -100,3 +114,21 @@ class SubscriptionPlanUpdateDTO(BaseModel):
             if line.quantity < 1:
                 raise ValueError('quantity do produto deve ser >= 1')
         return v
+
+    @field_validator('service_ids')
+    @classmethod
+    def _validate_unique_service_ids(
+        cls, v: Optional[List[UUID]]
+    ) -> Optional[List[UUID]]:
+        if v is not None and len(v) != len(set(v)):
+            raise ValueError('service_ids não pode repetir o mesmo serviço')
+        return v
+
+    @model_validator(mode='after')
+    def _validate_unique_product_ids(self) -> 'SubscriptionPlanUpdateDTO':
+        if self.product_lines is None:
+            return self
+        pids = [line.product_id for line in self.product_lines]
+        if len(pids) != len(set(pids)):
+            raise ValueError('product_lines não pode repetir o mesmo product_id')
+        return self
