@@ -19,7 +19,7 @@ async def test_service_create_delegates():
     service = SubscriptionPlanService(repo)
     dto = SubscriptionPlanCreateDTO(
         company_id=uuid4(),
-        service_id=uuid4(),
+        service_ids=[uuid4()],
         name='A',
         price=Decimal('1'),
     )
@@ -52,3 +52,6 @@ async def test_service_get_list_update_delete_delegates():
 
     repo.service_belongs_to_company.return_value = True
     assert await service.service_belongs_to_company(uuid4(), cid) is True
+
+    repo.product_belongs_to_company.return_value = True
+    assert await service.product_belongs_to_company(uuid4(), cid) is True

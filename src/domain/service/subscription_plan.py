@@ -51,3 +51,8 @@ class SubscriptionPlanService:
         self, service_id: UUID, company_id: UUID
     ) -> bool:
         return await self.repository.service_belongs_to_company(service_id, company_id)
+
+    async def product_belongs_to_company(
+        self, product_id: UUID, company_id: UUID
+    ) -> bool:
+        return await self.repository.product_belongs_to_company(product_id, company_id)

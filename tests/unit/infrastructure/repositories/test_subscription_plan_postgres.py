@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
@@ -8,7 +9,7 @@ from src.core.exceptions.custom import DatabaseException
 from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.subscription_plan import (
     SubscriptionPlanCreateDTO,
-    SubscriptionPlanOutDTO,
+    SubscriptionPlanProductLineOutDTO,
     SubscriptionPlanUpdateDTO,
 )
 from src.infrastructure.repositories.subscription_plan_postgres import (
@@ -45,40 +46,153 @@ class TestSubscriptionPlanRepositoryPostgres:
             await repo.service_belongs_to_company(uuid4(), uuid4())
         mock_session.rollback.assert_awaited_once()
 
+    async def test_product_belongs_to_company_true(self, repo, mock_session):
+        mock_r = MagicMock()
+        mock_r.scalar_one_or_none.return_value = object()
+        mock_session.execute = AsyncMock(return_value=mock_r)
+        assert await repo.product_belongs_to_company(uuid4(), uuid4()) is True
+
+    async def test_product_belongs_to_company_false(self, repo, mock_session):
+        mock_r = MagicMock()
+        mock_r.scalar_one_or_none.return_value = None
+        mock_session.execute = AsyncMock(return_value=mock_r)
+        assert await repo.product_belongs_to_company(uuid4(), uuid4()) is False
+
+    async def test_product_belongs_rollback(self, repo, mock_session):
+        mock_session.execute = AsyncMock(side_effect=ValueError('e'))
+        mock_session.rollback = AsyncMock()
+        with pytest.raises(DatabaseException, match='e'):
+            await repo.product_belongs_to_company(uuid4(), uuid4())
+        mock_session.rollback.assert_awaited_once()
+
+    async def test_service_ids_for_plan_empty_and_populated(self, repo, mock_session):
+        assert await repo._service_ids_for_plan(()) == {}
+        pid, sid = uuid4(), uuid4()
+        mock_r = MagicMock()
+        mock_r.all.return_value = [(pid, sid)]
+        mock_session.execute = AsyncMock(return_value=mock_r)
+        got = await repo._service_ids_for_plan([pid])
+        assert got == {pid: [sid]}
+
+    async def test_product_lines_for_plan_empty_and_populated(self, repo, mock_session):
+        assert await repo._product_lines_for_plan(()) == {}
+        pid, pr_id = uuid4(), uuid4()
+        expected_qty = 3
+        mock_r = MagicMock()
+        mock_r.all.return_value = [(pid, pr_id, expected_qty)]
+        mock_session.execute = AsyncMock(return_value=mock_r)
+        got = await repo._product_lines_for_plan([pid])
+        assert len(got[pid]) == 1
+        assert got[pid][0].product_id == pr_id
+        assert got[pid][0].quantity == expected_qty
+
     async def test_create_plan_success(self, repo, mock_session):
         cid, sid = uuid4(), uuid4()
         dto = SubscriptionPlanCreateDTO(
-            company_id=cid, service_id=sid, name='A', price=Decimal('1')
+            company_id=cid, service_ids=[sid], name='A', price=Decimal('1')
         )
         mock_orm = MagicMock()
+        mock_orm.id = uuid4()
+        now = datetime.now(timezone.utc)
+        mock_orm.name = 'A'
+        mock_orm.description = None
+        mock_orm.company_id = cid
+        mock_orm.price = Decimal('1')
+        mock_orm.uses_per_month = None
+        mock_orm.is_active = True
+        mock_orm.created_at = now
+        mock_orm.updated_at = now
+        mock_orm.is_deleted = False
+        mock_session.flush = AsyncMock()
         mock_session.commit = AsyncMock()
         mock_session.refresh = AsyncMock()
+        mock_session.execute = AsyncMock()
         with patch(
             'src.infrastructure.repositories.subscription_plan_postgres.SubscriptionPlan',
             return_value=mock_orm,
         ) as pcls:
             with patch.object(
-                SubscriptionPlanOutDTO, 'model_validate', return_value=MagicMock()
-            ):
-                await repo.create_plan(dto)
+                repo, '_product_lines_for_plan', new_callable=AsyncMock
+            ) as pl:
+                with patch.object(
+                    repo, '_service_ids_for_plan', new_callable=AsyncMock
+                ) as s:
+                    s.return_value = {mock_orm.id: [sid]}
+                    pl.return_value = {mock_orm.id: []}
+                    await repo.create_plan(dto)
         pcls.assert_called_once()
         mock_session.add.assert_called_once()
         mock_session.commit.assert_awaited_once()
 
+    async def test_create_plan_with_product_lines(self, repo, mock_session):
+        cid, sid, pr = uuid4(), uuid4(), uuid4()
+        dto = SubscriptionPlanCreateDTO(
+            company_id=cid,
+            service_ids=[sid],
+            name='A',
+            price=Decimal('1'),
+            product_lines=[
+                SubscriptionPlanProductLineOutDTO(product_id=pr, quantity=2),
+            ],
+        )
+        mock_orm = MagicMock()
+        mock_orm.id = uuid4()
+        now = datetime.now(timezone.utc)
+        mock_orm.name = 'A'
+        mock_orm.description = None
+        mock_orm.company_id = cid
+        mock_orm.price = Decimal('1')
+        mock_orm.uses_per_month = None
+        mock_orm.is_active = True
+        mock_orm.created_at = now
+        mock_orm.updated_at = now
+        mock_orm.is_deleted = False
+        mock_session.flush = AsyncMock()
+        mock_session.commit = AsyncMock()
+        mock_session.refresh = AsyncMock()
+        mock_session.execute = AsyncMock()
+        with patch(
+            'src.infrastructure.repositories.subscription_plan_postgres.SubscriptionPlan',
+            return_value=mock_orm,
+        ):
+            with patch.object(
+                repo, '_product_lines_for_plan', new_callable=AsyncMock
+            ) as pl:
+                with patch.object(
+                    repo, '_service_ids_for_plan', new_callable=AsyncMock
+                ) as s:
+                    s.return_value = {mock_orm.id: [sid]}
+                    pl.return_value = {mock_orm.id: dto.product_lines}
+                    await repo.create_plan(dto)
+        min_execute_calls = 2
+        assert mock_session.execute.await_count >= min_execute_calls
+
     async def test_create_plan_rollback_on_error(self, repo, mock_session):
         cid, sid = uuid4(), uuid4()
         dto = SubscriptionPlanCreateDTO(
-            company_id=cid, service_id=sid, name='A', price=Decimal('1')
+            company_id=cid, service_ids=[sid], name='A', price=Decimal('1')
         )
         mock_session.add = MagicMock()
+        mock_m = MagicMock()
+        mock_m.id = uuid4()
+        mock_session.flush = AsyncMock()
+        mock_session.execute = AsyncMock()
         mock_session.commit = AsyncMock(side_effect=RuntimeError('commit fail'))
         mock_session.rollback = AsyncMock()
         with patch(
             'src.infrastructure.repositories.subscription_plan_postgres.SubscriptionPlan',
-            return_value=MagicMock(),
+            return_value=mock_m,
         ):
-            with pytest.raises(DatabaseException, match='commit fail'):
-                await repo.create_plan(dto)
+            with patch.object(
+                repo, '_product_lines_for_plan', new_callable=AsyncMock
+            ) as pl:
+                with patch.object(
+                    repo, '_service_ids_for_plan', new_callable=AsyncMock
+                ) as s:
+                    s.return_value = {mock_m.id: [sid]}
+                    pl.return_value = {mock_m.id: []}
+                    with pytest.raises(DatabaseException, match='commit fail'):
+                        await repo.create_plan(dto)
         mock_session.rollback.assert_awaited_once()
 
     async def test_get_plan_rollback_on_error(self, repo, mock_session):
@@ -90,13 +204,27 @@ class TestSubscriptionPlanRepositoryPostgres:
 
     async def test_get_plan_with_active_only(self, repo, mock_session):
         mock_orm = MagicMock()
+        mock_orm.id = uuid4()
+        now = datetime.now(timezone.utc)
+        mock_orm.name = 'A'
+        mock_orm.description = None
+        mock_orm.company_id = uuid4()
+        mock_orm.price = Decimal('1')
+        mock_orm.uses_per_month = None
+        mock_orm.is_active = True
+        mock_orm.created_at = now
+        mock_orm.updated_at = now
+        mock_orm.is_deleted = False
         mock_r = MagicMock()
         mock_r.scalar_one_or_none.return_value = mock_orm
         mock_session.execute = AsyncMock(return_value=mock_r)
-        with patch.object(
-            SubscriptionPlanOutDTO, 'model_validate', return_value=object()
-        ):
-            r = await repo.get_plan(uuid4(), uuid4(), active_only=True)
+        with patch.object(repo, '_service_ids_for_plan', new_callable=AsyncMock) as s:
+            with patch.object(
+                repo, '_product_lines_for_plan', new_callable=AsyncMock
+            ) as p:
+                s.return_value = {mock_orm.id: [uuid4()]}
+                p.return_value = {mock_orm.id: []}
+                r = await repo.get_plan(uuid4(), uuid4(), active_only=True)
         assert r is not None
 
     async def test_get_plan_none(self, repo, mock_session):
@@ -117,6 +245,36 @@ class TestSubscriptionPlanRepositoryPostgres:
         r = await repo.list_plans(p, uuid4(), active_only=True)
         assert r == []
 
+    async def test_list_plans_returns_rows_with_junction_maps(self, repo, mock_session):
+        mock_row = MagicMock()
+        plan_id = uuid4()
+        mock_row.id = plan_id
+        now = datetime.now(timezone.utc)
+        mock_row.name = 'P'
+        mock_row.description = None
+        mock_row.company_id = uuid4()
+        mock_row.price = Decimal('5')
+        mock_row.uses_per_month = 1
+        mock_row.is_active = True
+        mock_row.created_at = now
+        mock_row.updated_at = now
+        mock_row.is_deleted = False
+        mock_exec = MagicMock()
+        mock_exec.scalars.return_value.all.return_value = [mock_row]
+        mock_session.execute = AsyncMock(return_value=mock_exec)
+        svc_id = uuid4()
+        pline = SubscriptionPlanProductLineOutDTO(product_id=uuid4(), quantity=1)
+        with patch.object(repo, '_service_ids_for_plan', new_callable=AsyncMock) as s:
+            with patch.object(
+                repo, '_product_lines_for_plan', new_callable=AsyncMock
+            ) as pl:
+                s.return_value = {plan_id: [svc_id]}
+                pl.return_value = {plan_id: [pline]}
+                r = await repo.list_plans(PaginationParamsDTO(), uuid4())
+        assert len(r) == 1
+        assert r[0].service_ids == [svc_id]
+        assert r[0].product_lines == [pline]
+
     async def test_list_plans_rollback(self, repo, mock_session):
         mock_session.execute = AsyncMock(side_effect=RuntimeError('db'))
         mock_session.rollback = AsyncMock()
@@ -126,6 +284,10 @@ class TestSubscriptionPlanRepositoryPostgres:
 
     async def test_update_plan_empty_returns_get(self, repo, mock_session):
         pid, cid = uuid4(), uuid4()
+        mock_r = MagicMock()
+        mock_r.scalar_one_or_none.return_value = MagicMock()
+        mock_session.execute = AsyncMock(return_value=mock_r)
+        mock_session.commit = AsyncMock()
         with patch.object(
             repo, 'get_plan', new_callable=AsyncMock, return_value=None
         ) as g:
@@ -135,18 +297,44 @@ class TestSubscriptionPlanRepositoryPostgres:
 
     async def test_update_plan_with_values(self, repo, mock_session):
         mock_r = MagicMock()
-        mock_r.scalar_one_or_none.return_value = MagicMock()
+        row = MagicMock()
+        row.id = uuid4()
+        mock_r.scalar_one_or_none.return_value = row
         mock_session.execute = AsyncMock(return_value=mock_r)
         mock_session.commit = AsyncMock()
-        with patch.object(
-            SubscriptionPlanOutDTO, 'model_validate', return_value=object()
-        ):
+        with patch.object(repo, 'get_plan', new_callable=AsyncMock) as g:
+            g.return_value = object()
             r = await repo.update_plan(
                 uuid4(),
                 SubscriptionPlanUpdateDTO(name='B'),
                 uuid4(),
             )
         assert r is not None
+
+    async def test_update_plan_refreshes_service_and_product_junctions(
+        self, repo, mock_session
+    ):
+        pid, cid = uuid4(), uuid4()
+        sid1, sid2 = uuid4(), uuid4()
+        pr = uuid4()
+        existing = MagicMock()
+        mock_first = MagicMock()
+        mock_first.scalar_one_or_none.return_value = existing
+        mock_rest = MagicMock()
+        mock_session.execute = AsyncMock(side_effect=[mock_first] + [mock_rest] * 5)
+        mock_session.commit = AsyncMock()
+        dto = SubscriptionPlanUpdateDTO(
+            service_ids=[sid1, sid2],
+            product_lines=[
+                SubscriptionPlanProductLineOutDTO(product_id=pr, quantity=2),
+            ],
+        )
+        with patch.object(repo, 'get_plan', new_callable=AsyncMock) as g:
+            g.return_value = object()
+            r = await repo.update_plan(pid, dto, cid)
+        assert r is not None
+        expected_execute_calls = 6
+        assert mock_session.execute.await_count == expected_execute_calls
 
     async def test_update_plan_returns_none_when_no_row(self, repo, mock_session):
         mock_r = MagicMock()
@@ -173,10 +361,17 @@ class TestSubscriptionPlanRepositoryPostgres:
 
     async def test_delete_plan_true(self, repo, mock_session):
         mock_r = MagicMock()
-        mock_r.rowcount = 1
+        mock_r.scalar_one_or_none.return_value = MagicMock()
         mock_session.execute = AsyncMock(return_value=mock_r)
         mock_session.commit = AsyncMock()
         assert await repo.delete_plan(uuid4(), uuid4()) is True
+
+    async def test_delete_plan_false_when_missing(self, repo, mock_session):
+        mock_r = MagicMock()
+        mock_r.scalar_one_or_none.return_value = None
+        mock_session.execute = AsyncMock(return_value=mock_r)
+        assert await repo.delete_plan(uuid4(), uuid4()) is False
+        mock_session.commit.assert_not_awaited()
 
     async def test_delete_plan_rollback(self, repo, mock_session):
         mock_session.execute = AsyncMock(side_effect=OSError('x'))

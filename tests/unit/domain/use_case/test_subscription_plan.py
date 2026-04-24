@@ -8,6 +8,7 @@ from src.domain.dtos.common.pagination import PaginationParamsDTO
 from src.domain.dtos.subscription_plan import (
     SubscriptionPlanCreateDTO,
     SubscriptionPlanOutDTO,
+    SubscriptionPlanProductLineOutDTO,
     SubscriptionPlanUpdateDTO,
 )
 from src.domain.exceptions.subscription import (
@@ -24,8 +25,10 @@ def _plan(company_id):
     return SubscriptionPlanOutDTO(
         id=uuid4(),
         company_id=company_id,
-        service_id=uuid4(),
         name='P',
+        description=None,
+        service_ids=[uuid4()],
+        product_lines=[],
         price=Decimal('10'),
         uses_per_month=2,
         is_active=True,
@@ -42,7 +45,7 @@ async def test_create_plan_raises_when_service_mismatch():
     uc = SubscriptionPlanUseCase(svc)
     dto = SubscriptionPlanCreateDTO(
         company_id=uuid4(),
-        service_id=uuid4(),
+        service_ids=[uuid4()],
         name='A',
         price=Decimal('1'),
     )
@@ -61,12 +64,58 @@ async def test_create_plan_success():
     uc = SubscriptionPlanUseCase(svc)
     dto = SubscriptionPlanCreateDTO(
         company_id=cid,
-        service_id=expected.service_id,
+        service_ids=expected.service_ids,
         name='A',
         price=Decimal('1'),
     )
     r = await uc.create_plan(dto)
     assert r == expected
+
+
+@pytest.mark.asyncio
+async def test_create_plan_raises_when_product_mismatch():
+    svc = AsyncMock()
+    cid = uuid4()
+    pid = uuid4()
+    svc.service_belongs_to_company.return_value = True
+    svc.product_belongs_to_company.return_value = False
+    uc = SubscriptionPlanUseCase(svc)
+    dto = SubscriptionPlanCreateDTO(
+        company_id=cid,
+        service_ids=[uuid4()],
+        name='A',
+        price=Decimal('1'),
+        product_lines=[
+            SubscriptionPlanProductLineOutDTO(product_id=pid, quantity=2),
+        ],
+    )
+    with pytest.raises(SubscriptionPlanServiceMismatchException):
+        await uc.create_plan(dto)
+    svc.create_plan.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_create_plan_with_product_lines_validates_products():
+    svc = AsyncMock()
+    cid = uuid4()
+    expected = _plan(cid)
+    pid = uuid4()
+    svc.service_belongs_to_company.return_value = True
+    svc.product_belongs_to_company.return_value = True
+    svc.create_plan.return_value = expected
+    uc = SubscriptionPlanUseCase(svc)
+    dto = SubscriptionPlanCreateDTO(
+        company_id=cid,
+        service_ids=expected.service_ids,
+        name='A',
+        price=Decimal('1'),
+        product_lines=[
+            SubscriptionPlanProductLineOutDTO(product_id=pid, quantity=1),
+        ],
+    )
+    r = await uc.create_plan(dto)
+    assert r == expected
+    svc.product_belongs_to_company.assert_awaited_once_with(pid, cid)
 
 
 @pytest.mark.asyncio
@@ -107,7 +156,7 @@ async def test_update_plan_service_mismatch():
     svc = AsyncMock()
     uc = SubscriptionPlanUseCase(svc)
     sid, cid = uuid4(), uuid4()
-    data = SubscriptionPlanUpdateDTO(service_id=sid)
+    data = SubscriptionPlanUpdateDTO(service_ids=[sid])
     svc.service_belongs_to_company.return_value = False
     with pytest.raises(SubscriptionPlanServiceMismatchException):
         await uc.update_plan(uuid4(), data, cid)
@@ -132,6 +181,39 @@ async def test_update_plan_success():
     uc = SubscriptionPlanUseCase(svc)
     r = await uc.update_plan(out.id, SubscriptionPlanUpdateDTO(name='Y'), cid)
     assert r == out
+
+
+@pytest.mark.asyncio
+async def test_update_plan_raises_when_product_mismatch():
+    svc = AsyncMock()
+    cid, pid = uuid4(), uuid4()
+    svc.service_belongs_to_company.return_value = True
+    svc.product_belongs_to_company.return_value = False
+    uc = SubscriptionPlanUseCase(svc)
+    data = SubscriptionPlanUpdateDTO(
+        product_lines=[SubscriptionPlanProductLineOutDTO(product_id=pid, quantity=1)],
+    )
+    with pytest.raises(SubscriptionPlanServiceMismatchException):
+        await uc.update_plan(uuid4(), data, cid)
+    svc.update_plan.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_update_plan_with_product_lines_validates_products():
+    svc = AsyncMock()
+    cid = uuid4()
+    out = _plan(cid)
+    pid = uuid4()
+    svc.service_belongs_to_company.return_value = True
+    svc.product_belongs_to_company.return_value = True
+    svc.update_plan.return_value = out
+    uc = SubscriptionPlanUseCase(svc)
+    data = SubscriptionPlanUpdateDTO(
+        product_lines=[SubscriptionPlanProductLineOutDTO(product_id=pid, quantity=1)],
+    )
+    r = await uc.update_plan(out.id, data, cid)
+    assert r == out
+    svc.product_belongs_to_company.assert_awaited_once_with(pid, cid)
 
 
 @pytest.mark.asyncio

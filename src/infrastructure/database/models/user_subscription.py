@@ -7,6 +7,7 @@ from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.infrastructure.database.models.base import BaseModel
+from src.infrastructure.database.models.commom.payment_method import PaymentMethod
 from src.infrastructure.database.models.commom.user_subscription_status import (
     UserSubscriptionStatus,
 )
@@ -49,4 +50,16 @@ class UserSubscription(BaseModel):
         String(120),
         nullable=True,
         doc='Ex.: id de preapproval / assinatura no provedor de pagamento.',
+    )
+    # Data e meio em que o pagamento foi confirmado (preenchido na ativação).
+    payment_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    payment_method: Mapped[Optional[PaymentMethod]] = mapped_column(
+        SQLEnum(
+            PaymentMethod,
+            name='payment_method_enum',
+            values_callable=_enum_values,
+        ),
+        nullable=True,
     )
